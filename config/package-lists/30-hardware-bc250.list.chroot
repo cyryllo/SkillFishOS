@@ -6,11 +6,6 @@ libva-utils
 radeontop
 libvulkan1
 
-# --- Mesa (i386 for 32-bit gaming) ---
-mesa-vulkan-drivers:i386
-libgl1-mesa-dri:i386
-libvulkan1:i386
-
 # --- Vulkan tools ---
 vulkan-tools
 spirv-cross
@@ -20,6 +15,4 @@ lm-sensors
 
 # --- DKMS (for nct6687 and other out-of-tree modules) ---
 dkms
-
-# --- Build tools (needed for DKMS) ---
 build-essential

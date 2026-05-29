@@ -3,7 +3,7 @@ set -e
 cd "$(dirname "$0")"
 
 echo "=== SkillFish OS Build ==="
-echo "Distribution: Debian forky | Desktop: Hyprland+DMS | Kernel: XanMod x64v3"
+echo "Distribution: Debian forky | Desktop: Hyprland+DMS | Kernel: linux-tkg 7.0.10 (BORE/znver2/BC-250)"
 echo ""
 
 # Prerequisites check

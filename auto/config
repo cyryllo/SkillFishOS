@@ -2,10 +2,11 @@
 set -e
 cd "$(dirname "$0")/.."
 
-# Fetch Google Chrome GPG key (idempotent)
-if [ ! -f config/archives/google-chrome.gpg ]; then
-    echo "Fetching Google Chrome GPG key..."
-    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o config/archives/google-chrome.gpg
+# Fetch Google Chrome signing key (ASCII-armored) for the chrome.list.chroot repo.
+# live-build installs *.key.chroot into the chroot's /etc/apt/trusted.gpg.d/.
+if [ ! -s config/archives/chrome.key.chroot ]; then
+    echo "Fetching Google Chrome signing key..."
+    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub -o config/archives/chrome.key.chroot
 fi
 
 lb config noauto \
