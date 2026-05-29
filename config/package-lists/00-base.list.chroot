@@ -30,7 +30,6 @@ blueman
 btrfs-progs
 inotify-tools
 snapper
-grub-btrfs
 btrfs-assistant
 
 # --- Bootloader ---
