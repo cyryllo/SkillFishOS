@@ -1,34 +1,33 @@
 #!/bin/bash
-set -e
-
-# nct6687 DKMS module for hardware sensor monitoring on BC-250
-# The kernel package should already have DKMS build tools available.
-
-NCT_REPO="https://github.com/Fred78290/nct6687d"
-NCT_DEB_BASE="https://github.com/Fred78290/nct6687d/releases/latest/download"
-
-# Try downloading a prebuilt DKMS .deb
-if curl -fsSL "${NCT_DEB_BASE}/nct6687d-dkms_all.deb" -o /tmp/nct6687-dkms.deb 2>/dev/null; then
+# nct6687 sensors DKMS module. Built against the installed (tkg) kernel. Best-effort.
+set +e
+KVER=$(ls /lib/modules 2>/dev/null | sort -V | tail -1)
+echo "[nct6687] target kernel: ${KVER:-unknown}"
+DEB="https://github.com/Fred78290/nct6687d/releases/latest/download/nct6687d-dkms_all.deb"
+if curl -fsSL "$DEB" -o /tmp/nct6687-dkms.deb; then
     dpkg -i /tmp/nct6687-dkms.deb || apt-get -f install -y
     rm -f /tmp/nct6687-dkms.deb
-    echo "nct6687 DKMS package installed."
+    # force-build for the installed kernel (DKMS in chroot won't auto-target it)
+    V=$(dkms status 2>/dev/null | grep -oiP 'nct6687d?[/, ]\K[0-9][^,: ]*' | head -1)
+    if [ -n "$V" ] && [ -n "$KVER" ]; then
+        dkms build  -m nct6687d -v "$V" -k "$KVER" --force
+        dkms install -m nct6687d -v "$V" -k "$KVER" --force
+    fi
+    echo "[nct6687] DKMS .deb path done"
 else
-    echo "WARNING: Could not download nct6687 .deb, trying DKMS source install..."
-    apt-get install -y git dkms 2>/dev/null || true
-    git clone --depth 1 "${NCT_REPO}" /tmp/nct6687d 2>/dev/null || true
+    echo "[nct6687] .deb unavailable, trying source"
+    git clone --depth 1 https://github.com/Fred78290/nct6687d /tmp/nct6687d
     if [ -d /tmp/nct6687d ]; then
-        VERSION=$(grep -oP '(?<=VERSION = ).*' /tmp/nct6687d/Makefile 2>/dev/null || echo "1.0")
-        mkdir -p /usr/src/nct6687d-${VERSION}
-        cp /tmp/nct6687d/*.c /tmp/nct6687d/*.h /tmp/nct6687d/Makefile            /usr/src/nct6687d-${VERSION}/ 2>/dev/null || true
-        dkms add -m nct6687d -v ${VERSION} 2>/dev/null || true
-        dkms build -m nct6687d -v ${VERSION} 2>/dev/null || true
-        dkms install -m nct6687d -v ${VERSION} 2>/dev/null || true
+        V=$(grep -oP '(?<=VERSION = ).*' /tmp/nct6687d/Makefile 2>/dev/null || echo 1.0)
+        mkdir -p /usr/src/nct6687d-$V
+        cp /tmp/nct6687d/*.c /tmp/nct6687d/*.h /tmp/nct6687d/Makefile /tmp/nct6687d/dkms.conf /usr/src/nct6687d-$V/ 2>/dev/null
+        dkms add -m nct6687d -v "$V"
+        [ -n "$KVER" ] && dkms build -m nct6687d -v "$V" -k "$KVER" --force && dkms install -m nct6687d -v "$V" -k "$KVER" --force
         rm -rf /tmp/nct6687d
-        echo "nct6687 DKMS built from source."
+        echo "[nct6687] source build attempted"
     else
-        echo "WARNING: nct6687 install skipped — could not fetch source."
+        echo "[nct6687] WARNING: source fetch failed (non-fatal)"
     fi
 fi
-
-# Ensure autoload
-echo "nct6687" >> /etc/modules 2>/dev/null || true
+grep -qx nct6687 /etc/modules 2>/dev/null || echo nct6687 >> /etc/modules
+exit 0

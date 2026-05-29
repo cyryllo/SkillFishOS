@@ -1,32 +1,25 @@
 #!/bin/bash
-set -e
-
-# CoolerControl from Cloudsmith repo
-# Fallback: try trixie codename if forky not recognised
-
-CLOUDSMITH_KEY_URL="https://dl.cloudsmith.io/public/coolercontrol/coolercontrol/gpg.key"
-CLOUDSMITH_DEB="https://dl.cloudsmith.io/public/coolercontrol/coolercontrol/deb/debian"
-
+# CoolerControl from Cloudsmith. Best-effort (non-fatal).
+set +e
+echo "[coolercontrol] installing from Cloudsmith"
 mkdir -p /etc/apt/keyrings
-curl -fsSL "${CLOUDSMITH_KEY_URL}" | gpg --dearmor -o /etc/apt/keyrings/coolercontrol.gpg
-
+curl -fsSL https://dl.cloudsmith.io/public/coolercontrol/coolercontrol/gpg.key \
+    | gpg --dearmor -o /etc/apt/keyrings/coolercontrol.gpg
+BASEURL="https://dl.cloudsmith.io/public/coolercontrol/coolercontrol/deb/debian"
 INSTALLED=0
 for CODENAME in forky trixie; do
-    echo "deb [signed-by=/etc/apt/keyrings/coolercontrol.gpg] ${CLOUDSMITH_DEB} ${CODENAME} main"         > /etc/apt/sources.list.d/coolercontrol-tmp.list
-
-    apt-get update         -o Dir::Etc::sourcelist="sources.list.d/coolercontrol-tmp.list"         -o Dir::Etc::sourceparts="-"         -o APT::Get::List-Cleanup="0" 2>/dev/null
-
-    if apt-get install -y coolercontrold coolercontrol 2>/dev/null; then
-        INSTALLED=1
-        break
-    fi
+    echo "deb [signed-by=/etc/apt/keyrings/coolercontrol.gpg] $BASEURL $CODENAME main" \
+        > /etc/apt/sources.list.d/coolercontrol-tmp.list
+    apt-get update -o Dir::Etc::sourcelist="sources.list.d/coolercontrol-tmp.list" \
+        -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
+    if apt-get install -y coolercontrold coolercontrol; then INSTALLED=1; break; fi
 done
-
 rm -f /etc/apt/sources.list.d/coolercontrol-tmp.list
-
-if [ "$INSTALLED" = "1" ]; then
+apt-get update >/dev/null 2>&1
+if [ "$INSTALLED" = 1 ]; then
     systemctl enable coolercontrold.service 2>/dev/null || true
-    echo "CoolerControl installed and enabled."
+    echo "[coolercontrol] installed"
 else
-    echo "WARNING: CoolerControl install failed — skipping."
+    echo "[coolercontrol] WARNING: install failed (non-fatal)"
 fi
+exit 0

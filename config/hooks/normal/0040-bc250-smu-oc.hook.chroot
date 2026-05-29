@@ -1,25 +1,18 @@
 #!/bin/bash
-set -e
-
-# Install bc250_smu_oc via pipx (system-wide install)
-# Source: https://github.com/bc250-collective/bc250_smu_oc
-export PIPX_HOME=/opt/pipx
-export PIPX_BIN_DIR=/usr/local/bin
-
-# Ensure pipx is available
-if ! command -v pipx &>/dev/null; then
-    pip3 install --break-system-packages pipx 2>/dev/null || pip3 install pipx
+# bc250_smu_oc (CPU OC/UV) - GitHub only (pyproject.toml), via pipx. Best-effort.
+set +e
+echo "[smu-oc] installing bc250_smu_oc from GitHub via pipx"
+export PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin
+command -v pipx >/dev/null 2>&1 || pip3 install --break-system-packages pipx
+pipx install --include-deps "git+https://github.com/bc250-collective/bc250_smu_oc.git"
+if command -v bc250-detect >/dev/null 2>&1; then
+    echo "[smu-oc] installed: $(command -v bc250-detect)"
+else
+    # ensure symlinks if pipx put them in the venv only
+    for B in bc250-detect bc250-apply; do
+        ln -sf /opt/pipx/venvs/bc250_smu_oc/bin/$B /usr/local/bin/$B 2>/dev/null || \
+        ln -sf /opt/pipx/venvs/bc250-smu-oc/bin/$B /usr/local/bin/$B 2>/dev/null || true
+    done
+    command -v bc250-detect >/dev/null 2>&1 && echo "[smu-oc] linked" || echo "[smu-oc] WARNING: install failed (non-fatal)"
 fi
-
-# Install the package
-pipx install --include-deps bc250-smu-oc 2>/dev/null ||     PIPX_HOME=/opt/pipx PIPX_BIN_DIR=/usr/local/bin pipx install --include-deps bc250-smu-oc
-
-# Ensure symlinks in /usr/local/bin
-for BIN in bc250-detect bc250-apply; do
-    if [ ! -e /usr/local/bin/$BIN ]; then
-        ln -sf /opt/pipx/venvs/bc250-smu-oc/bin/$BIN /usr/local/bin/$BIN 2>/dev/null || true
-    fi
-done
-
-echo "bc250_smu_oc installed."
-bc250-detect --help 2>/dev/null | head -3 || true
+exit 0
