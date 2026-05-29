@@ -2,13 +2,7 @@
 set -e
 cd "$(dirname "$0")/.."
 
-# Fetch XanMod GPG key (idempotent)
-if [ ! -f config/archives/xanmod-archive-keyring.gpg ]; then
-    echo "Fetching XanMod GPG key..."
-    curl -fsSL https://dl.xanmod.org/gpg.key | gpg --dearmor -o config/archives/xanmod-archive-keyring.gpg
-fi
-
-# Fetch Google Chrome GPG key
+# Fetch Google Chrome GPG key (idempotent)
 if [ ! -f config/archives/google-chrome.gpg ]; then
     echo "Fetching Google Chrome GPG key..."
     curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o config/archives/google-chrome.gpg

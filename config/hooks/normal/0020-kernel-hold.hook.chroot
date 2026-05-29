@@ -1,20 +1,21 @@
 #!/bin/bash
 set -e
 
-# Pin the XanMod kernel so future apt upgrades don't replace it with Debian stock
-XANMOD_VER=$(dpkg -l linux-xanmod-x64v3 2>/dev/null | awk '/^ii/{print $3}')
-if [ -n "$XANMOD_VER" ]; then
-    apt-mark hold linux-xanmod-x64v3 2>/dev/null || true
-    # Also hold the specific versioned images/headers
-    for PKG in $(dpkg -l 'linux-image-*-xanmod*' 'linux-headers-*-xanmod*' 2>/dev/null | awk '/^ii/{print $2}'); do
-        apt-mark hold "$PKG" 2>/dev/null || true
-    done
-fi
+# Pin the custom tkg kernel so apt upgrades never replace it, and purge any
+# Debian stock kernel that may have been pulled in as a dependency.
 
-# Remove Debian stock kernels if present (keep only XanMod)
-for PKG in $(dpkg -l 'linux-image-[0-9]*-amd64' 'linux-image-amd64' 2>/dev/null | awk '/^ii/{print $2}'); do
+# Hold every installed linux-image / linux-headers that carries our localversion
+for PKG in $(dpkg -l 'linux-image-*-tkg-*' 'linux-headers-*-tkg-*' 2>/dev/null | awk '/^ii/{print $2}'); do
+    apt-mark hold "$PKG" 2>/dev/null || true
+    echo "Held $PKG"
+done
+
+# Remove Debian stock kernels (keep only the tkg one)
+for PKG in $(dpkg -l 'linux-image-[0-9]*-amd64' 'linux-image-amd64' \
+                     'linux-headers-[0-9]*-amd64' 'linux-headers-amd64' 2>/dev/null \
+             | awk '/^ii/{print $2}'); do
     apt-get purge -y "$PKG" 2>/dev/null || true
 done
 
-echo "Kernel hold applied. Installed kernels:"
-dpkg -l 'linux-image-*' | grep ^ii
+echo "Installed kernels after hold:"
+dpkg -l 'linux-image-*' | grep '^ii' || true
