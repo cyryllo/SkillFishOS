@@ -1,11 +1,15 @@
-# --- Printing stack ---
+# --- Printing stack (driverless + common drivers available in forky) ---
 cups
 cups-browsed
 cups-filters
 system-config-printer
 ipp-usb
-printer-driver-gutenprint
-printer-driver-all
-hplip
+foomatic-db
+printer-driver-cups-pdf
+printer-driver-escpr
+printer-driver-splix
+printer-driver-foo2zjs
+sane-utils
 avahi-daemon
 avahi-utils
+# hplip + printer-driver-gutenprint: best-effort via hook 0086 (often out of testing)

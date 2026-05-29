@@ -1,6 +1,5 @@
 # --- Hyprland ---
 hyprland
-hyprutils
 hyprwayland-scanner
 
 # --- Display manager ---
@@ -10,7 +9,6 @@ sddm
 wayland-utils
 xwayland
 wl-clipboard
-wl-clipboard-x11
 
 # --- XDG portals ---
 xdg-desktop-portal-hyprland
@@ -29,7 +27,7 @@ nemo-fileroller
 
 # --- Archive manager ---
 file-roller
-p7zip-full
+7zip
 unrar-free
 
 # --- Screenshot ---
@@ -49,8 +47,6 @@ fonts-dejavu
 # --- Icons ---
 papirus-icon-theme
 hicolor-icon-theme
-
-# --- GTK theme ---
 adwaita-icon-theme
 
 # --- Session & auth ---
@@ -58,18 +54,13 @@ xdg-user-dirs
 xdg-utils
 gnome-keyring
 libpam-gnome-keyring
-polkit
+polkitd
+hyprpolkitagent
 
-# --- App launcher (fallback until DMS is up) ---
+# --- Fallbacks until DMS/Quickshell is up (deviates from CLAUDE.md 'DMS replaces these') ---
 wofi
-
-# --- Notification daemon (fallback until DMS is up) ---
 mako-notifier
-
-# --- Screen lock (fallback until DMS is up) ---
 swaylock
-
-# --- Idle daemon (fallback until DMS is up) ---
 swayidle
 
 # --- Brightness / media keys ---

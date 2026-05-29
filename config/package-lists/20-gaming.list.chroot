@@ -1,7 +1,7 @@
 # --- Steam input / controller support ---
 steam-devices
 
-# --- GameMode daemon (amd64; i386 libs installed by hook 0008-enable-i386) ---
+# --- GameMode daemon (i386 libs via hook 0008-enable-i386) ---
 gamemode
 libgamemode0
 libgamemodeauto0
@@ -9,8 +9,7 @@ libgamemodeauto0
 # --- Gamescope (Steam Big Picture session) ---
 gamescope
 
-# --- Performance overlay (amd64; i386 variant via hook 0008) ---
+# --- Performance overlay ---
 mangohud
 
-# --- Proton/Wine dependencies ---
-winetricks
+# (winetricks installed via hook 0088 - not in forky right now)

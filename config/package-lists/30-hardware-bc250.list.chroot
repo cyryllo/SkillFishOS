@@ -2,7 +2,6 @@
 mesa-vulkan-drivers
 libgl1-mesa-dri
 vainfo
-libva-utils
 radeontop
 libvulkan1
 

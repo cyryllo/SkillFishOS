@@ -28,6 +28,7 @@ blueman
 
 # --- Filesystem tools ---
 btrfs-progs
+inotify-tools
 snapper
 grub-btrfs
 btrfs-assistant
