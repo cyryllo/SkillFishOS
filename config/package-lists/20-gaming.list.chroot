@@ -1,0 +1,21 @@
+# --- Steam input / controller support ---
+steam-devices
+
+# --- GameMode daemon ---
+gamemode
+libgamemode0
+libgamemodeauto0
+
+# --- GameMode (i386 for 32-bit games) ---
+libgamemode0:i386
+libgamemodeauto0:i386
+
+# --- Gamescope (Steam Big Picture session) ---
+gamescope
+
+# --- Performance overlay ---
+mangohud
+mangohud:i386
+
+# --- Proton/Wine dependencies ---
+winetricks

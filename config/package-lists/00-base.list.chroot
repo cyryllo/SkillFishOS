@@ -1,0 +1,58 @@
+# --- Kernel (XanMod x86-64-v3, tested on BC-250) ---
+linux-xanmod-x64v3
+
+# --- Firmware ---
+firmware-linux-free
+firmware-linux-nonfree
+firmware-amd-graphics
+amd64-microcode
+
+# --- Network ---
+network-manager
+iwd
+rfkill
+
+# --- Audio (PipeWire stack) ---
+pipewire
+pipewire-pulse
+pipewire-alsa
+wireplumber
+pavucontrol
+gstreamer1.0-pipewire
+
+# --- Bluetooth ---
+bluez
+blueman
+
+# --- Filesystem tools ---
+btrfs-progs
+snapper
+grub-btrfs
+btrfs-assistant
+
+# --- Bootloader ---
+grub-efi-amd64
+grub-pc-bin
+grub2-common
+os-prober
+efibootmgr
+
+# --- Essential tools ---
+git
+curl
+wget
+vim
+nano
+htop
+python3
+python3-pip
+pipx
+bash-completion
+lsb-release
+ca-certificates
+gnupg
+apt-transport-https
+
+# --- Flatpak ---
+flatpak
+xdg-desktop-portal

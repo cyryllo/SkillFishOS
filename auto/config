@@ -1,0 +1,39 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")/.."
+
+# Fetch XanMod GPG key (idempotent)
+if [ ! -f config/archives/xanmod-archive-keyring.gpg ]; then
+    echo "Fetching XanMod GPG key..."
+    curl -fsSL https://dl.xanmod.org/gpg.key | gpg --dearmor -o config/archives/xanmod-archive-keyring.gpg
+fi
+
+# Fetch Google Chrome GPG key
+if [ ! -f config/archives/google-chrome.gpg ]; then
+    echo "Fetching Google Chrome GPG key..."
+    curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o config/archives/google-chrome.gpg
+fi
+
+lb config noauto \
+    --distribution forky \
+    --debian-installer false \
+    --archive-areas "main contrib non-free non-free-firmware" \
+    --apt-recommends false \
+    --apt-indices false \
+    --binary-images iso-hybrid \
+    --bootloaders "grub-efi,syslinux" \
+    --uefi-secure-boot disable \
+    --linux-packages none \
+    --linux-flavours none \
+    --memtest none \
+    --firmware-chroot true \
+    --firmware-binary true \
+    --mirror-bootstrap "http://deb.debian.org/debian/" \
+    --mirror-chroot "http://deb.debian.org/debian/" \
+    --mirror-binary "http://deb.debian.org/debian/" \
+    --security true \
+    --updates true \
+    --backports false \
+    --hostname "skillfish" \
+    --image-name "skillfish-os" \
+    "${@}"

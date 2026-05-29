@@ -1,0 +1,11 @@
+# --- Printing stack ---
+cups
+cups-browsed
+cups-filters
+system-config-printer
+ipp-usb
+printer-driver-gutenprint
+printer-driver-all
+hplip
+avahi-daemon
+avahi-utils

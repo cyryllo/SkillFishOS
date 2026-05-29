@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+# Pin the XanMod kernel so future apt upgrades don't replace it with Debian stock
+XANMOD_VER=$(dpkg -l linux-xanmod-x64v3 2>/dev/null | awk '/^ii/{print $3}')
+if [ -n "$XANMOD_VER" ]; then
+    apt-mark hold linux-xanmod-x64v3 2>/dev/null || true
+    # Also hold the specific versioned images/headers
+    for PKG in $(dpkg -l 'linux-image-*-xanmod*' 'linux-headers-*-xanmod*' 2>/dev/null | awk '/^ii/{print $2}'); do
+        apt-mark hold "$PKG" 2>/dev/null || true
+    done
+fi
+
+# Remove Debian stock kernels if present (keep only XanMod)
+for PKG in $(dpkg -l 'linux-image-[0-9]*-amd64' 'linux-image-amd64' 2>/dev/null | awk '/^ii/{print $2}'); do
+    apt-get purge -y "$PKG" 2>/dev/null || true
+done
+
+echo "Kernel hold applied. Installed kernels:"
+dpkg -l 'linux-image-*' | grep ^ii

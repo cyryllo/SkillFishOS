@@ -1,0 +1,83 @@
+# --- Hyprland ---
+hyprland
+hyprutils
+hyprwayland-scanner
+
+# --- Display manager ---
+sddm
+
+# --- Wayland essentials ---
+wayland-utils
+xwayland
+wl-clipboard
+wl-clipboard-x11
+
+# --- XDG portals ---
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+
+# --- Qt Wayland support ---
+qt6-wayland
+libqt5waylandclient5
+
+# --- Terminal ---
+alacritty
+
+# --- File manager ---
+nemo
+nemo-fileroller
+
+# --- Archive manager ---
+file-roller
+p7zip-full
+unrar-free
+
+# --- Screenshot ---
+grim
+slurp
+
+# --- Image viewer ---
+eog
+
+# --- Fonts ---
+fonts-noto
+fonts-noto-cjk
+fonts-noto-color-emoji
+fonts-liberation
+fonts-dejavu
+
+# --- Icons ---
+papirus-icon-theme
+hicolor-icon-theme
+
+# --- GTK theme ---
+adwaita-icon-theme
+
+# --- Session & auth ---
+xdg-user-dirs
+xdg-utils
+gnome-keyring
+libpam-gnome-keyring
+polkit
+
+# --- App launcher (fallback until DMS is up) ---
+wofi
+
+# --- Notification daemon (fallback until DMS is up) ---
+mako-notifier
+
+# --- Screen lock (fallback until DMS is up) ---
+swaylock
+
+# --- Idle daemon (fallback until DMS is up) ---
+swayidle
+
+# --- Brightness / media keys ---
+brightnessctl
+playerctl
+
+# --- Network GUI ---
+nm-tray
+
+# --- Disk management ---
+gparted

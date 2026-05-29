@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+
+# nct6687 DKMS module for hardware sensor monitoring on BC-250
+# The kernel package should already have DKMS build tools available.
+
+NCT_REPO="https://github.com/Fred78290/nct6687d"
+NCT_DEB_BASE="https://github.com/Fred78290/nct6687d/releases/latest/download"
+
+# Try downloading a prebuilt DKMS .deb
+if curl -fsSL "${NCT_DEB_BASE}/nct6687d-dkms_all.deb" -o /tmp/nct6687-dkms.deb 2>/dev/null; then
+    dpkg -i /tmp/nct6687-dkms.deb || apt-get -f install -y
+    rm -f /tmp/nct6687-dkms.deb
+    echo "nct6687 DKMS package installed."
+else
+    echo "WARNING: Could not download nct6687 .deb, trying DKMS source install..."
+    apt-get install -y git dkms 2>/dev/null || true
+    git clone --depth 1 "${NCT_REPO}" /tmp/nct6687d 2>/dev/null || true
+    if [ -d /tmp/nct6687d ]; then
+        VERSION=$(grep -oP '(?<=VERSION = ).*' /tmp/nct6687d/Makefile 2>/dev/null || echo "1.0")
+        mkdir -p /usr/src/nct6687d-${VERSION}
+        cp /tmp/nct6687d/*.c /tmp/nct6687d/*.h /tmp/nct6687d/Makefile            /usr/src/nct6687d-${VERSION}/ 2>/dev/null || true
+        dkms add -m nct6687d -v ${VERSION} 2>/dev/null || true
+        dkms build -m nct6687d -v ${VERSION} 2>/dev/null || true
+        dkms install -m nct6687d -v ${VERSION} 2>/dev/null || true
+        rm -rf /tmp/nct6687d
+        echo "nct6687 DKMS built from source."
+    else
+        echo "WARNING: nct6687 install skipped — could not fetch source."
+    fi
+fi
+
+# Ensure autoload
+echo "nct6687" >> /etc/modules 2>/dev/null || true

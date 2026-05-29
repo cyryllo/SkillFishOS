@@ -1,0 +1,32 @@
+#!/bin/bash
+set -e
+
+# CoolerControl from Cloudsmith repo
+# Fallback: try trixie codename if forky not recognised
+
+CLOUDSMITH_KEY_URL="https://dl.cloudsmith.io/public/coolercontrol/coolercontrol/gpg.key"
+CLOUDSMITH_DEB="https://dl.cloudsmith.io/public/coolercontrol/coolercontrol/deb/debian"
+
+mkdir -p /etc/apt/keyrings
+curl -fsSL "${CLOUDSMITH_KEY_URL}" | gpg --dearmor -o /etc/apt/keyrings/coolercontrol.gpg
+
+INSTALLED=0
+for CODENAME in forky trixie; do
+    echo "deb [signed-by=/etc/apt/keyrings/coolercontrol.gpg] ${CLOUDSMITH_DEB} ${CODENAME} main"         > /etc/apt/sources.list.d/coolercontrol-tmp.list
+
+    apt-get update         -o Dir::Etc::sourcelist="sources.list.d/coolercontrol-tmp.list"         -o Dir::Etc::sourceparts="-"         -o APT::Get::List-Cleanup="0" 2>/dev/null
+
+    if apt-get install -y coolercontrold coolercontrol 2>/dev/null; then
+        INSTALLED=1
+        break
+    fi
+done
+
+rm -f /etc/apt/sources.list.d/coolercontrol-tmp.list
+
+if [ "$INSTALLED" = "1" ]; then
+    systemctl enable coolercontrold.service 2>/dev/null || true
+    echo "CoolerControl installed and enabled."
+else
+    echo "WARNING: CoolerControl install failed — skipping."
+fi
