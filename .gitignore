@@ -10,3 +10,4 @@ config/binary
 config/chroot
 config/common
 config/source
+SkillFishOS-amd64.*
