@@ -29,6 +29,18 @@ if [ -x "$GOV_SRC" ] && [ ! -f "$GOV_DEST" ]; then
 fi
 
 # Build
+# --- WORKAROUND (custom kernel) -------------------------------------------
+# With --linux-packages none (kernel installed via hook 0005, not apt),
+# live-build's binary_linux-image early-exits and never copies the kernel
+# into binary/live, breaking syslinux/grub. Neutralize that gate so it still
+# globs chroot/boot/vmlinuz-* into the image.
+BLI=/usr/lib/live/build/binary_linux-image
+if [ -f "$BLI" ] && ! grep -q 'SKF-patched' "$BLI"; then
+    sed -i 's|if \[ "${LB_LINUX_PACKAGES}" = "none" \]|if false  # SKF-patched: kernel from hook 0005|' "$BLI"
+    echo "Patched $BLI for custom-kernel binary copy."
+fi
+# --------------------------------------------------------------------------
+
 echo ">>> Running lb build ..."
 lb build noauto 2>&1 | tee build.log
 echo ""
