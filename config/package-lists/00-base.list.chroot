@@ -62,3 +62,6 @@ build-essential
 # --- Flatpak ---
 flatpak
 xdg-desktop-portal
+
+# --- SSH (debug access) ---
+openssh-server
