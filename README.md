@@ -82,11 +82,19 @@ build.sh        ISO build entry point
 screenshots/    images used in this README
 ```
 
-The installable ISO reproduces the system described above (Hyprland+DMS desktop, gamescope session, Btrfs + Snapper + grub‑btrfs, Calamares installer) and pulls the prebuilt kernel `.deb` from the GitHub release on [`MTSistemi/AMD-BC-250`](https://github.com/MTSistemi/AMD-BC-250).
+The installable ISO reproduces the system described above (Hyprland+DMS desktop, gamescope session, Btrfs + Snapper + grub‑btrfs, Calamares installer).
 
-### Building the kernel
+### Kernel
 
-See [`kernel-build/README.md`](kernel-build/README.md). In short: clone [linux‑tkg](https://github.com/Frogging-Family/linux-tkg), drop in `customization.cfg` and the three `userpatches/*.mypatch`, patch `install.sh` to drop the `tkg-` flavor prefix, and run `./install.sh install`. The result is `linux-image-7.0.10-skillfishos_*.deb`.
+A prebuilt kernel `.deb` is published under [**Releases**](../../releases/tag/kernel-7.0.10-skillfishos) (`kernel-7.0.10-skillfishos`):
+
+```sh
+sudo dpkg -i linux-image-7.0.10-skillfishos_7.0.10-1_amd64.deb \
+            linux-headers-7.0.10-skillfishos_7.0.10-1_amd64.deb
+sudo apt-mark hold linux-image-7.0.10-skillfishos linux-headers-7.0.10-skillfishos
+```
+
+To build it yourself, see [`kernel-build/README.md`](kernel-build/README.md). In short: clone [linux‑tkg](https://github.com/Frogging-Family/linux-tkg), drop in `customization.cfg` and the three `userpatches/*.mypatch`, patch `install.sh` to drop the `tkg-` flavor prefix, and run `./install.sh install`.
 
 ---
 
