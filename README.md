@@ -1,12 +1,24 @@
+<div align="center">
+
 # SkillFishOS
 
-**A dark, gaming‑focused Linux distribution for the AMD BC‑250 ("Cyan Skillfish") mining board, reborn as a desktop & console.**
+**A dark, steampunk, gaming‑focused Linux distribution that turns the AMD BC‑250 compute board into a daily‑drivable desktop and games console — tuned and ready out of the box.**
 
-![SkillFishOS desktop](screenshots/desktop.png)
+[**skillfishos.com**](https://skillfishos.com) · Based on Debian · KDE Plasma · GPL‑3.0
 
-SkillFishOS turns the cheap, abundant **AMD BC‑250** compute board (the same PS5‑class APU: Zen 2 + RDNA 2, 16 GB GDDR6) into a proper, daily‑drivable Linux machine: a steampunk "Brass Clockwork" Hyprland desktop on one side, a Steam Big‑Picture gaming console on the other, with all of the board's quirky hardware tamed and tuned out of the box.
+![SkillFishOS desktop](screenshots/desktop.jpg)
 
-> It started as a way to get kids to *use and learn Linux while they game* — gaming is the carrot, Btrfs snapshots are the safety net that lets them tinker without fear.
+</div>
+
+---
+
+SkillFishOS takes the cheap, abundant **AMD BC‑250** compute board — a semi‑custom APU from the **AMD Zen 2 + RDNA 2** family (CPU codename *Oberon*, GPU *Cyan Skillfish* / `GFX1013`, 16 GB GDDR6) — and makes it a proper Linux machine: a steampunk KDE Plasma desktop on one side, a Steam Big‑Picture / EmuDeck games console on the other, with all of the board's awkward hardware **tamed and tuned for you**.
+
+> It began as a way to get kids to **use and learn Linux while they game** — gaming is the carrot, Btrfs snapshots are the safety net that lets them tinker without fear.
+
+**The whole point: a ready‑to‑use system, no tinkering required.** Every governor, kernel patch, overclock profile, thermal guard and driver workaround is already configured and tested — you turn it on and it runs at full speed. Everything is documented here so the community can understand it, reproduce it, and make it better.
+
+> 🤝 **This is a community open‑source project and we want it to grow.** Contributions of every kind are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
@@ -14,37 +26,39 @@ SkillFishOS turns the cheap, abundant **AMD BC‑250** compute board (the same P
 
 | | |
 |---|---|
-| Board | AMD BC‑250 ("Cyan Skillfish", `GFX1013`) |
-| CPU | AMD Zen 2, 6 cores active |
-| GPU | RDNA 2, 24 CUs (40 CUs unlockable) |
+| Board | AMD BC‑250 (*Cyan Skillfish*, `GFX1013`) |
+| CPU | AMD Zen 2 (*Oberon*), 6 cores active — OC to **3.7 GHz** |
+| GPU | RDNA 2, 24 CUs default → **40 CUs unlockable** |
 | Memory | 16 GB GDDR6 (shared / UMA) |
 | Base distro | Debian **sid** |
 
-The BC‑250 is a fantastic value but a difficult target: non‑standard clock control via the SMU, a broken display IRQ/HPD path, an unreliable RDSEED, locked‑down CUs, no IOMMU, and BIOS ACPI gaps. SkillFishOS papers over all of it.
+The BC‑250 is fantastic value but a difficult target: non‑standard clock control through the SMU, a broken display IRQ/HPD path, an unreliable RDSEED, locked‑down compute units, no IOMMU and BIOS ACPI gaps. SkillFishOS papers over all of it. See **[docs/OPTIMIZATIONS.md](docs/OPTIMIZATIONS.md)** for the full list and how each problem is solved.
 
 ---
 
 ## Highlights
 
-- 🐧 **Custom `linux-tkg` 7.0.10 kernel** (`7.0.10-skillfishos`) — BORE scheduler, GCC `-O3`, `-march=znver2`, 1000 Hz, NTsync + fsync, with BC‑250 patches baked in:
-  - GPU SCLK range unlocked **350 – 2230 MHz** (was 1000–2000).
-  - **40‑CU unlock** (opt‑in via `amdgpu.bc250_cc_write_mode=3`).
-  - The cosmetic per‑CPU *"RDSEED is not reliable…"* boot spam silenced (RDSEED still correctly disabled, just quietly).
-- ⚡ **Real clock control** — the [cyan‑skillfish‑governor](https://github.com/Magnap/cyan-skillfish-governor) drives the GPU to **2230 MHz** under load and idles it at 350 MHz; a persistent SMU **CPU overclock** holds **3700 MHz** with a thermal guard.
-- 🎛️ **SkillFishOS Tuner** — a native GTK4 / libadwaita app to overclock/undervolt CPU & GPU, control the fan, resize VRAM (UMA), and toggle the 40‑CU unlock, each with built‑in benchmark‑and‑rollback testing.
-- 📊 **Live HUD** — a translucent `eww` overlay with per‑core CPU load, clocks, temps, power, VRAM/RAM and fan, all from real sensors.
-- 📸 **Btrfs + Snapper + grub‑btrfs** — automatic pre/post‑apt snapshots and bootable rollbacks from the GRUB menu, with `@home` kept separate so rollbacks never touch user data.
-- 🎮 **Gaming stack** — Steam, Heroic, gamescope (+ FSR 1), GameMode, MangoHud, EmuDeck and emulators, plus a dedicated gamescope "console" session.
-- 🎨 **"Brass Clockwork" theme** end‑to‑end — GRUB, Plymouth, SDDM, the Hyprland/DMS desktop and wallpaper.
-- 🖨️ **Driverless printing** (CUPS + IPP Everywhere + Avahi), Bluetooth, and a fully localized desktop.
+- 🐧 **Custom `linux-tkg` kernel** `7.0.10-skillfishos` — BORE scheduler, GCC `-O3`, `-march=znver2`, 1000 Hz, NTsync + fsync, with BC‑250 patches: GPU clock range unlocked **350–2230 MHz**, **40‑CU unlock** (opt‑in), and the cosmetic *"RDSEED is not reliable…"* boot spam silenced. Prebuilt `.deb` in [**Releases**](../../releases) — see [docs/BUILD.md](docs/BUILD.md).
+- ⚡ **Real clock control** — the `cyan-skillfish-governor` drives the GPU to its safe‑point and idles it at 350 MHz; a persistent SMU **CPU overclock** holds **3.7 GHz** under a thermal guard. **~11,330 GFLOPS** fp32 with the 40‑CU unlock (≈1.8× a stock build).
+- 🎛️ **SkillFishOS Tuner** — a native GTK4 / libadwaita app to overclock & undervolt CPU and GPU, control the fan, resize the UMA VRAM split, and toggle the 40‑CU unlock — each with built‑in *benchmark‑and‑rollback* testing. No terminal needed.
+- 📊 **Live system HUD** — a translucent overlay with per‑core CPU load, clocks, temps, power draw, VRAM/RAM, fan RPM and Bluetooth controller battery, all from real sensors.
+- 📸 **Btrfs + Snapper + grub‑btrfs** — automatic pre/post‑apt snapshots and bootable rollbacks straight from the GRUB menu, with `@home` kept separate so a rollback never touches user data.
+- 🎮 **Gaming, ready** — Steam, Heroic, Proton, gamescope (+ FSR 1), GameMode, MangoHud, plus **EmuDeck** and the **ES‑DE** frontend to install and configure emulators in a few clicks. *(SkillFishOS ships the tools, not the games — you bring your own games and ROMs.)*
+- 🧠 **On‑device AI** — an Ollama + OpenWebUI stack accelerated in **Vulkan** on the integrated GPU, with a one‑click panel that frees the GPU when you want to play.
+- 🎨 **End‑to‑end steampunk theme** — GRUB, Plymouth, SDDM, the KDE Plasma desktop, icons, cursors, Kvantum and wallpaper. The theme lives in [`theme/`](theme/).
+- 🖨️ Driverless printing (CUPS + IPP Everywhere + Avahi), Bluetooth controllers, broken‑HPD display hot‑swap, and a fully localized desktop.
 
 ---
 
 ## Screenshots
 
-| SkillFishOS Tuner | System HUD |
+| About this system | SkillFishOS Tuner |
 |---|---|
-| ![Tuner](screenshots/tuner.png) | ![HUD](screenshots/hud.png) |
+| ![About](screenshots/about.jpg) | ![Tuner](screenshots/tuner.jpg) |
+
+| Local AI panel | EmuDeck — easy emulation |
+|---|---|
+| ![AI panel](screenshots/ai-panel.jpg) | ![EmuDeck](screenshots/emudeck.jpg) |
 
 ---
 
@@ -54,39 +68,19 @@ The BC‑250 is a fantastic value but a difficult target: non‑standard clock c
 
 | Configuration | GFLOPS | Notes |
 |---|---:|---|
-| Stock XanMod ~2000 MHz, 24 CU | 6141 | baseline |
-| tkg + governor 2230 MHz, 24 CU | 6868 | +12 % |
-| **tkg + governor + 40‑CU unlock** | **11329** | **1.84× baseline** |
+| Stock ~2000 MHz, 24 CU | 6141 | baseline |
+| tkg + governor, 24 CU | 6868 | +12 % |
+| **tkg + governor + 40‑CU unlock** | **11329** | **≈1.84× baseline** |
 
-CPU OC validated stable at **3700 MHz** under sustained load; the APU shares its power budget gracefully, easing CPU clocks under combined CPU+GPU load to stay within thermal limits.
-
----
-
-## Under the hood
-
-- **Desktop:** Hyprland + [DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell) (quickshell) on a custom brass theme · SDDM display manager.
-- **Filesystem:** Btrfs (`@rootfs` + `@home`), Snapper timeline + apt hooks, grub‑btrfs for snapshot boot entries.
-- **Power/thermal:** `cyan-skillfish-governor` (GPU SMU), `bc250_smu_oc` (CPU SMU OC/UV), a thermal‑guard watchdog, and `nct6687` fan/sensor support.
-- **Tools shipped:** SkillFishOS Tuner, the eww HUD + metrics scripts, `amdgpu_top`, `bc250_memcfg` (VRAM/UMA sizing via CMOS).
+CPU OC validated stable at **3.7 GHz** under sustained load; the APU shares its power budget gracefully, easing CPU clocks under combined CPU+GPU load to stay within thermal limits. Full methodology and benchmarks: [docs/OPTIMIZATIONS.md](docs/OPTIMIZATIONS.md).
 
 ---
 
-## Repository layout
+## Get it
 
-```
-config/         live-build configuration for the installable ISO
-auto/           live-build auto scripts
-kernel-build/   linux-tkg recipe (customization.cfg + BC-250 userpatches)  ← see kernel-build/README.md
-scripts/        helpers (e.g. publish-kernel.sh)
-build.sh        ISO build entry point
-screenshots/    images used in this README
-```
+### Prebuilt kernel
 
-The installable ISO reproduces the system described above (Hyprland+DMS desktop, gamescope session, Btrfs + Snapper + grub‑btrfs, Calamares installer).
-
-### Kernel
-
-A prebuilt kernel `.deb` is published under [**Releases**](../../releases/tag/kernel-7.0.10-skillfishos) (`kernel-7.0.10-skillfishos`):
+A prebuilt kernel `.deb` is published under [**Releases**](../../releases/tag/kernel-7.0.10-skillfishos):
 
 ```sh
 sudo dpkg -i linux-image-7.0.10-skillfishos_7.0.10-1_amd64.deb \
@@ -94,18 +88,70 @@ sudo dpkg -i linux-image-7.0.10-skillfishos_7.0.10-1_amd64.deb \
 sudo apt-mark hold linux-image-7.0.10-skillfishos linux-headers-7.0.10-skillfishos
 ```
 
-To build it yourself, see [`kernel-build/README.md`](kernel-build/README.md). In short: clone [linux‑tkg](https://github.com/Frogging-Family/linux-tkg), drop in `customization.cfg` and the three `userpatches/*.mypatch`, patch `install.sh` to drop the `tkg-` flavor prefix, and run `./install.sh install`.
+To build it yourself, see [docs/BUILD.md](docs/BUILD.md) and [`kernel-build/`](kernel-build/).
+
+### Installable ISO
+
+The live‑build recipe in [`iso/`](iso/) reproduces the full system (KDE Plasma steampunk desktop, gamescope console session, Btrfs + Snapper + grub‑btrfs, Calamares installer). See [docs/BUILD.md](docs/BUILD.md).
+
+> The bootable ISO and an update repository are **coming soon** — track progress on [skillfishos.com](https://skillfishos.com).
+
+---
+
+## Repository layout
+
+```
+README.md          this file
+LICENSE            GPL-3.0
+CONTRIBUTING.md    how to get involved
+docs/              full documentation
+  OPTIMIZATIONS.md   kernel patches, governor, OC/UV, 40-CU, VRAM/GTT, audio/display, controllers
+  DESKTOP.md         KDE Plasma, steampunk theme, HUD, Tuner, AI panel
+  GAMING.md          Steam, EmuDeck, ES-DE, emulators (bring your own games)
+  AI.md              the local Ollama + OpenWebUI Vulkan stack
+  BUILD.md           building the kernel and the ISO
+kernel-build/      linux-tkg recipe (customization.cfg + BC-250 userpatches)
+theme/             the "SkillFish Steampunk" theme (icons, cursors, Kvantum, wallpapers, palettes)
+iso/               live-build configuration for the installable ISO
+scripts/           helper scripts (e.g. publish-kernel.sh)
+screenshots/       images used in this README
+legacy/            superseded early setup scripts, kept for reference
+```
+
+---
+
+## Documentation
+
+Everything that makes the BC‑250 sing is documented:
+
+- **[docs/OPTIMIZATIONS.md](docs/OPTIMIZATIONS.md)** — the heart of the project: the kernel patches, SMU governor, CPU/GPU overclock & undervolt, 40‑CU unlock, VRAM/GTT tuning, broken‑HPD display fix, audio, Wi‑Fi/Bluetooth and controllers.
+- **[docs/DESKTOP.md](docs/DESKTOP.md)** — KDE Plasma, the steampunk theme, the live HUD, the Tuner and the AI panel.
+- **[docs/GAMING.md](docs/GAMING.md)** — the gaming stack and how EmuDeck / ES‑DE are set up.
+- **[docs/AI.md](docs/AI.md)** — running LLMs locally on the integrated GPU via Vulkan.
+- **[docs/BUILD.md](docs/BUILD.md)** — build the kernel and the ISO from source.
+
+---
+
+## Contributing
+
+We genuinely want this project to take off, and that needs people. Whether you can write kernel patches, package software, improve the theme, test on real hardware, fix typos in the docs, or just file good bug reports — **you're welcome here**. Start with [CONTRIBUTING.md](CONTRIBUTING.md), open an issue, or say hi in a discussion.
 
 ---
 
 ## Status
 
-Work in progress, dogfooded directly on real BC‑250 hardware. Not affiliated with AMD. "PlayStation" and "PS5" are trademarks of Sony Interactive Entertainment; SkillFishOS is an independent community project.
+Work in progress, dogfooded daily on real BC‑250 hardware. An independent community project — **not affiliated with AMD or any other vendor.**
 
 ## Credits & references
 
-- [Frogging‑Family/linux‑tkg](https://github.com/Frogging-Family/linux-tkg)
-- [Magnap/cyan‑skillfish‑governor](https://github.com/Magnap/cyan-skillfish-governor)
+Built on the shoulders of:
+
+- [Frogging‑Family/linux‑tkg](https://github.com/Frogging-Family/linux-tkg) — the kernel build system
+- [Magnap/cyan‑skillfish‑governor](https://github.com/Magnap/cyan-skillfish-governor) — GPU SMU clock control
 - [bc250‑collective/bc250_smu_oc](https://github.com/bc250-collective/bc250_smu_oc) · [fanoush/bc250_memcfg](https://github.com/fanoush/bc250_memcfg) · [duggasco/bc250‑40cu‑unlock](https://github.com/duggasco/bc250-40cu-unlock)
-- [AvengeMedia/DankMaterialShell](https://github.com/AvengeMedia/DankMaterialShell)
+- [EmuDeck](https://www.emudeck.com/) · [ES‑DE](https://es-de.org/) · [Ollama](https://ollama.com/)
 - BC‑250 community docs: [bc250.info](https://bc250.info) · [elektricm.github.io/amd-bc-250-docs](https://elektricm.github.io/amd-bc-250-docs)
+
+## License
+
+[GPL‑3.0](LICENSE). The bundled artwork/theme is provided for use with SkillFishOS.

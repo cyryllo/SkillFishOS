@@ -1,13 +1,21 @@
+# Build artifacts
 .lock
-.build/
-chroot/
-binary/
-cache/
 *.iso
 build.log
-config/bootstrap
-config/binary
-config/chroot
-config/common
-config/source
-SkillFishOS-amd64.*
+
+# live-build working/generated dirs (under iso/)
+iso/.build/
+iso/chroot/
+iso/binary/
+iso/cache/
+iso/build.log
+iso/config/bootstrap
+iso/config/binary
+iso/config/chroot
+iso/config/common
+iso/config/source
+iso/SkillFishOS-amd64.*
+
+# Kernel build scratch
+kernel-build/linux-tkg/
+*.deb
