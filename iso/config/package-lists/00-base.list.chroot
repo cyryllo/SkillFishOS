@@ -1,7 +1,7 @@
 # --- Kernel ---
 # NOTE: The kernel is NOT installed from apt. The custom linux-tkg 7.0.10
 # (BORE + znver2 + BC-250 patches) .deb is downloaded from the GitHub release
-# MTSistemi/AMD-BC-250 by hook 0005-install-tkg-kernel.hook.chroot.
+# MTSistemi/SkillFishOS by hook 0005-install-tkg-kernel.hook.chroot.
 
 # --- Firmware ---
 firmware-linux-free

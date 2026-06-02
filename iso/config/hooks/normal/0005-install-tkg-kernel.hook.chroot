@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 # Install the custom linux-tkg 7.0.10 (BORE/znver2/BC-250) kernel named
-# 7.0.10-skillfishos, from the GitHub release on MTSistemi/AMD-BC-250.
+# 7.0.10-skillfishos, from the GitHub release on MTSistemi/SkillFishOS.
 KERNEL_TAG="${SKILLFISH_KERNEL_TAG:-kernel-7.0.10-skillfishos}"
-REPO="MTSistemi/AMD-BC-250"
+REPO="MTSistemi/SkillFishOS"
 log(){ echo "[tkg-kernel] $*"; }
 log "Fetching kernel .deb assets for tag ${KERNEL_TAG}"
 WORK=$(mktemp -d); cd "$WORK"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Publish the freshly-built linux-tkg BC-250 kernel .deb files as a GitHub Release
-# asset on MTSistemi/AMD-BC-250, using the REST API (no gh CLI needed).
+# asset on MTSistemi/SkillFishOS, using the REST API (no gh CLI needed).
 #
 # Usage:
 #   GITHUB_TOKEN=ghp_xxx ./publish-kernel.sh [TAG]
@@ -8,8 +8,8 @@
 # Requires: curl, jq. A token with 'repo' (or 'contents:write') scope.
 set -euo pipefail
 
-REPO="MTSistemi/AMD-BC-250"
-TAG="${1:-kernel-7.0.10-bc250}"
+REPO="MTSistemi/SkillFishOS"
+TAG="${1:-kernel-7.0.10-skillfishos}"
 DEBS_DIR="${DEBS_DIR:-/root/linux-tkg/DEBS}"
 API="https://api.github.com"
 UPLOADS="https://uploads.github.com"
