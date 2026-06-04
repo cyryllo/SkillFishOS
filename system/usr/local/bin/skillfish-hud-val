@@ -1,0 +1,12 @@
+#!/bin/bash
+GHW=$(echo /sys/class/drm/card0/device/hwmon/hwmon*)
+hw(){ for h in /sys/class/hwmon/hwmon*; do [ "$(cat "$h/name" 2>/dev/null)" = "$1" ] && { echo "$h"; return; }; done; }
+case "$1" in
+  cpu_temp) awk '{printf "%.0f",$1/1000}' "$(hw k10temp)/temp1_input" 2>/dev/null ;;
+  gpu_freq) awk '/\*/{print $2}' /sys/class/drm/card0/device/pp_dpm_sclk 2>/dev/null ;;
+  gpu_temp) awk '{printf "%.0f",$1/1000}' "$GHW/temp1_input" 2>/dev/null ;;
+  gpu_power) awk '{printf "%.0f",$1/1000000}' "$GHW/power1_average" 2>/dev/null ;;
+  gpu_mv) cat "$GHW/in0_input" 2>/dev/null ;;
+  vram) awk '{printf "%.0f",$1/1048576}' /sys/class/drm/card0/device/mem_info_vram_used 2>/dev/null ;;
+  fan) cat "$(hw nct6686)/fan2_input" 2>/dev/null ;;
+esac
