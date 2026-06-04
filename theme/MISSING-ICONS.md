@@ -31,12 +31,16 @@ theme, so they're now aliased to it (copied SVG). Highlights:
 
 Full map: [`audit/alias_map.txt`](../audit/alias_map.txt) in the work tree.
 
-## ❌ Still missing — need new brass art
+## ✅ Resolved — art drop 2026‑06‑04
 
-Grouped by where the user sees them, most‑visible first. These have **no** good
-equivalent in the theme and should be drawn (steampunk/brass, `#d8a849` accent).
-Provide them as SVGs with these exact base names (KDE also picks up `-symbolic`
-variants automatically).
+**All groups A–H below were drawn and shipped** in the `SkillFish-Steampunk-KDE`
+theme package (icon set grown to ~452 names). After installing, the icon resolver
+reports **every** visible‑shell candidate now resolving to `SkillFishSteampunk`
+(the only fallback left is `yakuake`, which isn't installed). The KCM/System
+Settings set is 46/46. Nothing below falls back to breeze any more.
+
+The list is kept for reference / future contributors. Names are the exact base
+names KDE requests (it also picks up `-symbolic` variants automatically).
 
 ### A. Logout / shutdown screen (high)
 - `dialog-ok`, `dialog-ok-apply` — the confirm checkmark

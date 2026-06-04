@@ -2,7 +2,7 @@
 Name=SkillFish Steampunk
 Comment=Brass & copper steampunk icon theme matching the SkillFishOs wallpaper
 Inherits=breeze-dark,Adwaita,hicolor
-Directories=scalable/status,scalable/places,scalable/apps,scalable/categories,scalable/mimetypes,scalable/actions
+Directories=scalable/emblems,scalable/status,scalable/places,scalable/apps,scalable/categories,scalable/mimetypes,scalable/actions
 
 [scalable/places]
 Size=128
@@ -45,3 +45,10 @@ MinSize=8
 MaxSize=512
 Type=Scalable
 Context=Status
+
+[scalable/emblems]
+Size=48
+MinSize=8
+MaxSize=512
+Type=Scalable
+Context=Emblems
