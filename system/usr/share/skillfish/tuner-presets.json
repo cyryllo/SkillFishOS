@@ -31,10 +31,10 @@
       "desc": "Spinta alta. CPU 3900 MHz ~1199 mV (undervolt), GPU 2230 MHz. Ventola al 75%.",
       "desc_it": "Spinta alta. CPU 3900 MHz ~1199 mV (undervolt), GPU 2230 MHz. Ventola al 75%.",
       "desc_en": "High boost. CPU 3900 MHz ~1199 mV (undervolt), GPU 2230 MHz. Fan at 75%.",
-      "cpu": {"frequency": 3900, "scale": -24, "max_temperature": 90},
+      "cpu": {"frequency": 3900, "scale": -24, "max_temperature": 85},
       "gpu": {"min_mhz": 350, "min_mv": 700, "max_mhz": 2230, "max_mv": 1000},
       "fan": {"mode": "manual", "pct": 75},
-      "thermal_guard": 88
+      "thermal_guard": 85
     },
     {
       "name": "Crazy",
@@ -43,10 +43,10 @@
       "desc": "Massimo validato. CPU 4.0 GHz ~1224 mV (undervolt), GPU 2230 MHz, ventola 100%. ~83 C in stress sulla BC-250 di riferimento.",
       "desc_it": "Massimo validato. CPU 4.0 GHz ~1224 mV (undervolt), GPU 2230 MHz, ventola 100%. ~83 C in stress sulla BC-250 di riferimento.",
       "desc_en": "Validated maximum. CPU 4.0 GHz ~1224 mV (undervolt), GPU 2230 MHz, fan 100%. ~83 C under stress on the reference BC-250.",
-      "cpu": {"frequency": 4000, "scale": -36, "max_temperature": 90},
+      "cpu": {"frequency": 4000, "scale": -36, "max_temperature": 85},
       "gpu": {"min_mhz": 350, "min_mv": 700, "max_mhz": 2230, "max_mv": 1000},
       "fan": {"mode": "manual", "pct": 100},
-      "thermal_guard": 90
+      "thermal_guard": 85
     }
   ]
 }
