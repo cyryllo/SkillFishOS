@@ -171,6 +171,16 @@ export const strings: Record<string, Entry> = {
   'bm.src': { it: "Fonte: misurazioni del progetto su hardware reale (vkpeak). Dettagli in", en: "Source: project measurements on real hardware (vkpeak). Details in" },
   'bm.gpulink': { it: "GPU, governor e overclock", en: "GPU, governor and overclock" },
 
+  // --- Wukong real-world load panel ---
+  'wk.h': { it: "Sotto carico reale — Black Myth: Wukong (1080p)", en: "Real-world load — Black Myth: Wukong (1080p)" },
+  'wk.note': { it: "Telemetria di ~4 minuti di gioco: <strong>CPU e GPU restano all'overclock pieno</strong> entro il limite termico di 85 °C — governor, OC e thermal-guard reggono un AAA pesante. (Wukong è <em>CPU/draw-call bound</em>: qui conta la stabilità sotto carico, non la risoluzione.)", en: "~4 minutes of in-game telemetry: <strong>CPU and GPU hold full overclock</strong> within the 85 °C thermal cap — governor, OC and thermal-guard handle a demanding AAA title. (Wukong is <em>CPU/draw-call bound</em>: what matters here is stability under load, not resolution.)" },
+  'wk.l.gpu': { it: "GPU (safe-point)", en: "GPU (safe-point)" },
+  'wk.l.gpuc': { it: "GPU edge (max 81)", en: "GPU edge (max 81)" },
+  'wk.l.pwr': { it: "Assorbimento (picco 182 W)", en: "Power draw (peak 182 W)" },
+  'wk.l.cpu': { it: "CPU (overclock)", en: "CPU (overclock)" },
+  'wk.l.vram': { it: "VRAM in uso", en: "VRAM in use" },
+  'wk.l.fan': { it: "Ventola", en: "Fan" },
+
   // --- Contact page ---
   'ct.title': { it: "Contatti — SkillFishOs", en: "Contact — SkillFishOs" },
   'ct.eye': { it: "Contatti", en: "Contact" },

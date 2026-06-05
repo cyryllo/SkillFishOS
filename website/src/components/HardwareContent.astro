@@ -27,6 +27,15 @@ const bstats = [
   { v: '22685', l: 'bm.s3.l' },
   { v: '45495', l: 'bm.s4.l' },
 ];
+// Black Myth: Wukong (1080p) — averages measured from ~4 min of in-game telemetry.
+const wkstats = [
+  { v: '2000 MHz', l: 'wk.l.gpu' },
+  { v: '~78 °C', l: 'wk.l.gpuc' },
+  { v: '~130 W', l: 'wk.l.pwr' },
+  { v: '3.7 GHz', l: 'wk.l.cpu' },
+  { v: '4.4 GB', l: 'wk.l.vram' },
+  { v: '~2700 RPM', l: 'wk.l.fan' },
+];
 ---
 <section class="hero" style="padding-bottom:30px">
   <div class="wrap">
@@ -81,6 +90,14 @@ const bstats = [
     </div>
     <p class="bm-note" set:html={t('bm.note', lang)} />
     <p class="bm-note" style="opacity:.8">{t('bm.src', lang)} <a href={localePath('/docs/gpu-overclock', lang)}>{t('bm.gpulink', lang)}</a> · <a href={localePath('/docs/kernel', lang)}>kernel</a>.</p>
+
+    <h3 style="text-align:center;margin:48px 0 6px;color:var(--gold-lt);font-size:1.2rem">🎮 {t('wk.h', lang)}</h3>
+    <div class="chips" style="margin-top:18px">
+      {wkstats.map((s) => (
+        <div class="chip"><div class="big">{s.v}</div><div class="lbl">{t(s.l, lang)}</div></div>
+      ))}
+    </div>
+    <p class="bm-note" set:html={t('wk.note', lang)} />
   </div>
 </section>
 
