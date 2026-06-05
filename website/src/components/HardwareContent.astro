@@ -1,0 +1,60 @@
+---
+import { t, localePath, type Lang } from '../i18n';
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+const specs = [
+  { t: 'hwp.cpu.t', d: 'hwp.cpu.d' },
+  { t: 'hwp.gpu.t', d: 'hwp.gpu.d' },
+  { t: 'hwp.mem.t', d: 'hwp.mem.d' },
+  { t: 'hwp.perf.t', d: 'hwp.perf.d' },
+];
+const quirks = [
+  { t: 'hwp.q1.t', d: 'hwp.q1.d' },
+  { t: 'hwp.q2.t', d: 'hwp.q2.d' },
+  { t: 'hwp.q3.t', d: 'hwp.q3.d' },
+  { t: 'hwp.q4.t', d: 'hwp.q4.d' },
+];
+---
+<section class="hero" style="padding-bottom:30px">
+  <div class="wrap">
+    <div class="soon"><span class="dot"></span><span>{t('hwp.eye', lang)}</span></div>
+    <h1 style="font-size:clamp(2rem,5vw,3.4rem)" set:html={t('hwp.h2', lang)} />
+    <p class="sub">{t('hwp.sub', lang)}</p>
+  </div>
+</section>
+
+<section class="specs" style="padding-top:10px">
+  <div class="wrap">
+    <div class="chips">
+      <div class="chip"><div class="big">6× Zen 2</div><div class="lbl">CPU "Oberon"</div></div>
+      <div class="chip"><div class="big">RDNA 2</div><div class="lbl">40 CU · gfx1013</div></div>
+      <div class="chip"><div class="big">~11 TFLOPS</div><div class="lbl">FP32 · Vulkan</div></div>
+      <div class="chip"><div class="big">16 GB</div><div class="lbl">GDDR6 UMA</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="features" style="padding-top:30px">
+  <div class="wrap">
+    <div class="sec-head"><div class="eyebrow">{t('hwp.specs.h', lang)}</div></div>
+    <div class="grid">
+      {specs.map((s) => (
+        <div class="card"><h3>{t(s.t, lang)}</h3><p set:html={t(s.d, lang)} /></div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="showcase">
+  <div class="wrap">
+    <div class="sec-head"><h2>{t('hwp.quirks.h', lang)}</h2></div>
+    <div class="grid">
+      {quirks.map((q) => (
+        <div class="card"><h3>{t(q.t, lang)}</h3><p set:html={t(q.d, lang)} /></div>
+      ))}
+    </div>
+    <div style="text-align:center;margin-top:40px">
+      <a class="btn btn-ghost" href={localePath('/docs/hardware-bc250', lang)}>{t('hwp.cta', lang)}</a>
+    </div>
+  </div>
+</section>

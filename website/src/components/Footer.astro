@@ -1,0 +1,12 @@
+---
+import { t, SITE, type Lang } from '../i18n';
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+---
+<footer>
+  <div class="wrap foot">
+    <div class="logo"><img src="/img/logo.png" style="width:30px;height:30px" alt=""/><span class="brandfont">SkillFish<span class="gold-text">Os</span></span></div>
+    <div class="based">{t('foot.based', lang)}</div>
+    <div><a href={SITE.github} target="_blank" rel="noopener">GitHub</a> · <a href={`https://${SITE.domain}`}>{SITE.domain}</a></div>
+  </div>
+</footer>
