@@ -32,6 +32,7 @@ export const strings: Record<string, Entry> = {
   'nav.download': { it: "Download", en: "Download" },
   'nav.docs': { it: "Documentazione", en: "Docs" },
   'nav.gallery': { it: "Galleria", en: "Gallery" },
+  'nav.contact': { it: "Contatti", en: "Contact" },
 
   'hero.soon': { it: "Presto disponibile", en: "Coming soon" },
   'hero.tag': { it: "Il sistema operativo gaming forgiato per l'<b>AMD BC-250</b>.", en: "The gaming operating system forged for the <b>AMD BC-250</b>." },
@@ -156,6 +157,27 @@ export const strings: Record<string, Entry> = {
   'hwp.q4.t': { it: "Raffreddamento marginale", en: "Marginal cooling" },
   'hwp.q4.d': { it: "Solo sensore edge, niente sensore VRAM → thermal-guard a 85 °C sempre attivo.", en: "Edge sensor only, no VRAM sensor → an 85 °C thermal-guard always active." },
   'hwp.cta': { it: "Approfondisci nella documentazione →", en: "Read more in the documentation →" },
+
+  // --- Contact page ---
+  'ct.title': { it: "Contatti — SkillFishOs", en: "Contact — SkillFishOs" },
+  'ct.eye': { it: "Contatti", en: "Contact" },
+  'ct.h2': { it: "Scrivici", en: "Get in touch" },
+  'ct.sub': { it: "Assistenza, informazioni o altro: compila il modulo e ti risponderemo via email.", en: "Support, information or anything else: fill in the form and we'll reply by email." },
+  'ct.f.name': { it: "Nome", en: "Name" },
+  'ct.f.email': { it: "La tua email", en: "Your email" },
+  'ct.f.type': { it: "Tipo di richiesta", en: "Request type" },
+  'ct.f.msg': { it: "Messaggio", en: "Message" },
+  'ct.f.captcha': { it: "Quanto fa", en: "How much is" },
+  'ct.type.support': { it: "Assistenza", en: "Support" },
+  'ct.type.info': { it: "Informazioni", en: "Information" },
+  'ct.type.other': { it: "Altro", en: "Other" },
+  'ct.send': { it: "Invia richiesta", en: "Send request" },
+  'ct.privacy': { it: "Non pubblichiamo la nostra email per ridurre lo spam: il modulo la inoltra in modo sicuro. I dati inseriti servono solo a risponderti.", en: "We don't publish our email to reduce spam: the form forwards it securely. The data you enter is only used to reply to you." },
+  'ct.ok': { it: "✅ Messaggio inviato! Ti risponderemo al più presto.", en: "✅ Message sent! We'll get back to you soon." },
+  'ct.err.captcha': { it: "❌ Verifica anti-spam errata. Riprova.", en: "❌ Anti-spam check failed. Please try again." },
+  'ct.err.fields': { it: "❌ Controlla i campi: nome, email valida e messaggio sono obbligatori.", en: "❌ Check the fields: name, a valid email and a message are required." },
+  'ct.err.send': { it: "❌ Invio non riuscito. Riprova più tardi o scrivici su GitHub.", en: "❌ Sending failed. Please try later or reach us on GitHub." },
+  'ct.err.generic': { it: "❌ Si è verificato un errore. Riprova.", en: "❌ Something went wrong. Please try again." },
 };
 
 export function t(key: string, lang: Lang): string {

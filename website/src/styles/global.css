@@ -108,6 +108,23 @@ footer{border-top:1px solid var(--line);padding:46px 0;background:#0a0805}
 .ga-card h3{font-size:1.12rem;color:var(--gold-lt);margin-bottom:6px}
 .ga-card p{color:var(--muted);font-size:.94rem}
 
+/* ===== Contact form ===== */
+.ct-form{display:flex;flex-direction:column;gap:18px}
+.ct-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.ct-field{display:flex;flex-direction:column;gap:7px}
+.ct-field>span{color:var(--gold-lt);font-size:.9rem;font-weight:600}
+.ct-field input,.ct-field select,.ct-field textarea{background:#0a0805;border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--cream);font-family:inherit;font-size:.98rem;transition:border-color .2s}
+.ct-field input:focus,.ct-field select:focus,.ct-field textarea:focus{outline:none;border-color:var(--gold)}
+.ct-field textarea{resize:vertical;min-height:130px}
+.ct-captcha>span strong{color:var(--gold-lt)}
+.ct-form .btn-primary{align-self:flex-start;cursor:pointer}
+.ct-privacy{color:var(--muted);font-size:.84rem;margin-top:-4px}
+.ct-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.ct-banner{border-radius:12px;padding:14px 18px;margin-bottom:22px;border:1px solid var(--line);font-weight:500}
+.ct-banner.ok{border-color:rgba(216,168,73,.5);background:rgba(216,168,73,.12);color:var(--gold-lt)}
+.ct-banner.err{border-color:var(--copper);background:rgba(185,114,47,.14);color:#f0c08a}
+@media(max-width:620px){.ct-row{grid-template-columns:1fr}}
+
 /* ===== Documentation ===== */
 .docs{display:grid;grid-template-columns:262px minmax(0,1fr) 210px;gap:40px;align-items:start;max-width:1320px;margin:0 auto;padding:34px 24px 90px}
 .docs-side{position:sticky;top:88px;max-height:calc(100vh - 104px);overflow-y:auto;padding-right:6px}
