@@ -156,6 +156,21 @@ export const strings: Record<string, Entry> = {
   'hwp.q4.d': { it: "Solo sensore edge, niente sensore VRAM → thermal-guard a 85 °C sempre attivo.", en: "Edge sensor only, no VRAM sensor → an 85 °C thermal-guard always active." },
   'hwp.cta': { it: "Approfondisci nella documentazione →", en: "Read more in the documentation →" },
 
+  // --- Benchmark section (on the Hardware page) ---
+  'bm.h': { it: "Prestazioni misurate", en: "Measured performance" },
+  'bm.sub': { it: "vkpeak FP32-scalar (GFLOPS) sulla <strong>stessa</strong> BC-250, prima e dopo SkillFishOs.", en: "vkpeak FP32-scalar (GFLOPS) on the <strong>same</strong> BC-250, before and after SkillFishOs." },
+  'bm.bar1': { it: "Baseline — XanMod, 24 CU", en: "Baseline — XanMod, 24 CU" },
+  'bm.bar2': { it: "tkg + governor, 24 CU", en: "tkg + governor, 24 CU" },
+  'bm.bar3': { it: "SkillFishOs — tkg + governor + 40 CU", en: "SkillFishOs — tkg + governor + 40 CU" },
+  'bm.unit': { it: "GFLOPS", en: "GFLOPS" },
+  'bm.s1.l': { it: "FP32 vs baseline", en: "FP32 vs baseline" },
+  'bm.s2.l': { it: "GFLOPS FP32 (≈11.3 TFLOPS)", en: "GFLOPS FP32 (≈11.3 TFLOPS)" },
+  'bm.s3.l': { it: "GFLOPS FP16 (vec4)", en: "GFLOPS FP16 (vec4)" },
+  'bm.s4.l': { it: "GIOPS int8 (dot-product)", en: "GIOPS int8 (dot-product)" },
+  'bm.note': { it: "Misure <strong>vkpeak</strong> (Vulkan compute) sulla stessa scheda, da freddo e a riposo. Con le 40 CU attive la GPU rende <strong>1.84×</strong> rispetto al sistema di partenza. A riposo il governor scende a 350 MHz; edge ~54 °C dopo il carico compute.", en: "<strong>vkpeak</strong> (Vulkan compute) measurements on the same board, from cold and idle. With the 40 CUs active the GPU delivers <strong>1.84×</strong> over the starting system. At idle the governor drops to 350 MHz; edge ~54 °C after the compute load." },
+  'bm.src': { it: "Fonte: misurazioni del progetto su hardware reale (vkpeak). Dettagli in", en: "Source: project measurements on real hardware (vkpeak). Details in" },
+  'bm.gpulink': { it: "GPU, governor e overclock", en: "GPU, governor and overclock" },
+
   // --- Contact page ---
   'ct.title': { it: "Contatti — SkillFishOs", en: "Contact — SkillFishOs" },
   'ct.eye': { it: "Contatti", en: "Contact" },

@@ -14,6 +14,19 @@ const quirks = [
   { t: 'hwp.q3.t', d: 'hwp.q3.d' },
   { t: 'hwp.q4.t', d: 'hwp.q4.d' },
 ];
+// vkpeak FP32-scalar (GFLOPS), measured on the same BC-250.
+const BMAX = 12000;
+const bars = [
+  { l: 'bm.bar1', v: 6141, hl: false },
+  { l: 'bm.bar2', v: 6868, hl: false },
+  { l: 'bm.bar3', v: 11329, hl: true },
+];
+const bstats = [
+  { v: '1.84×', l: 'bm.s1.l' },
+  { v: '11329', l: 'bm.s2.l' },
+  { v: '22685', l: 'bm.s3.l' },
+  { v: '45495', l: 'bm.s4.l' },
+];
 ---
 <section class="hero" style="padding-bottom:30px">
   <div class="wrap">
@@ -42,6 +55,32 @@ const quirks = [
         <div class="card"><h3>{t(s.t, lang)}</h3><p set:html={t(s.d, lang)} /></div>
       ))}
     </div>
+  </div>
+</section>
+
+<section class="features" style="padding-top:10px">
+  <div class="wrap" style="max-width:880px">
+    <div class="sec-head"><div class="eyebrow">Benchmark</div><h2>{t('bm.h', lang)}</h2><p set:html={t('bm.sub', lang)} /></div>
+    <div class="bm-chart">
+      {bars.map((b) => (
+        <div class="bm-row">
+          <div class="bm-label">{t(b.l, lang)}</div>
+          <div class="bm-track">
+            <div class={`bm-fill ${b.hl ? 'hl' : ''}`} style={`width:${Math.round((b.v / BMAX) * 100)}%`}>
+              <span class="bm-val">{b.v.toLocaleString('it-IT')}</span>
+            </div>
+          </div>
+        </div>
+      ))}
+      <div class="bm-axis">{t('bm.unit', lang)}</div>
+    </div>
+    <div class="chips" style="margin-top:36px">
+      {bstats.map((s) => (
+        <div class="chip"><div class="big">{s.v}</div><div class="lbl">{t(s.l, lang)}</div></div>
+      ))}
+    </div>
+    <p class="bm-note" set:html={t('bm.note', lang)} />
+    <p class="bm-note" style="opacity:.8">{t('bm.src', lang)} <a href={localePath('/docs/gpu-overclock', lang)}>{t('bm.gpulink', lang)}</a> · <a href={localePath('/docs/kernel', lang)}>kernel</a>.</p>
   </div>
 </section>
 
