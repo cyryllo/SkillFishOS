@@ -5,7 +5,7 @@ group: Usage
 order: 1
 ---
 
-SkillFishOs was born to play. The whole gaming stack is preinstalled and configured; you add **your** games and **your** ROMs.
+SkillFishOS was born to play. The whole gaming stack is preinstalled and configured; you add **your** games and **your** ROMs.
 
 ## Steam and Proton
 
@@ -19,11 +19,11 @@ SkillFishOs was born to play. The whole gaming stack is preinstalled and configu
 
 **[EmuDeck](https://www.emudeck.com/)** installs and configures, in a few clicks, a complete set of emulators (Flatpak): **RetroArch, Dolphin, PCSX2, PPSSPP, melonDS, PrimeHack, Ryujinx, ScummVM** and more. The frontend is **[ES-DE](https://es-de.org/)** (EmulationStation Desktop Edition).
 
-On SkillFishOs the `~/Emulation` folder can point to a network **NAS** (BIOS, ROMs and saves shared across machines).
+On SkillFishOS the `~/Emulation` folder can point to a network **NAS** (BIOS, ROMs and saves shared across machines).
 
 > ⚠️ ES-DE rewrites its settings file on exit: edit them while the program is **closed**.
 >
-> ⚠️ For **Ryujinx**, firmware and keys must be imported by the user: the firmware expects each NCA as a directory. **Games, ROMs, BIOS and keys are not included** in the system — a deliberate legal choice: SkillFishOs provides the tools, you supply the content.
+> ⚠️ For **Ryujinx**, firmware and keys must be imported by the user: the firmware expects each NCA as a directory. **Games, ROMs, BIOS and keys are not included** in the system — a deliberate legal choice: SkillFishOS provides the tools, you supply the content.
 
 ## Android and more
 

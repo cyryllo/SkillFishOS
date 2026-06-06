@@ -5,7 +5,7 @@ group: Sistema
 order: 4
 ---
 
-SkillFishOs usa **[KDE Plasma 6](https://kde.org/plasma-desktop/)** come ambiente desktop, vestito con un tema steampunk coerente e una serie di accorgimenti specifici per la BC-250.
+SkillFishOS usa **[KDE Plasma 6](https://kde.org/plasma-desktop/)** come ambiente desktop, vestito con un tema steampunk coerente e una serie di accorgimenti specifici per la BC-250.
 
 ## Sessioni
 
@@ -17,7 +17,7 @@ Al login (gestito da **SDDM**, con autologin dell'utente) sono disponibili più 
 
 ## ⚠️ Anti-suspend (critico)
 
-La BC-250 ha la **sospensione ACPI rotta**: se si sospende, **non si risveglia** e serve un reset (vedi [hardware](/docs/hardware-bc250)). Per questo SkillFishOs **disabilita in modo permanente** tutti gli stati di sospensione:
+La BC-250 ha la **sospensione ACPI rotta**: se si sospende, **non si risveglia** e serve un reset (vedi [hardware](/docs/hardware-bc250)). Per questo SkillFishOS **disabilita in modo permanente** tutti gli stati di sospensione:
 
 ```bash
 systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
@@ -42,7 +42,7 @@ In alto a destra c'è un **HUD** in stile ottone realizzato con **[Conky](https:
 
 ## Accesso remoto (x11vnc)
 
-Poiché la sessione predefinita è X11, l'accesso remoto è semplice: SkillFishOs avvia **[x11vnc](https://github.com/LibVNC/x11vnc)** sul display in uso, condividendo lo schermo reale. Sulla LAN si raggiunge con un qualsiasi client VNC. Questo permette assistenza e configurazione da un altro PC senza tastiera/mouse fisici sulla scheda.
+Poiché la sessione predefinita è X11, l'accesso remoto è semplice: SkillFishOS avvia **[x11vnc](https://github.com/LibVNC/x11vnc)** sul display in uso, condividendo lo schermo reale. Sulla LAN si raggiunge con un qualsiasi client VNC. Questo permette assistenza e configurazione da un altro PC senza tastiera/mouse fisici sulla scheda.
 
 ## Rete, audio e applicazioni
 

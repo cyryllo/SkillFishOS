@@ -5,11 +5,11 @@ group: Uso
 order: 2
 ---
 
-SkillFishOs include uno stack di **intelligenza artificiale locale**: modelli di chat e coding che girano interamente sulla GPU della BC-250, **senza cloud** e senza inviare dati all'esterno. Si accende e spegne con un clic, così da liberare GPU e RAM quando vuoi giocare.
+SkillFishOS include uno stack di **intelligenza artificiale locale**: modelli di chat e coding che girano interamente sulla GPU della BC-250, **senza cloud** e senza inviare dati all'esterno. Si accende e spegne con un clic, così da liberare GPU e RAM quando vuoi giocare.
 
 ## Perché Vulkan e non ROCm
 
-Lo stack AMD "ufficiale" per il calcolo è **ROCm**, ma **non supporta la `gfx1013`** della BC-250. SkillFishOs usa quindi il backend **Vulkan** di [Ollama](https://ollama.com/), con i driver Mesa: funziona bene sulla GPU integrata sfruttando la memoria condivisa (e il GTT esteso, vedi [GPU](/docs/gpu-overclock)).
+Lo stack AMD "ufficiale" per il calcolo è **ROCm**, ma **non supporta la `gfx1013`** della BC-250. SkillFishOS usa quindi il backend **Vulkan** di [Ollama](https://ollama.com/), con i driver Mesa: funziona bene sulla GPU integrata sfruttando la memoria condivisa (e il GTT esteso, vedi [GPU](/docs/gpu-overclock)).
 
 ## I componenti
 

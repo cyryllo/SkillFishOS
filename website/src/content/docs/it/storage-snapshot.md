@@ -1,11 +1,11 @@
 ---
 title: Storage e snapshot Btrfs
-description: "La rete di sicurezza di SkillFishOs: snapshot automatici e rollback dal boot."
+description: "La rete di sicurezza di SkillFishOS: snapshot automatici e rollback dal boot."
 group: Sistema
 order: 3
 ---
 
-Una delle idee centrali di SkillFishOs è poter **smanettare senza paura**. Questo è reso possibile dal filesystem **[Btrfs](https://btrfs.readthedocs.io/)** con snapshot automatici: ogni modifica importante è fotografata, e se qualcosa si rompe si torna indietro in un clic.
+Una delle idee centrali di SkillFishOS è poter **smanettare senza paura**. Questo è reso possibile dal filesystem **[Btrfs](https://btrfs.readthedocs.io/)** con snapshot automatici: ogni modifica importante è fotografata, e se qualcosa si rompe si torna indietro in un clic.
 
 ## Sottovolumi separati
 
@@ -18,7 +18,7 @@ Tenerli separati è fondamentale: fare il **rollback del sistema non tocca i fil
 
 ## Snapshot automatici con Snapper
 
-SkillFishOs usa **[Snapper](http://snapper.io/)** con una configurazione `root` e degli **hook pre/post su APT**: ogni volta che installi o aggiorni pacchetti, vengono creati automaticamente uno snapshot *prima* e uno *dopo*. Così, se un aggiornamento causa problemi, lo snapshot "prima" è già lì.
+SkillFishOS usa **[Snapper](http://snapper.io/)** con una configurazione `root` e degli **hook pre/post su APT**: ogni volta che installi o aggiorni pacchetti, vengono creati automaticamente uno snapshot *prima* e uno *dopo*. Così, se un aggiornamento causa problemi, lo snapshot "prima" è già lì.
 
 Caratteristiche della configurazione:
 
@@ -28,7 +28,7 @@ Caratteristiche della configurazione:
 
 ## Rollback dal menu di avvio
 
-Grazie a **[grub-btrfs](https://github.com/Antynea/grub-btrfs)** (con il demone `grub-btrfsd`), gli snapshot compaiono direttamente nel menu di **GRUB**, sotto la voce *"SkillFishOs snapshots"*. In caso di problema:
+Grazie a **[grub-btrfs](https://github.com/Antynea/grub-btrfs)** (con il demone `grub-btrfsd`), gli snapshot compaiono direttamente nel menu di **GRUB**, sotto la voce *"SkillFishOS snapshots"*. In caso di problema:
 
 1. riavvia;
 2. dal menu GRUB scegli uno snapshot precedente funzionante;
@@ -38,7 +38,7 @@ Grazie a **[grub-btrfs](https://github.com/Antynea/grub-btrfs)** (con il demone 
 
 ## Perché Btrfs e non Timeshift
 
-SkillFishOs ha scelto **Btrfs + Snapper + grub-btrfs** invece di soluzioni come Timeshift perché:
+SkillFishOS ha scelto **Btrfs + Snapper + grub-btrfs** invece di soluzioni come Timeshift perché:
 
 - l'integrazione con APT è automatica (snapshot a ogni operazione sui pacchetti);
 - gli snapshot sono nativi del filesystem (istantanei, *copy-on-write*, poco costosi);

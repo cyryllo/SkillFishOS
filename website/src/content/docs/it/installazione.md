@@ -5,7 +5,7 @@ group: Installazione
 order: 1
 ---
 
-SkillFishOs si installa da una **ISO live** che contiene l'installer grafico [Calamares](https://calamares.io/). L'intero processo si fa con il mouse, senza terminale.
+SkillFishOS si installa da una **ISO live** che contiene l'installer grafico [Calamares](https://calamares.io/). L'intero processo si fa con il mouse, senza terminale.
 
 > ⚠️ Al momento la ISO non è ancora pubblicata. Questa pagina descrive la procedura prevista; verrà aggiornata al rilascio. Vedi la pagina [Download](/download).
 
@@ -33,15 +33,15 @@ sudo dd if=SkillFishOS_amd64.iso of=/dev/sdX bs=4M status=progress oflag=sync
 
 ## 2. Avviare la BC-250 da USB
 
-Inserisci la chiavetta, accendi la scheda ed entra nel menu di boot/UEFI per selezionare la USB come dispositivo di avvio. Partirà l'ambiente **live** di SkillFishOs (KDE Plasma): puoi già esplorare il sistema prima di installarlo.
+Inserisci la chiavetta, accendi la scheda ed entra nel menu di boot/UEFI per selezionare la USB come dispositivo di avvio. Partirà l'ambiente **live** di SkillFishOS (KDE Plasma): puoi già esplorare il sistema prima di installarlo.
 
 ## 3. Installazione con Calamares
 
-Dal desktop live avvia l'installer (icona *Installa SkillFishOs*). Calamares ti guida passo-passo:
+Dal desktop live avvia l'installer (icona *Installa SkillFishOS*). Calamares ti guida passo-passo:
 
 1. **Lingua e fuso orario.**
 2. **Tastiera.**
-3. **Partizionamento.** SkillFishOs usa **Btrfs** con i sottovolumi `@rootfs` (sistema) e `@home` (dati utente) separati: questo permette di fare il *rollback* del sistema senza toccare i tuoi file. Una piccola partizione **EFI** e una di **swap** completano lo schema. Per la maggior parte degli utenti va bene l'opzione di installazione automatica ("Cancella disco").
+3. **Partizionamento.** SkillFishOS usa **Btrfs** con i sottovolumi `@rootfs` (sistema) e `@home` (dati utente) separati: questo permette di fare il *rollback* del sistema senza toccare i tuoi file. Una piccola partizione **EFI** e una di **swap** completano lo schema. Per la maggior parte degli utenti va bene l'opzione di installazione automatica ("Cancella disco").
 4. **Utente.** Crea il tuo account (sarà nei gruppi corretti per gaming, audio, render, ecc.).
 5. **Riepilogo e installazione.**
 

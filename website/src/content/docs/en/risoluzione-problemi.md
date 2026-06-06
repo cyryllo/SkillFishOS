@@ -1,15 +1,15 @@
 ---
 title: Troubleshooting
-description: The most common BC-250 problems and how SkillFishOs handles them.
+description: The most common BC-250 problems and how SkillFishOS handles them.
 group: Reference
 order: 1
 ---
 
-Many of the BC-250's "problems" are actually known hardware flaws that SkillFishOs works around automatically. Here are the most common ones.
+Many of the BC-250's "problems" are actually known hardware flaws that SkillFishOS works around automatically. Here are the most common ones.
 
 ## The screen stays black / the monitor isn't detected
 
-The DisplayPort **Hot-Plug Detect (HPD) is broken**: the board doesn't detect when you connect a monitor. SkillFishOs handles this with the `skillfish-dp-hotswap` daemon (which forces detection at boot and on monitor changes) and the `video=DP-1:e` kernel parameter.
+The DisplayPort **Hot-Plug Detect (HPD) is broken**: the board doesn't detect when you connect a monitor. SkillFishOS handles this with the `skillfish-dp-hotswap` daemon (which forces detection at boot and on monitor changes) and the `video=DP-1:e` kernel parameter.
 
 What to check:
 
@@ -19,7 +19,7 @@ What to check:
 
 ## The board won't wake from standby
 
-Suspend is **broken at the hardware level**. SkillFishOs disables it completely for this very reason (see [Desktop](/en/docs/desktop)). If the board appears "dead" after being idle and power management had been changed, the only way out is a **physical reset**. Do not re-enable sleep states.
+Suspend is **broken at the hardware level**. SkillFishOS disables it completely for this very reason (see [Desktop](/en/docs/desktop)). If the board appears "dead" after being idle and power management had been changed, the only way out is a **physical reset**. Do not re-enable sleep states.
 
 ## No audio from the monitor/TV
 
@@ -42,7 +42,7 @@ DisplayPort audio works, but:
 
 ## An update broke something
 
-Reboot and from the **GRUB → "SkillFishOs snapshots"** menu pick a working previous snapshot. See [Storage and snapshots](/en/docs/storage-snapshot). Pre/post-update snapshots are automatic.
+Reboot and from the **GRUB → "SkillFishOS snapshots"** menu pick a working previous snapshot. See [Storage and snapshots](/en/docs/storage-snapshot). Pre/post-update snapshots are automatic.
 
 ## The AI won't start or gives strange output
 

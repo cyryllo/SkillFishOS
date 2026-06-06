@@ -29,13 +29,28 @@ const bstats = [
 ];
 // Black Myth: Wukong (1080p) — averages measured from ~4 min of in-game telemetry.
 const wkstats = [
-  { v: '2000 MHz', l: 'wk.l.gpu' },
-  { v: '~78 °C', l: 'wk.l.gpuc' },
-  { v: '~130 W', l: 'wk.l.pwr' },
-  { v: '3.7 GHz', l: 'wk.l.cpu' },
-  { v: '4.4 GB', l: 'wk.l.vram' },
-  { v: '~2700 RPM', l: 'wk.l.fan' },
+  { v: '2230 MHz', l: 'wk.l.gpu' },
+  { v: '~84 °C', l: 'wk.l.gpuc' },
+  { v: '~150 W', l: 'wk.l.pwr' },
+  { v: '3.9 GHz', l: 'wk.l.cpu' },
+  { v: '4.5 GB', l: 'wk.l.vram' },
+  { v: 'auto', l: 'wk.l.fan' },
 ];
+// Gaming benchmark headline cards + GPU comparisons (Unigine leaderboards).
+const gbench = [
+  { v: 'gb.wk.v', l: 'gb.wk.l' },
+  { v: 'gb.hv.v', l: 'gb.hv.l' },
+  { v: 'gb.sp.v', l: 'gb.sp.l' },
+];
+const cmpOS = { max: 6000, bars: [
+  { l: 'cmp.os.b1', v: 5513, hl: true },
+  { l: 'cmp.os.b2', v: 4102, hl: false },
+] };
+const cmpGPU = { max: 16500, bars: [
+  { l: 'cmp.gpu.b1', v: 12938, hl: true },
+  { l: 'cmp.gpu.b2', v: 12454, hl: false },
+  { l: 'cmp.gpu.b3', v: 15806, hl: false },
+] };
 ---
 <section class="hero" style="padding-bottom:30px">
   <div class="wrap">
@@ -98,6 +113,43 @@ const wkstats = [
       ))}
     </div>
     <p class="bm-note" set:html={t('wk.note', lang)} />
+  </div>
+</section>
+
+<section class="features" style="padding-top:0">
+  <div class="wrap" style="max-width:920px">
+    <div class="sec-head"><div class="eyebrow">🎮 Gaming</div><h2>{t('gb.h', lang)}</h2><p set:html={t('gb.sub', lang)} /></div>
+    <div class="chips">
+      {gbench.map((g) => (
+        <div class="chip"><div class="big">{t(g.v, lang)}</div><div class="lbl" set:html={t(g.l, lang)} /></div>
+      ))}
+    </div>
+
+    <h3 style="text-align:center;margin:54px 0 6px;color:var(--gold-lt);font-size:1.25rem">⚡ {t('cmp.os.h', lang)}</h3>
+    <p style="text-align:center;color:var(--muted);max-width:680px;margin:0 auto 22px" set:html={t('cmp.os.sub', lang)} />
+    <div class="bm-chart">
+      {cmpOS.bars.map((b) => (
+        <div class="bm-row">
+          <div class="bm-label" set:html={t(b.l, lang)} />
+          <div class="bm-track"><div class={`bm-fill ${b.hl ? 'hl' : ''}`} style={`width:${Math.round((b.v / cmpOS.max) * 100)}%`}><span class="bm-val">{b.v.toLocaleString('it-IT')}</span></div></div>
+        </div>
+      ))}
+      <div class="bm-axis">{t('cmp.axis', lang)} · Extreme</div>
+    </div>
+    <p class="bm-note" set:html={t('cmp.os.note', lang)} />
+
+    <h3 style="text-align:center;margin:54px 0 6px;color:var(--gold-lt);font-size:1.25rem">🏆 {t('cmp.gpu.h', lang)}</h3>
+    <p style="text-align:center;color:var(--muted);max-width:680px;margin:0 auto 22px" set:html={t('cmp.gpu.sub', lang)} />
+    <div class="bm-chart">
+      {cmpGPU.bars.map((b) => (
+        <div class="bm-row">
+          <div class="bm-label" set:html={t(b.l, lang)} />
+          <div class="bm-track"><div class={`bm-fill ${b.hl ? 'hl' : ''}`} style={`width:${Math.round((b.v / cmpGPU.max) * 100)}%`}><span class="bm-val">{b.v.toLocaleString('it-IT')}</span></div></div>
+        </div>
+      ))}
+      <div class="bm-axis">{t('cmp.axis', lang)} · High</div>
+    </div>
+    <p class="bm-note" set:html={t('cmp.gpu.note', lang)} />
   </div>
 </section>
 

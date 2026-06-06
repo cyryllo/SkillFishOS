@@ -5,11 +5,11 @@ group: System
 order: 1
 ---
 
-The heart of SkillFishOs's optimizations is a **custom-built kernel** for the BC-250, based on [linux-tkg](https://github.com/Frogging-Family/linux-tkg) — a build recipe from the *Frogging Family* that applies performance- and gaming-oriented patches.
+The heart of SkillFishOS's optimizations is a **custom-built kernel** for the BC-250, based on [linux-tkg](https://github.com/Frogging-Family/linux-tkg) — a build recipe from the *Frogging Family* that applies performance- and gaming-oriented patches.
 
 ## Version and patches
 
-The SkillFishOs kernel is version **`7.0.10-skillfishos`**. On top of the standard linux-tkg patches it includes:
+The SkillFishOS kernel is version **`7.0.10-skillfishos`**. On top of the standard linux-tkg patches it includes:
 
 - the BC-250 **frequency-unlock patch** (range 350–2230 MHz);
 - the **40-CU patch** that enables all of the GPU's Compute Units;
@@ -40,7 +40,7 @@ video=DP-1:e
 
 ## Kernels to avoid
 
-Not all recent kernels work well on this hardware. In particular the **6.15.0–6.15.6** and **6.17.8–6.17.10** series are known to be problematic and should be avoided. SkillFishOs ships its own tested kernel precisely to avoid these regressions — see [Updates](/en/docs/aggiornamenti).
+Not all recent kernels work well on this hardware. In particular the **6.15.0–6.15.6** and **6.17.8–6.17.10** series are known to be problematic and should be avoided. SkillFishOS ships its own tested kernel precisely to avoid these regressions — see [Updates](/en/docs/aggiornamenti).
 
 ## IOMMU
 

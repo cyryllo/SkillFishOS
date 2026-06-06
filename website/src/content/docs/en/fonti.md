@@ -1,11 +1,11 @@
 ---
 title: Sources and references
-description: All the sources, upstream projects and tools SkillFishOs is built on.
+description: All the sources, upstream projects and tools SkillFishOS is built on.
 group: Reference
 order: 2
 ---
 
-SkillFishOs is an integration effort: it brings together the work of many open source communities and projects. This page collects the sources cited in the documentation and the projects the system is built on.
+SkillFishOS is an integration effort: it brings together the work of many open source communities and projects. This page collects the sources cited in the documentation and the projects the system is built on.
 
 ## BC-250 hardware documentation
 
@@ -62,4 +62,4 @@ SkillFishOs is an integration effort: it brings together the work of many open s
 
 ---
 
-> SkillFishOs is not affiliated with AMD. "AMD", "Ryzen", "RDNA" and related trademarks belong to Advanced Micro Devices, Inc. All other trademarks mentioned belong to their respective owners.
+> SkillFishOS is not affiliated with AMD. "AMD", "Ryzen", "RDNA" and related trademarks belong to Advanced Micro Devices, Inc. All other trademarks mentioned belong to their respective owners.

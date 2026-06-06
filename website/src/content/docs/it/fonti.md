@@ -1,11 +1,11 @@
 ---
 title: Fonti e riferimenti
-description: Tutte le fonti, i progetti upstream e gli strumenti su cui si basa SkillFishOs.
+description: Tutte le fonti, i progetti upstream e gli strumenti su cui si basa SkillFishOS.
 group: Riferimenti
 order: 2
 ---
 
-SkillFishOs è un lavoro di integrazione: mette insieme il lavoro di tante comunità e progetti open source. Questa pagina raccoglie le fonti citate nella documentazione e i progetti su cui il sistema si basa.
+SkillFishOS è un lavoro di integrazione: mette insieme il lavoro di tante comunità e progetti open source. Questa pagina raccoglie le fonti citate nella documentazione e i progetti su cui il sistema si basa.
 
 ## Documentazione hardware BC-250
 
@@ -62,4 +62,4 @@ SkillFishOs è un lavoro di integrazione: mette insieme il lavoro di tante comun
 
 ---
 
-> SkillFishOs non è affiliato ad AMD. "AMD", "Ryzen", "RDNA" e i relativi marchi appartengono ad Advanced Micro Devices, Inc. Tutti gli altri marchi citati appartengono ai rispettivi proprietari.
+> SkillFishOS non è affiliato ad AMD. "AMD", "Ryzen", "RDNA" e i relativi marchi appartengono ad Advanced Micro Devices, Inc. Tutti gli altri marchi citati appartengono ai rispettivi proprietari.

@@ -1,15 +1,15 @@
 ---
 title: GPU, governor and overclock
-description: How SkillFishOs controls the BC-250's frequencies, voltages and temperatures.
+description: How SkillFishOS controls the BC-250's frequencies, voltages and temperatures.
 group: System
 order: 2
 ---
 
-On a normal APU the GPU frequencies are tuned via the `amdgpu` sysfs. On the BC-250 **that's not how it works**: control goes through the **SMU** (System Management Unit) and requires a dedicated governor. SkillFishOs integrates one, already configured with safe profiles.
+On a normal APU the GPU frequencies are tuned via the `amdgpu` sysfs. On the BC-250 **that's not how it works**: control goes through the **SMU** (System Management Unit) and requires a dedicated governor. SkillFishOS integrates one, already configured with safe profiles.
 
 ## The SMU governor
 
-SkillFishOs uses the **[cyan-skillfish-governor](https://github.com/Magnap/cyan-skillfish-governor)** (written in Rust), installed as a system service with its configuration in `/etc/cyan-skillfish-governor/config.toml`. The governor defines frequency/voltage *safe-points*, e.g. 350/700 MHz at idle and **2000/1000** under load.
+SkillFishOS uses the **[cyan-skillfish-governor](https://github.com/Magnap/cyan-skillfish-governor)** (written in Rust), installed as a system service with its configuration in `/etc/cyan-skillfish-governor/config.toml`. The governor defines frequency/voltage *safe-points*, e.g. 350/700 MHz at idle and **2000/1000** under load.
 
 > ⚠️ **2000 MHz is the real safe-point**, not 2230. In testing (e.g. *Black Myth: Wukong*), 2230 MHz delivers the same FPS but runs hotter. 2230 MHz only makes sense for pure compute. The standard amdgpu sysfs does **not** control the BC-250: only the SMU governor does.
 

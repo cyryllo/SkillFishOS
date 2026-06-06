@@ -1,11 +1,11 @@
 ---
 title: Updates and repository
-description: How SkillFishOs updates safely, without being broken by Debian sid.
+description: How SkillFishOS updates safely, without being broken by Debian sid.
 group: Usage
 order: 4
 ---
 
-SkillFishOs is based on **Debian sid** (*unstable*), Debian's development branch: always up to date, but by nature subject to occasional regressions. On "exotic" hardware like the BC-250, a bad update (of Mesa, firmware or the kernel) can break the system. SkillFishOs addresses this with two tools.
+SkillFishOS is based on **Debian sid** (*unstable*), Debian's development branch: always up to date, but by nature subject to occasional regressions. On "exotic" hardware like the BC-250, a bad update (of Mesa, firmware or the kernel) can break the system. SkillFishOS addresses this with two tools.
 
 ## 1. Our own components, from a dedicated repository
 
@@ -21,7 +21,7 @@ Publishing a component from our own repo means we can **test it first** on the r
 
 ## 2. "Pinning" the fragile packages
 
-For the packages that come from Debian but are delicate on this hardware, SkillFishOs uses **APT pinning**: it keeps them at a **verified** version until we test a newer one. The main pinning candidates are:
+For the packages that come from Debian but are delicate on this hardware, SkillFishOS uses **APT pinning**: it keeps them at a **verified** version until we test a newer one. The main pinning candidates are:
 
 - **Mesa / Vulkan drivers (RADV)** — an update can regress `gfx1013`;
 - **AMD firmware / `linux-firmware`** — GPU microcode;
@@ -44,7 +44,7 @@ sudo apt update && sudo apt full-upgrade
 
 ## Update server architecture
 
-On the infrastructure side, the repository is a classic signed APT repo (managed with **[reprepro](https://salsa.debian.org/debian/reprepro)**) served over HTTP, with the client verifying the GPG signature via a dedicated *keyring*. The system arrives already configured to point at the official SkillFishOs repository.
+On the infrastructure side, the repository is a classic signed APT repo (managed with **[reprepro](https://salsa.debian.org/debian/reprepro)**) served over HTTP, with the client verifying the GPG signature via a dedicated *keyring*. The system arrives already configured to point at the official SkillFishOS repository.
 
 ## Sources
 

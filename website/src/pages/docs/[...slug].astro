@@ -17,7 +17,7 @@ const { Content, headings } = await render(entry);
 const slug = entry.id.slice(3);
 const sidebar = entries.map((e) => ({ id: e.id.slice(3), data: e.data }));
 ---
-<Base lang="it" page={`/docs/${slug}`} title={`${entry.data.title} — Documentazione SkillFishOs`} description={entry.data.description}>
+<Base lang="it" page={`/docs/${slug}`} title={`${entry.data.title} — Documentazione SkillFishOS`} description={entry.data.description}>
   <DocsShell lang="it" entries={sidebar} current={slug} headings={headings}>
     <Content />
   </DocsShell>

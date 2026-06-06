@@ -5,7 +5,7 @@ group: Installation
 order: 1
 ---
 
-SkillFishOs installs from a **live ISO** that contains the [Calamares](https://calamares.io/) graphical installer. The whole process is done with the mouse, no terminal required.
+SkillFishOS installs from a **live ISO** that contains the [Calamares](https://calamares.io/) graphical installer. The whole process is done with the mouse, no terminal required.
 
 > ⚠️ The ISO isn't published yet. This page describes the planned procedure; it will be updated at release. See the [Download](/en/download) page.
 
@@ -33,15 +33,15 @@ sudo dd if=SkillFishOS_amd64.iso of=/dev/sdX bs=4M status=progress oflag=sync
 
 ## 2. Boot the BC-250 from USB
 
-Insert the stick, power on the board and enter the boot/UEFI menu to select the USB as the boot device. The SkillFishOs **live** environment (KDE Plasma) will start: you can explore the system before installing it.
+Insert the stick, power on the board and enter the boot/UEFI menu to select the USB as the boot device. The SkillFishOS **live** environment (KDE Plasma) will start: you can explore the system before installing it.
 
 ## 3. Install with Calamares
 
-From the live desktop launch the installer (*Install SkillFishOs* icon). Calamares guides you step by step:
+From the live desktop launch the installer (*Install SkillFishOS* icon). Calamares guides you step by step:
 
 1. **Language and timezone.**
 2. **Keyboard.**
-3. **Partitioning.** SkillFishOs uses **Btrfs** with separate `@rootfs` (system) and `@home` (user data) subvolumes: this lets you *roll back* the system without touching your files. A small **EFI** partition and a **swap** partition complete the layout. For most users the automatic install option ("Erase disk") is fine.
+3. **Partitioning.** SkillFishOS uses **Btrfs** with separate `@rootfs` (system) and `@home` (user data) subvolumes: this lets you *roll back* the system without touching your files. A small **EFI** partition and a **swap** partition complete the layout. For most users the automatic install option ("Erase disk") is fine.
 4. **User.** Create your account (it will be in the right groups for gaming, audio, render, etc.).
 5. **Summary and install.**
 

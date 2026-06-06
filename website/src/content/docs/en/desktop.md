@@ -5,7 +5,7 @@ group: System
 order: 4
 ---
 
-SkillFishOs uses **[KDE Plasma 6](https://kde.org/plasma-desktop/)** as its desktop environment, dressed in a consistent steampunk theme and a set of tweaks specific to the BC-250.
+SkillFishOS uses **[KDE Plasma 6](https://kde.org/plasma-desktop/)** as its desktop environment, dressed in a consistent steampunk theme and a set of tweaks specific to the BC-250.
 
 ## Sessions
 
@@ -17,7 +17,7 @@ At login (handled by **SDDM**, with autologin) several sessions are available:
 
 ## ⚠️ Anti-suspend (critical)
 
-The BC-250 has **broken ACPI suspend**: if it sleeps, it **won't wake up** and needs a reset (see [hardware](/en/docs/hardware-bc250)). For this reason SkillFishOs **permanently disables** all sleep states:
+The BC-250 has **broken ACPI suspend**: if it sleeps, it **won't wake up** and needs a reset (see [hardware](/en/docs/hardware-bc250)). For this reason SkillFishOS **permanently disables** all sleep states:
 
 ```bash
 systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
@@ -42,7 +42,7 @@ In the top-right corner there's a brass-styled **HUD** built with **[Conky](http
 
 ## Remote access (x11vnc)
 
-Because the default session is X11, remote access is simple: SkillFishOs starts **[x11vnc](https://github.com/LibVNC/x11vnc)** on the active display, sharing the real screen. On the LAN any VNC client can connect. This allows support and configuration from another PC without a physical keyboard/mouse on the board.
+Because the default session is X11, remote access is simple: SkillFishOS starts **[x11vnc](https://github.com/LibVNC/x11vnc)** on the active display, sharing the real screen. On the LAN any VNC client can connect. This allows support and configuration from another PC without a physical keyboard/mouse on the board.
 
 ## Network, audio and applications
 

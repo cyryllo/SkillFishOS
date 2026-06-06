@@ -24,19 +24,19 @@ Memory is **unified**: the GDDR6 is shared between system and graphics. By defau
 
 By default the GPU exposes a reduced number of Compute Units. With a kernel parameter (`amdgpu.bc250_cc_write_mode=3`) it is possible to **unlock 40 CUs**, nearly doubling floating-point performance. The reverse-engineering work that made this unlock possible is documented by the [bc250-40cu-unlock](https://github.com/duggasco/bc250-40cu-unlock) project.
 
-> With 40 CUs active, SkillFishOs measures **11385 GFLOPS** FP32 (vkpeak) from cold, versus ~6141 for a baseline 24-CU configuration: about **+85%**.
+> With 40 CUs active, SkillFishOS measures **11385 GFLOPS** FP32 (vkpeak) from cold, versus ~6141 for a baseline 24-CU configuration: about **+85%**.
 
 ## Hardware flaws to know about
 
-The BC-250 is repurposed "mining" hardware: it has some limitations that SkillFishOs works around in software. Knowing them explains many of the system's choices.
+The BC-250 is repurposed "mining" hardware: it has some limitations that SkillFishOS works around in software. Knowing them explains many of the system's choices.
 
 ### Broken DisplayPort Hot-Plug Detect (HPD)
 
-The monitor connection detection on the DisplayPort connector **does not work**: the board doesn't "see" when you plug in a screen. SkillFishOs solves this with a dedicated daemon (`skillfish-dp-hotswap`) that forces detection at boot and watches for monitor changes at runtime, plus the `video=DP-1:e` kernel parameter as a fallback. See [Desktop](/en/docs/desktop) and [Troubleshooting](/en/docs/risoluzione-problemi).
+The monitor connection detection on the DisplayPort connector **does not work**: the board doesn't "see" when you plug in a screen. SkillFishOS solves this with a dedicated daemon (`skillfish-dp-hotswap`) that forces detection at boot and watches for monitor changes at runtime, plus the `video=DP-1:e` kernel parameter as a fallback. See [Desktop](/en/docs/desktop) and [Troubleshooting](/en/docs/risoluzione-problemi).
 
 ### Broken ACPI suspend
 
-Suspend (**s2idle is broken**): the board goes to sleep but **does not wake up** and needs a reset. A suspended machine is also unreachable remotely. For this reason SkillFishOs **permanently disables** all sleep states (see [Desktop](/en/docs/desktop)). It is a mandatory measure.
+Suspend (**s2idle is broken**): the board goes to sleep but **does not wake up** and needs a reset. A suspended machine is also unreachable remotely. For this reason SkillFishOS **permanently disables** all sleep states (see [Desktop](/en/docs/desktop)). It is a mandatory measure.
 
 ### IOMMU unusable
 

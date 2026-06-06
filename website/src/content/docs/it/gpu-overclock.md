@@ -1,15 +1,15 @@
 ---
 title: GPU, governor e overclock
-description: Come SkillFishOs controlla frequenze, tensioni e temperature della BC-250.
+description: Come SkillFishOS controlla frequenze, tensioni e temperature della BC-250.
 group: Sistema
 order: 2
 ---
 
-Su una APU normale le frequenze della GPU si regolano via sysfs `amdgpu`. Sulla BC-250 **non funziona così**: il controllo passa per l'**SMU** (System Management Unit) e richiede un governor dedicato. SkillFishOs ne integra uno, già configurato con profili sicuri.
+Su una APU normale le frequenze della GPU si regolano via sysfs `amdgpu`. Sulla BC-250 **non funziona così**: il controllo passa per l'**SMU** (System Management Unit) e richiede un governor dedicato. SkillFishOS ne integra uno, già configurato con profili sicuri.
 
 ## Il governor SMU
 
-SkillFishOs usa il **[cyan-skillfish-governor](https://github.com/Magnap/cyan-skillfish-governor)** (scritto in Rust), installato come servizio di sistema con la sua configurazione in `/etc/cyan-skillfish-governor/config.toml`. Il governor definisce dei *safe-point* di frequenza/tensione, ad esempio 350/700 MHz a riposo e **2000/1000** sotto carico.
+SkillFishOS usa il **[cyan-skillfish-governor](https://github.com/Magnap/cyan-skillfish-governor)** (scritto in Rust), installato come servizio di sistema con la sua configurazione in `/etc/cyan-skillfish-governor/config.toml`. Il governor definisce dei *safe-point* di frequenza/tensione, ad esempio 350/700 MHz a riposo e **2000/1000** sotto carico.
 
 > ⚠️ **2000 MHz è il safe-point reale**, non 2230. Test alla mano (es. *Black Myth: Wukong*), a 2230 MHz si ottengono gli stessi FPS ma con più calore. I 2230 MHz hanno senso solo per il *compute* puro. Il sysfs amdgpu standard **non** controlla la BC-250: solo il governor SMU lo fa.
 

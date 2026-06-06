@@ -24,19 +24,19 @@ La memoria è **unificata**: la GDDR6 è condivisa tra sistema e grafica. Di def
 
 La GPU espone di default un numero ridotto di Compute Unit. Tramite un parametro del kernel (`amdgpu.bc250_cc_write_mode=3`) è possibile **sbloccare 40 CU**, quasi raddoppiando le prestazioni in virgola mobile. Il lavoro di reverse engineering che ha reso possibile questo sblocco è documentato dal progetto [bc250-40cu-unlock](https://github.com/duggasco/bc250-40cu-unlock).
 
-> Con 40 CU attive SkillFishOs misura **11385 GFLOPS** FP32 (vkpeak) da freddo, contro i ~6141 di una configurazione baseline a 24 CU: un **+85%** circa.
+> Con 40 CU attive SkillFishOS misura **11385 GFLOPS** FP32 (vkpeak) da freddo, contro i ~6141 di una configurazione baseline a 24 CU: un **+85%** circa.
 
 ## Difetti hardware da conoscere
 
-La BC-250 è hardware "da mining" riadattato: ha alcuni limiti che SkillFishOs aggira via software. Conoscerli aiuta a capire molte scelte del sistema.
+La BC-250 è hardware "da mining" riadattato: ha alcuni limiti che SkillFishOS aggira via software. Conoscerli aiuta a capire molte scelte del sistema.
 
 ### Hot-Plug Detect (HPD) del DisplayPort rotto
 
-Il rilevamento del collegamento del monitor sul connettore DisplayPort **non funziona**: la scheda non "vede" quando si attacca uno schermo. SkillFishOs risolve con un demone dedicato (`skillfish-dp-hotswap`) che forza il rilevamento all'avvio e monitora i cambi di monitor a runtime, più il parametro kernel `video=DP-1:e` come fallback. Vedi [Desktop](/docs/desktop) e [Risoluzione problemi](/docs/risoluzione-problemi).
+Il rilevamento del collegamento del monitor sul connettore DisplayPort **non funziona**: la scheda non "vede" quando si attacca uno schermo. SkillFishOS risolve con un demone dedicato (`skillfish-dp-hotswap`) che forza il rilevamento all'avvio e monitora i cambi di monitor a runtime, più il parametro kernel `video=DP-1:e` come fallback. Vedi [Desktop](/docs/desktop) e [Risoluzione problemi](/docs/risoluzione-problemi).
 
 ### Sospensione (suspend) ACPI rotta
 
-La sospensione **s2idle è guasta**: la scheda va in sospensione ma **non si risveglia** e richiede un reset. Inoltre una macchina sospesa è irraggiungibile da remoto. Per questo SkillFishOs **disabilita in modo permanente** tutti gli stati di sospensione (vedi [Desktop](/docs/desktop)). È una misura obbligatoria.
+La sospensione **s2idle è guasta**: la scheda va in sospensione ma **non si risveglia** e richiede un reset. Inoltre una macchina sospesa è irraggiungibile da remoto. Per questo SkillFishOS **disabilita in modo permanente** tutti gli stati di sospensione (vedi [Desktop](/docs/desktop)). È una misura obbligatoria.
 
 ### IOMMU non utilizzabile
 
