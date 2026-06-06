@@ -10,10 +10,9 @@ export const languages: Record<Lang, string> = { it: 'Italiano', en: 'English' }
 export const SITE = {
   github: 'https://github.com/MTSistemi/SkillFishOS',
   domain: 'skillfishos.com',
-  // Masked download URL: skillfishos.com/dl/... → 302 to Dropbox (see public/.htaccess).
-  // 26.06 "Aetherium" BC-250 release ISO (masked → Dropbox, dl=1).
-  isoUrl: '/dl/SkillFishOS-26.06-Aetherium-BC250-amd64.iso',
-  isoSizeGb: '5.6',
+  // 26.06 "Aetherium" BC-250 release ISO — hosted on SourceForge (reliable mirror + stats).
+  isoUrl: 'https://sourceforge.net/projects/skillfishos/files/26.06-Aetherium/SkillFishOS-26.06-Aetherium-BC250-amd64.iso/download',
+  isoSizeGb: '6.0',
   repoUrl: 'https://mtsistemi.github.io/SkillFishOS',
 };
 
