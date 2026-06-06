@@ -1,28 +1,47 @@
 # DistroWatch — new distribution submission (draft)
 
-Submit via the DistroWatch "Submit a distribution" page once the ISO is publicly
-downloadable (SourceForge). DistroWatch only lists distros with a public release and
-a working download, and reviews submissions manually — so do SourceForge first.
+Submit via DistroWatch's "Submit a distribution" page: <https://distrowatch.com/dwres.php?resource=submit>
 
-## Form fields
+## ⚠️ Read this first — alignment with DistroWatch's rules
+
+DistroWatch only needs **four** things in the submission: project name, website URL, a short
+description (incl. the base distro), and **a link to the installation media (ISO)**. But two
+of its stated rules affect us directly:
+
+1. **No cloud-storage downloads.** DistroWatch lists, among projects that are *not yet ready*,
+   those offering *"non-transparent and/or 'unlinkable' download options, such as those from
+   Google Drive, MEGA and other cloud storage services."*
+   → Our masked `skillfishos.com/dl/…` link **302-redirects to Dropbox** — same category.
+   **Do not submit the Dropbox link.** Host the ISO on a proper mirror first — **SourceForge**
+   (DistroWatch-accepted; see `../sourceforge/UPLOAD.md`) — and submit *that* URL.
+   The Dropbox-masked link is fine for the website; it is **not** fine for DistroWatch.
+
+2. **Waiting list + maturity.** New distros go on a waiting list — *"be prepared for a
+   year-long wait"* — and are expected to have *"proper infrastructure, including forums,
+   mailing lists, documentation, bug tracking databases, etc."*
+   → We have **docs** + **GitHub issues** (bug tracking). We do **not** have a forum or
+   mailing list. Optional but it strengthens the submission: a Discussions/forum and a
+   contact/mailing channel.
+
+(There's also a paid fast-track: buy ≥100,000 ad impressions / $250 for immediate evaluation —
+*no guarantee* of inclusion. Only if you want to skip the queue.)
+
+## The 4 required fields
 
 | Field | Value |
 |---|---|
-| **Distribution name** | SkillFishOS |
-| **Home page** | https://skillfishos.com |
-| **Download (ISO)** | https://skillfishos.com/dl/SkillFishOS-26.06-Aetherium-BC250-amd64.iso (5.6 GB, 302 → direct download) |
-| **Based on** | Debian (unstable / sid) |
-| **Origin** | Italy |
-| **Architecture** | x86_64 (amd64) — current release targets the AMD BC-250 board |
-| **Desktop** | KDE Plasma 6 |
-| **Category** | Desktop, Gaming, Live Medium |
-| **Release model** | Fixed releases on a rolling (sid) base, with a curated/tested update repository |
-| **Status** | Active |
-| **Installer** | Calamares |
-| **Package management** | APT / dpkg (+ Flatpak) |
-| **Init** | systemd |
-| **License** | Open source (GPL-compatible; Debian-based) |
-| **Source code** | https://github.com/MTSistemi/SkillFishOS |
+| **Project / distribution name** | SkillFishOS |
+| **Website URL** | https://skillfishos.com |
+| **Description (with base)** | Steampunk gaming Linux for the AMD BC-250, based on **Debian sid** + KDE Plasma 6 (see 100-word version below) |
+| **ISO download link** | ⚠️ **SourceForge URL — upload first** (NOT the Dropbox-backed `skillfishos.com/dl/…`) |
+
+## Useful extra context (DistroWatch fills the DB entry themselves)
+
+- Origin: Italy · Architecture: x86_64 (amd64), BC-250-specific · Desktop: KDE Plasma 6
+- Base: Debian unstable (sid) · Installer: Calamares · Packaging: APT/dpkg + Flatpak · Init: systemd
+- Category: Desktop, Gaming, Live Medium · Release: 26.06 "Aetherium" · Status: Active
+- License: open source (GPL-compatible) · Source: https://github.com/MTSistemi/SkillFishOS
+- Screenshots: https://skillfishos.com/gallery
 
 ## Description (≈ 100 words)
 
@@ -33,9 +52,4 @@ that unlocks all 40 Compute Units, a dedicated SMU governor, CPU/GPU overclock a
 profiles with thermal protection, Btrfs snapshots with one-click rollback, a full gaming and
 emulation stack (Steam, EmuDeck, ES-DE, Heroic) and an on-device Vulkan AI stack. The system
 boots in English with language selection at install. Open source; a generic x86-64 version is
-planned.
-
-## Notes for the editor
-- Release: **26.06 "Aetherium"** (BC-250 specific).
-- The project is not affiliated with AMD or any console manufacturer.
-- Screenshots available at https://skillfishos.com/gallery
+planned. Not affiliated with AMD or any console manufacturer.
