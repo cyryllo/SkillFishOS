@@ -34,7 +34,7 @@ export const strings: Record<string, Entry> = {
   'nav.gallery': { it: "Galleria", en: "Gallery" },
   'nav.contact': { it: "Contatti", en: "Contact" },
 
-  'hero.soon': { it: "Presto disponibile", en: "Coming soon" },
+  'hero.soon': { it: "Release 26.06 «Aetherium»", en: "Release 26.06 “Aetherium”" },
   'hero.tag': { it: "Il sistema operativo gaming forgiato per l'<b>AMD BC-250</b>.", en: "The gaming operating system forged for the <b>AMD BC-250</b>." },
   'hero.sub': { it: "Linux steampunk, pronto al gioco dal primo avvio. Tutto già ottimizzato, senza smanettare. Emulazione, Steam e AI locale. Basato su Debian e KDE&nbsp;Plasma.", en: "Steampunk Linux, ready to play from the first boot. Everything pre-tuned, no tinkering needed. Emulation, Steam and on-device AI. Built on Debian and KDE&nbsp;Plasma." },
   'hero.btn1': { it: "Guarda il sistema", en: "See it in action" },
@@ -83,7 +83,7 @@ export const strings: Record<string, Entry> = {
 
   'cta.h2': { it: 'Accendi. <span class="gold-text">Gioca.</span> Impara.', en: 'Power on. <span class="gold-text">Play.</span> Learn.' },
   'cta.p': { it: "Un sistema operativo open-source che rende una scheda essenziale una vera console-PC. Questa release è dedicata alla AMD BC-250; una versione per PC x86-64 arriverà in seguito.", en: "An open-source operating system that turns a bare board into a real console-PC. This release targets the AMD BC-250; a generic x86-64 PC version will follow." },
-  'cta.btn': { it: "🚀 Presto disponibile", en: "🚀 Coming soon" },
+  'cta.btn': { it: "⬇ Scarica SkillFishOS", en: "⬇ Download SkillFishOS" },
 
   'foot.based': { it: "Open-source · Basato su Debian · KDE Plasma · © 2026 SkillFishOS", en: "Open-source · Based on Debian · KDE Plasma · © 2026 SkillFishOS" },
 
@@ -132,9 +132,9 @@ export const strings: Record<string, Entry> = {
   'gal.tuner.t': { it: "Tuner", en: "Tuner" },
   'gal.tuner.d': { it: "Controllo di CPU, GPU, ventola e Compute Unit, con test e rollback.", en: "Control CPU, GPU, fan and Compute Units, with test and rollback." },
   'gal.b1.t': { it: "Stesso hardware, +34% — vs Bazzite", en: "Same hardware, +34% — vs Bazzite" },
-  'gal.b1.d': { it: "Superposition 1080p Extreme: la stessa BC-250 segna 4102 a clock di fabbrica su un'altra distro; SkillFishOS arriva a 5513. Leaderboard ufficiale Unigine (username oscurato).", en: "Superposition 1080p Extreme: the same BC-250 scores 4102 at stock clocks on another distro; SkillFishOS reaches 5513. Official Unigine leaderboard (username blurred)." },
+  'gal.b1.d': { it: "Superposition 1080p Extreme: la stessa BC-250 segna 4102 a clock di fabbrica su un'altra distro; SkillFishOS arriva a 5513. Leaderboard ufficiale Unigine.", en: "Superposition 1080p Extreme: the same BC-250 scores 4102 at stock clocks on another distro; SkillFishOS reaches 5513. Official Unigine leaderboard." },
   'gal.b2.t': { it: "Pari a una Radeon RX 6600", en: "On par with a Radeon RX 6600" },
-  'gal.b2.d': { it: "Superposition 1080p High: la BC-250 con SkillFishOS (12 938) eguaglia una RX 6600/6600 XT (12 454) da 200 €+. Leaderboard ufficiale Unigine (username oscurato).", en: "Superposition 1080p High: the BC-250 with SkillFishOS (12,938) matches a €200+ RX 6600/6600 XT (12,454). Official Unigine leaderboard (username blurred)." },
+  'gal.b2.d': { it: "Superposition 1080p High: la BC-250 con SkillFishOS (12 938) eguaglia una RX 6600/6600 XT (12 454) da 200 €+. Leaderboard ufficiale Unigine.", en: "Superposition 1080p High: the BC-250 with SkillFishOS (12,938) matches a €200+ RX 6600/6600 XT (12,454). Official Unigine leaderboard." },
 
   // --- Hardware page ---
   'hwp.title': { it: "Hardware AMD BC-250 — SkillFishOS", en: "AMD BC-250 hardware — SkillFishOS" },
