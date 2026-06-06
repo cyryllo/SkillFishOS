@@ -1,11 +1,11 @@
 ---
 title: Updates and repository
-description: How SkillFishOs updates safely, without being broken by Debian sid.
+description: How SkillFishOS updates safely, without being broken by Debian sid.
 group: Usage
 order: 4
 ---
 
-SkillFishOs is based on **Debian sid** (*unstable*), Debian's development branch: always up to date, but by nature subject to occasional regressions. On "exotic" hardware like the BC-250, a bad update (of Mesa, firmware or the kernel) can break the system. SkillFishOs addresses this with two tools.
+SkillFishOS is based on **Debian sid** (*unstable*), Debian's development branch: always up to date, but by nature subject to occasional regressions. On "exotic" hardware like the BC-250, a bad update (of Mesa, firmware or the kernel) can break the system. SkillFishOS addresses this with two tools.
 
 ## 1. Our own components, from a dedicated repository
 
@@ -21,7 +21,7 @@ Publishing a component from our own repo means we can **test it first** on the r
 
 ## 2. "Pinning" the fragile packages
 
-For the packages that come from Debian but are delicate on this hardware, SkillFishOs uses **APT pinning**: it keeps them at a **verified** version until we test a newer one. The main pinning candidates are:
+For the packages that come from Debian but are delicate on this hardware, SkillFishOS uses **APT pinning**: it keeps them at a **verified** version until we test a newer one. The main pinning candidates are:
 
 - **Mesa / Vulkan drivers (RADV)** — an update can regress `gfx1013`;
 - **AMD firmware / `linux-firmware`** — GPU microcode;
@@ -42,9 +42,27 @@ sudo apt update && sudo apt full-upgrade
 
 > In short: **we** give you a tested kernel, apps and themes; **Debian** gives you the rest of the updated software; **pinning** prevents surprises; **Btrfs** is the safety net. Three layers of protection, so updating isn't scary.
 
-## Update server architecture
+## The official repository
 
-On the infrastructure side, the repository is a classic signed APT repo (managed with **[reprepro](https://salsa.debian.org/debian/reprepro)**) served over HTTP, with the client verifying the GPG signature via a dedicated *keyring*. The system arrives already configured to point at the official SkillFishOs repository.
+The SkillFishOS APT repo is **live**, GPG-signed and hosted on **GitHub Pages** (suite `aetherium`):
+
+```bash
+# 1. import the signing key
+sudo curl -fsSL https://mtsistemi.github.io/SkillFishOS/skillfishos-archive-keyring.gpg \
+  -o /usr/share/keyrings/skillfishos-archive-keyring.gpg
+# 2. add the repo
+echo "deb [signed-by=/usr/share/keyrings/skillfishos-archive-keyring.gpg] \
+https://mtsistemi.github.io/SkillFishOS aetherium main" \
+  | sudo tee /etc/apt/sources.list.d/skillfishos.list
+# 3. install/update the kernel via apt
+sudo apt update && sudo apt install skillfishos-kernel
+```
+
+Recent SkillFishOS builds ship it **pre-configured**; otherwise the commands above set it up. The [kernel](/docs/kernel)
+(152 MB image) is published as a GitHub *release asset*: the tiny `skillfishos-kernel`
+package downloads and installs it automatically, so the update still goes through `apt`. The
+repo is managed with **[reprepro](https://salsa.debian.org/debian/reprepro)** and the client
+verifies the signature via the dedicated *keyring*.
 
 ## Sources
 

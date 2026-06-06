@@ -2,6 +2,15 @@
 
 RewriteEngine On
 
-# Masked ISO download: skillfishos.com/dl/skillfishos-preview.iso -> Dropbox (direct)
+# Masked ISO download: skillfishos.com/dl/<name> -> Dropbox direct download (dl=1).
 # Keeps the public-facing URL on our own domain; QSD discards any incoming query string.
+# (Full proxy-masking of a 5.6 GB file isn't feasible on shared hosting, so this is a 302.)
+
+# 26.06 "Aetherium" (BC-250) — current release
+RewriteRule ^dl/SkillFishOS-26\.06-Aetherium-BC250-amd64\.iso$ https://www.dropbox.com/scl/fi/jfgdqhf5t9s650091aaq3/SkillFishOS-26.06-Aetherium-BC250-amd64.iso?rlkey=9g2phuchag3w1i4xo6qx0ox37&dl=1 [R=302,L,QSD]
+
+# stable alias (always points at the latest release)
+RewriteRule ^dl/skillfishos-latest\.iso$ https://www.dropbox.com/scl/fi/jfgdqhf5t9s650091aaq3/SkillFishOS-26.06-Aetherium-BC250-amd64.iso?rlkey=9g2phuchag3w1i4xo6qx0ox37&dl=1 [R=302,L,QSD]
+
+# legacy preview (kept for old links)
 RewriteRule ^dl/skillfishos-preview\.iso$ https://www.dropbox.com/scl/fi/ppnob3ia0x5gnbbuw3o29/SkillFishOs-Preview.iso?rlkey=29nckgkils1pp0p703mthx6z5&dl=1 [R=302,L,QSD]

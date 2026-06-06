@@ -11,19 +11,19 @@ export const SITE = {
   github: 'https://github.com/MTSistemi/SkillFishOS',
   domain: 'skillfishos.com',
   // Masked download URL: skillfishos.com/dl/... → 302 to Dropbox (see public/.htaccess).
-  // Currently a fully-functional preview ISO hosted on Dropbox.
-  isoUrl: '/dl/skillfishos-preview.iso',
-  isoSizeGb: '5.78',
-  repoUrl: 'http://192.168.5.22',
+  // 26.06 "Aetherium" BC-250 release ISO (masked → Dropbox, dl=1).
+  isoUrl: '/dl/SkillFishOS-26.06-Aetherium-BC250-amd64.iso',
+  isoSizeGb: '5.6',
+  repoUrl: 'https://mtsistemi.github.io/SkillFishOS',
 };
 
 type Entry = Record<Lang, string>;
 
 export const strings: Record<string, Entry> = {
-  'title': { it: "SkillFishOs — Gaming Linux per l'AMD BC-250", en: "SkillFishOs — Gaming Linux for the AMD BC-250" },
+  'title': { it: "SkillFishOS — Gaming Linux per l'AMD BC-250", en: "SkillFishOS — Gaming Linux for the AMD BC-250" },
   'meta.desc': {
-    it: "SkillFishOs: il sistema operativo gaming steampunk per la scheda AMD BC-250. Tutto pronto e ottimizzato, senza smanettare. Emulazione, Steam, AI locale. Basato su Debian + KDE Plasma.",
-    en: "SkillFishOs: the steampunk gaming operating system for the AMD BC-250 board. Pre-tuned and ready, no tinkering. Emulation, Steam, on-device AI. Built on Debian + KDE Plasma.",
+    it: "SkillFishOS: il sistema operativo gaming steampunk per la scheda AMD BC-250. Tutto pronto e ottimizzato, senza smanettare. Emulazione, Steam, AI locale. Basato su Debian + KDE Plasma.",
+    en: "SkillFishOS: the steampunk gaming operating system for the AMD BC-250 board. Pre-tuned and ready, no tinkering. Emulation, Steam, on-device AI. Built on Debian + KDE Plasma.",
   },
 
   'nav.feat': { it: "Funzioni", en: "Features" },
@@ -34,7 +34,7 @@ export const strings: Record<string, Entry> = {
   'nav.gallery': { it: "Galleria", en: "Gallery" },
   'nav.contact': { it: "Contatti", en: "Contact" },
 
-  'hero.soon': { it: "Presto disponibile", en: "Coming soon" },
+  'hero.soon': { it: "Release 26.06 «Aetherium»", en: "Release 26.06 “Aetherium”" },
   'hero.tag': { it: "Il sistema operativo gaming forgiato per l'<b>AMD BC-250</b>.", en: "The gaming operating system forged for the <b>AMD BC-250</b>." },
   'hero.sub': { it: "Linux steampunk, pronto al gioco dal primo avvio. Tutto già ottimizzato, senza smanettare. Emulazione, Steam e AI locale. Basato su Debian e KDE&nbsp;Plasma.", en: "Steampunk Linux, ready to play from the first boot. Everything pre-tuned, no tinkering needed. Emulation, Steam and on-device AI. Built on Debian and KDE&nbsp;Plasma." },
   'hero.btn1': { it: "Guarda il sistema", en: "See it in action" },
@@ -43,7 +43,7 @@ export const strings: Record<string, Entry> = {
 
   'intro.eye': { it: "Che cos'è", en: "What it is" },
   'intro.h2': { it: "Una console-PC,<br>pronta all'uso.", en: "A console-PC,<br>ready to use." },
-  'intro.p1': { it: "SkillFishOs trasforma la scheda <strong>AMD BC-250</strong> — un'APU semi-custom della famiglia <strong>AMD Zen&nbsp;2 + RDNA&nbsp;2</strong> (CPU «Oberon», grafica «Cyan&nbsp;Skillfish», 16&nbsp;GB GDDR6) — in un sistema completo per giocare e usare il PC.", en: "SkillFishOs turns the <strong>AMD BC-250</strong> board — a semi-custom APU from the <strong>AMD Zen&nbsp;2 + RDNA&nbsp;2 family</strong> (CPU “Oberon”, “Cyan&nbsp;Skillfish” graphics, 16&nbsp;GB GDDR6) — into a complete system to play and get things done." },
+  'intro.p1': { it: "SkillFishOS trasforma la scheda <strong>AMD BC-250</strong> — un'APU semi-custom della famiglia <strong>AMD Zen&nbsp;2 + RDNA&nbsp;2</strong> (CPU «Oberon», grafica «Cyan&nbsp;Skillfish», 16&nbsp;GB GDDR6) — in un sistema completo per giocare e usare il PC.", en: "SkillFishOS turns the <strong>AMD BC-250</strong> board — a semi-custom APU from the <strong>AMD Zen&nbsp;2 + RDNA&nbsp;2 family</strong> (CPU “Oberon”, “Cyan&nbsp;Skillfish” graphics, 16&nbsp;GB GDDR6) — into a complete system to play and get things done." },
   'intro.p2': { it: "Governor, patch del kernel, overclock e profili termici sono <strong>già pronti e ottimizzati</strong>: un sistema che gira al massimo <strong>senza dover smanettare</strong>. Estetica <strong>steampunk</strong> coerente dal boot al desktop, pensata anche per far <strong>imparare Linux ai più piccoli</strong> mentre giocano.", en: "Governors, kernel patches, overclock and thermal profiles come <strong>pre-tuned and ready</strong>: a system that runs at its best <strong>with no tinkering</strong>. A consistent <strong>steampunk</strong> look from boot to desktop, also designed to help <strong>kids learn Linux</strong> while they play." },
 
   'feat.eye': { it: "Funzioni", en: "Features" },
@@ -71,34 +71,35 @@ export const strings: Record<string, Entry> = {
   's4.t': { it: "AI in casa, con un clic", en: "On-device AI, one click away" },
   's4.d': { it: "Un pannello dedicato accende o spegne il motore AI locale (Qwen su GPU Vulkan). Chat web, terminale di coding e gestione: l'intelligenza artificiale gira in casa, e libera la GPU quando vuoi giocare.", en: "A dedicated panel turns the local AI engine (Qwen on the Vulkan GPU) on or off. Web chat, a coding terminal and management: AI runs at home, and frees the GPU when it's time to play." },
   's5.t': { it: "Tuning a portata di clic", en: "One-click tuning" },
-  's5.d': { it: "Il Tuner regola frequenze, undervolt, ventola e Compute Unit con preset pronti (Stock, Performance, Crazy) e un thermal-guard che protegge l'hardware. Tutta la potenza, in sicurezza, senza riga di comando.", en: "The Tuner adjusts clocks, undervolt, fan and Compute Units with ready presets (Stock, Performance, Crazy) and a thermal-guard that protects the hardware. All the power, safely, with no command line." },
+  's5.d': { it: "Il Tuner regola frequenze, undervolt, ventola e Compute Unit con quattro preset pronti (Stock, Performance, Turbo, Crazy) e un thermal-guard che protegge l'hardware. Tutta la potenza, in sicurezza, senza riga di comando.", en: "The Tuner adjusts clocks, undervolt, fan and Compute Units with four ready presets (Stock, Performance, Turbo, Crazy) and a thermal-guard that protects the hardware. All the power, safely, with no command line." },
 
   'hw.eye': { it: "Hardware", en: "Hardware" },
   'hw.h2': { it: "Nato per l'AMD BC-250.", en: "Born for the AMD BC-250." },
   'hw.sub': { it: "Tutta la potenza della famiglia AMD Zen 2 + RDNA 2, liberata su Linux.", en: "All the power of the AMD Zen 2 + RDNA 2 family, unleashed on Linux." },
-  'hw.c1': { it: 'CPU "Oberon" · fino a 3.7 GHz', en: '"Oberon" CPU · up to 3.7 GHz' },
+  'hw.c1': { it: 'CPU "Oberon" · fino a 4.0 GHz', en: '"Oberon" CPU · up to 4.0 GHz' },
   'hw.c2': { it: 'GPU "Cyan Skillfish" · 40 CU', en: '"Cyan Skillfish" GPU · 40 CU' },
   'hw.c3': { it: "FP32 · accelerazione Vulkan", en: "FP32 · Vulkan acceleration" },
   'hw.c4': { it: "GDDR6 condivisa", en: "shared GDDR6" },
 
   'cta.h2': { it: 'Accendi. <span class="gold-text">Gioca.</span> Impara.', en: 'Power on. <span class="gold-text">Play.</span> Learn.' },
-  'cta.p': { it: "Un sistema operativo che rende una scheda essenziale una vera console-PC. Presto disponibili: la ISO installabile e gli aggiornamenti dedicati.", en: "An operating system that turns a bare board into a real console-PC. Coming soon: the installable ISO and dedicated updates." },
-  'cta.btn': { it: "🚀 Presto disponibile", en: "🚀 Coming soon" },
+  'cta.p': { it: "Un sistema operativo open-source che rende una scheda essenziale una vera console-PC. Questa release è dedicata alla AMD BC-250; una versione per PC x86-64 arriverà in seguito.", en: "An open-source operating system that turns a bare board into a real console-PC. This release targets the AMD BC-250; a generic x86-64 PC version will follow." },
+  'cta.btn': { it: "⬇ Scarica SkillFishOS", en: "⬇ Download SkillFishOS" },
 
-  'foot.based': { it: "Basato su Debian · KDE Plasma · © 2026 SkillFishOs", en: "Based on Debian · KDE Plasma · © 2026 SkillFishOs" },
+  'foot.based': { it: "Open-source · Basato su Debian · KDE Plasma · © 2026 SkillFishOS", en: "Open-source · Based on Debian · KDE Plasma · © 2026 SkillFishOS" },
 
   // --- Download page ---
-  'dl.title': { it: "Download — SkillFishOs", en: "Download — SkillFishOs" },
+  'dl.title': { it: "Download — SkillFishOS", en: "Download — SkillFishOS" },
   'dl.eye': { it: "Download", en: "Download" },
-  'dl.h2': { it: "Scarica SkillFish<span class=\"gold-text\">Os</span>", en: "Download SkillFish<span class=\"gold-text\">Os</span>" },
+  'dl.h2': { it: "Scarica SkillFish<span class=\"gold-text\">OS</span>", en: "Download SkillFish<span class=\"gold-text\">OS</span>" },
   'dl.sub': { it: "La ISO installabile, brandizzata e pronta all'uso per l'AMD BC-250.", en: "The installable, branded, ready-to-use ISO for the AMD BC-250." },
-  'dl.badge': { it: "Preview", en: "Preview" },
-  'dl.notice': { it: "Questa è una <strong>preview completamente funzionante</strong> di SkillFishOs: la installi e la usi davvero sulla tua BC-250.", en: "This is a <strong>fully-functional preview</strong> of SkillFishOs: you can really install and use it on your BC-250." },
+  'dl.badge': { it: "26.06 «Aetherium»", en: "26.06 “Aetherium”" },
+  'dl.notice': { it: "La release <strong>26.06 «Aetherium»</strong> di SkillFishOS, dedicata alla scheda <strong>AMD BC-250</strong>: completa e pronta all'uso. Una versione per PC <strong>x86-64</strong> generico arriverà in seguito. Progetto <strong>open-source</strong>.", en: "The <strong>26.06 “Aetherium”</strong> release of SkillFishOS, built for the <strong>AMD BC-250</strong> board: complete and ready to use. A generic <strong>x86-64</strong> PC version will follow later. <strong>Open-source</strong> project." },
   'dl.btnsoon': { it: "🚀 ISO in arrivo", en: "🚀 ISO coming soon" },
-  'dl.btn': { it: "⬇ Scarica la ISO (Preview)", en: "⬇ Download the ISO (Preview)" },
-  'dl.size': { it: "amd64 · ~{size} GB · btrfs + KDE Plasma · preview", en: "amd64 · ~{size} GB · btrfs + KDE Plasma · preview" },
+  'dl.btn': { it: "⬇ Scarica la ISO", en: "⬇ Download the ISO" },
+  'dl.size': { it: "amd64 · ~{size} GB · btrfs + KDE Plasma", en: "amd64 · ~{size} GB · btrfs + KDE Plasma" },
+  'dl.ver': { it: "Versione <strong>26.06 «Aetherium»</strong> · release per <strong>AMD BC-250</strong> · parte in inglese, lingua scegliibile in installazione", en: "Version <strong>26.06 “Aetherium”</strong> · <strong>AMD BC-250</strong> release · boots in English, language selectable at install" },
   'dl.bugs.h': { it: "Hai trovato un problema?", en: "Found a problem?" },
-  'dl.bugs.d': { it: "La preview è in continuo miglioramento. Per segnalare bug o problemi apri una <em>issue</em> su GitHub. (Presto aggiungeremo anche un indirizzo email.)", en: "The preview is continuously improving. To report bugs or problems, open an <em>issue</em> on GitHub. (We'll add an email address soon.)" },
+  'dl.bugs.d': { it: "SkillFishOS è in continuo miglioramento. Per segnalare bug o problemi apri una <em>issue</em> su GitHub. (Presto aggiungeremo anche un indirizzo email.)", en: "SkillFishOS is continuously improving. To report bugs or problems, open an <em>issue</em> on GitHub. (We'll add an email address soon.)" },
   'dl.bugs.btn': { it: "🐛 Segnala su GitHub", en: "🐛 Report on GitHub" },
 
   'dl.req.h': { it: "Requisiti", en: "Requirements" },
@@ -111,17 +112,17 @@ export const strings: Record<string, Entry> = {
   'dl.step3': { it: "Al primo avvio è tutto già configurato: accendi e gioca.", en: "On first boot everything is set up: power on and play." },
 
   'dl.repo.h': { it: "Aggiornamenti", en: "Updates" },
-  'dl.repo.d': { it: "SkillFishOs si aggiorna dal <strong>repository ufficiale</strong>: kernel, app e temi arrivano da noi e sono testati, così gli aggiornamenti di Debian sid non rompono il sistema.", en: "SkillFishOs updates from its <strong>official repository</strong>: kernel, apps and themes come from us and are tested, so Debian sid updates can't break the system." },
+  'dl.repo.d': { it: "SkillFishOS si aggiorna dal <strong>repository ufficiale</strong>: kernel, app e temi arrivano da noi e sono testati, così gli aggiornamenti di Debian sid non rompono il sistema.", en: "SkillFishOS updates from its <strong>official repository</strong>: kernel, apps and themes come from us and are tested, so Debian sid updates can't break the system." },
 
   // --- Gallery page ---
-  'gal.title': { it: "Galleria — SkillFishOs", en: "Gallery — SkillFishOs" },
+  'gal.title': { it: "Galleria — SkillFishOS", en: "Gallery — SkillFishOS" },
   'gal.eye': { it: "Galleria", en: "Gallery" },
   'gal.h2': { it: "Bello da vedere, comodo da usare.", en: "Great to look at, easy to use." },
-  'gal.sub': { it: "Uno sguardo a SkillFishOs in azione: desktop, gaming, emulazione e strumenti.", en: "A look at SkillFishOs in action: desktop, gaming, emulation and tools." },
+  'gal.sub': { it: "Uno sguardo a SkillFishOS in azione: desktop, gaming, emulazione e strumenti.", en: "A look at SkillFishOS in action: desktop, gaming, emulation and tools." },
   'gal.desktop.t': { it: "Il desktop steampunk", en: "The steampunk desktop" },
   'gal.desktop.d': { it: "KDE Plasma a tema, con HUD di sistema live in alto a destra.", en: "Themed KDE Plasma, with a live system HUD in the top-right." },
   'gal.about.t': { it: "Informazioni di sistema", en: "System info" },
-  'gal.about.d': { it: "Branding completo: nome, logo e hardware riconosciuti come SkillFishOs.", en: "Full branding: name, logo and hardware recognized as SkillFishOs." },
+  'gal.about.d': { it: "Branding completo: nome, logo e hardware riconosciuti come SkillFishOS.", en: "Full branding: name, logo and hardware recognized as SkillFishOS." },
   'gal.emudeck.t': { it: "EmuDeck", en: "EmuDeck" },
   'gal.emudeck.d': { it: "Installazione e configurazione degli emulatori in pochi clic.", en: "Emulator install and setup in a few clicks." },
   'gal.esde1.t': { it: "ES-DE — Frontend", en: "ES-DE — Frontend" },
@@ -130,15 +131,19 @@ export const strings: Record<string, Entry> = {
   'gal.ai.d': { it: "Accendi e spegni lo stack AI locale (Vulkan) con un clic.", en: "Turn the local AI stack (Vulkan) on and off with one click." },
   'gal.tuner.t': { it: "Tuner", en: "Tuner" },
   'gal.tuner.d': { it: "Controllo di CPU, GPU, ventola e Compute Unit, con test e rollback.", en: "Control CPU, GPU, fan and Compute Units, with test and rollback." },
+  'gal.b1.t': { it: "Stesso hardware, +34% — vs Bazzite", en: "Same hardware, +34% — vs Bazzite" },
+  'gal.b1.d': { it: "Superposition 1080p Extreme: la stessa BC-250 segna 4102 a clock di fabbrica su un'altra distro; SkillFishOS arriva a 5513. Leaderboard ufficiale Unigine.", en: "Superposition 1080p Extreme: the same BC-250 scores 4102 at stock clocks on another distro; SkillFishOS reaches 5513. Official Unigine leaderboard." },
+  'gal.b2.t': { it: "Pari a una Radeon RX 6600", en: "On par with a Radeon RX 6600" },
+  'gal.b2.d': { it: "Superposition 1080p High: la BC-250 con SkillFishOS (12 938) eguaglia una RX 6600/6600 XT (12 454) da 200 €+. Leaderboard ufficiale Unigine.", en: "Superposition 1080p High: the BC-250 with SkillFishOS (12,938) matches a €200+ RX 6600/6600 XT (12,454). Official Unigine leaderboard." },
 
   // --- Hardware page ---
-  'hwp.title': { it: "Hardware AMD BC-250 — SkillFishOs", en: "AMD BC-250 hardware — SkillFishOs" },
+  'hwp.title': { it: "Hardware AMD BC-250 — SkillFishOS", en: "AMD BC-250 hardware — SkillFishOS" },
   'hwp.eye': { it: "Hardware", en: "Hardware" },
   'hwp.h2': { it: "Nato per l'<span class=\"gold-text\">AMD BC-250</span>.", en: "Born for the <span class=\"gold-text\">AMD BC-250</span>." },
   'hwp.sub': { it: "Un'APU semi-custom AMD Zen 2 + RDNA 2 con 16 GB di GDDR6, liberata su Linux.", en: "A semi-custom AMD Zen 2 + RDNA 2 APU with 16 GB of GDDR6, unleashed on Linux." },
   'hwp.specs.h': { it: "Specifiche", en: "Specifications" },
   'hwp.cpu.t': { it: "CPU — 6× Zen 2", en: "CPU — 6× Zen 2" },
-  'hwp.cpu.d': { it: '"Oberon", 6 core / 12 thread, fino a ~3.7 GHz in overclock.', en: '"Oberon", 6 cores / 12 threads, up to ~3.7 GHz overclocked.' },
+  'hwp.cpu.d': { it: '"Oberon", 6 core / 12 thread, fino a <strong>4.0 GHz all-core</strong> in overclock (~1206 mV, validato).', en: '"Oberon", 6 cores / 12 threads, up to <strong>4.0 GHz all-core</strong> overclocked (~1206 mV, validated).' },
   'hwp.gpu.t': { it: "GPU — RDNA 2", en: "GPU — RDNA 2" },
   'hwp.gpu.d': { it: '"Cyan Skillfish" (gfx1013), fino a 40 Compute Unit sbloccabili.', en: '"Cyan Skillfish" (gfx1013), up to 40 unlockable Compute Units.' },
   'hwp.mem.t': { it: "Memoria — 16 GB GDDR6", en: "Memory — 16 GB GDDR6" },
@@ -158,10 +163,10 @@ export const strings: Record<string, Entry> = {
 
   // --- Benchmark section (on the Hardware page) ---
   'bm.h': { it: "Prestazioni misurate", en: "Measured performance" },
-  'bm.sub': { it: "vkpeak FP32-scalar (GFLOPS) sulla <strong>stessa</strong> BC-250, prima e dopo SkillFishOs.", en: "vkpeak FP32-scalar (GFLOPS) on the <strong>same</strong> BC-250, before and after SkillFishOs." },
+  'bm.sub': { it: "vkpeak FP32-scalar (GFLOPS) sulla <strong>stessa</strong> BC-250, prima e dopo SkillFishOS.", en: "vkpeak FP32-scalar (GFLOPS) on the <strong>same</strong> BC-250, before and after SkillFishOS." },
   'bm.bar1': { it: "Baseline — XanMod, 24 CU", en: "Baseline — XanMod, 24 CU" },
   'bm.bar2': { it: "tkg + governor, 24 CU", en: "tkg + governor, 24 CU" },
-  'bm.bar3': { it: "SkillFishOs — tkg + governor + 40 CU", en: "SkillFishOs — tkg + governor + 40 CU" },
+  'bm.bar3': { it: "SkillFishOS — tkg + governor + 40 CU", en: "SkillFishOS — tkg + governor + 40 CU" },
   'bm.unit': { it: "GFLOPS", en: "GFLOPS" },
   'bm.s1.l': { it: "FP32 vs baseline", en: "FP32 vs baseline" },
   'bm.s2.l': { it: "GFLOPS FP32 (≈11.3 TFLOPS)", en: "GFLOPS FP32 (≈11.3 TFLOPS)" },
@@ -181,8 +186,47 @@ export const strings: Record<string, Entry> = {
   'wk.l.vram': { it: "VRAM in uso", en: "VRAM in use" },
   'wk.l.fan': { it: "Ventola", en: "Fan" },
 
+  // --- Gaming benchmarks (real results) ---
+  'gb.h': { it: "Benchmark di gioco — risultati reali", en: "Game benchmarks — real results" },
+  'gb.sub': { it: "Misurati sulla BC-250 con SkillFishOS, a 1080p. Una scheda da <strong>~50&nbsp;€</strong> che gioca nella fascia <strong>Radeon RX&nbsp;6600</strong>.", en: "Measured on the BC-250 with SkillFishOS, at 1080p. A <strong>~€50</strong> board playing in the <strong>Radeon RX&nbsp;6600</strong> class." },
+  'gb.wk.v': { it: "112 FPS", en: "112 FPS" },
+  'gb.wk.l': { it: "Black Myth: Wukong · media a 1080p", en: "Black Myth: Wukong · 1080p average" },
+  'gb.hv.v': { it: "2865", en: "2865" },
+  'gb.hv.l': { it: "Unigine Heaven · 1080p Ultra/Extreme · 8× AA · 113 FPS", en: "Unigine Heaven · 1080p Ultra/Extreme · 8× AA · 113 FPS" },
+  'gb.sp.v': { it: "12 938", en: "12,938" },
+  'gb.sp.l': { it: "Unigine Superposition · 1080p High · (5513 in Extreme)", en: "Unigine Superposition · 1080p High · (5513 in Extreme)" },
+
+  // --- Comparison: same hardware, different OS ---
+  'cmp.os.h': { it: "Stesso hardware, +34% solo cambiando OS", en: "Same hardware, +34% just by changing OS" },
+  'cmp.os.sub': { it: "Superposition 1080p Extreme, sulla <strong>stessa BC-250</strong>: SkillFishOS contro un'altra distro a clock di fabbrica.", en: "Superposition 1080p Extreme, on the <strong>same BC-250</strong>: SkillFishOS vs another distro at stock clocks." },
+  'cmp.os.b1': { it: "SkillFishOS — GPU 2230 · CPU 3900", en: "SkillFishOS — GPU 2230 · CPU 3900" },
+  'cmp.os.b2': { it: "Altra distro (Bazzite) — GPU 2100 · CPU 3436", en: "Other distro (Bazzite) — GPU 2100 · CPU 3436" },
+  'cmp.os.note': { it: "40 CU sbloccate, governor che spinge la GPU a 2230 MHz e overclock+undervolt CPU: <strong>+34% di prestazioni reali</strong> dallo stesso identico chip. Fonte: leaderboard ufficiale Unigine.", en: "Unlocked 40 CUs, a governor pushing the GPU to 2230 MHz and CPU overclock+undervolt: <strong>+34% real performance</strong> from the very same chip. Source: the official Unigine leaderboard." },
+
+  // --- Comparison: vs retail Radeons ---
+  'cmp.gpu.h': { it: "Testa a testa con le Radeon desktop", en: "Head-to-head with desktop Radeons" },
+  'cmp.gpu.sub': { it: "Superposition 1080p High: la BC-250 con SkillFishOS pareggia una <strong>RX&nbsp;6600/6600&nbsp;XT</strong> da 200&nbsp;€+.", en: "Superposition 1080p High: the BC-250 with SkillFishOS matches a <strong>RX&nbsp;6600/6600&nbsp;XT</strong> costing €200+." },
+  'cmp.gpu.b1': { it: "SkillFishOS — BC-250 (~50 €)", en: "SkillFishOS — BC-250 (~€50)" },
+  'cmp.gpu.b2': { it: "Radeon RX 6600 / 6600 XT", en: "Radeon RX 6600 / 6600 XT" },
+  'cmp.gpu.b3': { it: "Radeon RX 6700 / 6750 XT", en: "Radeon RX 6700 / 6750 XT" },
+  'cmp.gpu.note': { it: "Compute grezzo da RX&nbsp;6700 (~11,3 TFLOPS), prestazioni di gioco da RX&nbsp;6600/6600&nbsp;XT — su una scheda da ~50&nbsp;€. Un die <strong>RDNA&nbsp;2 semi-custom di classe console</strong> («Oberon», gfx1013), liberato su Linux.", en: "Raw compute of an RX&nbsp;6700 (~11.3 TFLOPS), gaming performance of an RX&nbsp;6600/6600&nbsp;XT — on a ~€50 board. A <strong>semi-custom, console-class RDNA&nbsp;2 die</strong> (“Oberon”, gfx1013), unleashed on Linux." },
+  'cmp.axis': { it: "Score Superposition", en: "Superposition score" },
+
+  // --- Overclock & Undervolt (real, hand-characterized data) ---
+  'oc.h': { it: "Overclock & undervolt — caratterizzati a mano", en: "Overclock & undervolt — hand-characterized" },
+  'oc.sub': { it: "Curve V/F misurate via SMU sull'APU «Oberon», con validazione termica reale. Tutto pilotabile dal <strong>Tuner</strong> con preset pronti.", en: "V/F curves measured via the SMU on the “Oberon” APU, with real thermal validation. All driveable from the <strong>Tuner</strong> with ready presets." },
+  'oc.cpu.v': { it: "4.0 GHz", en: "4.0 GHz" },
+  'oc.cpu.l': { it: "CPU 6 core all-core · ~1206 mV · validato 120s a 83 °C", en: "CPU 6-core all-core · ~1206 mV · 120s-validated at 83 °C" },
+  'oc.uv.v': { it: "−194 mV", en: "−194 mV" },
+  'oc.uv.l': { it: "Undervolt CPU a 3.7 GHz (1206→1012 mV) senza perdite", en: "CPU undervolt at 3.7 GHz (1206→1012 mV) with no loss" },
+  'oc.gpu.v': { it: "2230 MHz", en: "2230 MHz" },
+  'oc.gpu.l': { it: "GPU · 40 CU · governor SMU dedicato", en: "GPU · 40 CU · dedicated SMU governor" },
+  'oc.cap.v': { it: "85 °C", en: "85 °C" },
+  'oc.cap.l': { it: "Cap termico CPU+GPU: throttla il clock, non si spacca mai", en: "CPU+GPU thermal cap: throttles the clock, never breaks" },
+  'oc.note': { it: "Per ogni frequenza abbiamo trovato il <strong>voltaggio minimo stabile</strong> leggendo il VID reale dall'SMU e validando con stress di 120s. I preset <strong>Stock · Performance · Turbo · Crazy</strong> applicano questi profili in un clic; un thermal-guard tiene tutto entro 85 °C. Dettagli completi nella documentazione.", en: "For every frequency we found the <strong>lowest stable voltage</strong> by reading the real VID from the SMU and validating with 120s stress. The <strong>Stock · Performance · Turbo · Crazy</strong> presets apply these profiles in one click; a thermal-guard keeps everything within 85 °C. Full details in the docs." },
+
   // --- Contact page ---
-  'ct.title': { it: "Contatti — SkillFishOs", en: "Contact — SkillFishOs" },
+  'ct.title': { it: "Contatti — SkillFishOS", en: "Contact — SkillFishOS" },
   'ct.eye': { it: "Contatti", en: "Contact" },
   'ct.h2': { it: "Scrivici", en: "Get in touch" },
   'ct.sub': { it: "Assistenza, informazioni o altro: compila il modulo e ti risponderemo via email.", en: "Support, information or anything else: fill in the form and we'll reply by email." },
