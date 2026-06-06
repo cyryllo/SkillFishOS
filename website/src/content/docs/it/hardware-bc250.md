@@ -66,6 +66,9 @@ La BC-250 arriva **nuda**, pensata per cestelli da mining con cinque ventole *sc
 | [Case ATX PSU & Fan Duct](https://www.printables.com/model/1616167-amd-bc-250-case-atx-psu-fan-duct) | ZMASLO | Usa una PSU ATX standard, convogliatore che non danneggia il dissipatore |
 | [Case per PSU ATX standard](https://www.thingiverse.com/thing:7269520) | CatSiewDai | Case completo per alimentatori ATX |
 | [OC vRAM Fan Kit (remix)](https://www.thingiverse.com/thing:7271946) | marccyberwiz | Kit ventola **dedicato alla VRAM** per overclock |
+| [NexGen3D — DIY Steam Machine (Bazzite)](https://www.printables.com/model/1499974-nexgen3d-diy-steam-machine-powered-by-bazzite) | NexGen3D | Case completo stile **Steam Machine** per la BC-250 |
+| [NexGen3D — Steam Machine PRO (liquid-cooled)](https://www.printables.com/model/1614131-nexgen3d-diy-steam-machine-pro-liquid-cooled-bc-25/files) | NexGen3D | Versione **PRO raffreddata a liquido** (AIO) — massimo raffreddamento |
+| [NexGen3D — Supporto AIO per BC-250](https://www.printables.com/model/1554003-nexgen3d-aio-mount-for-the-bc-250) | NexGen3D | Staffa per montare un **AIO** (raffreddamento a liquido) sulla BC-250 |
 
 > Guida di riferimento sul raffreddamento: [Cooling Solutions — amd-bc250-docs](https://elektricm.github.io/amd-bc250-docs/hardware/cooling/).
 

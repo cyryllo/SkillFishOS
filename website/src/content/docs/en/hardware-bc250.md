@@ -66,6 +66,9 @@ The BC-250 arrives **bare**, designed for mining racks with five 80 mm *screamer
 | [Case ATX PSU & Fan Duct](https://www.printables.com/model/1616167-amd-bc-250-case-atx-psu-fan-duct) | ZMASLO | Uses a standard ATX PSU, duct that won't damage the cooler |
 | [Standard ATX PSU case](https://www.thingiverse.com/thing:7269520) | CatSiewDai | Full case for ATX power supplies |
 | [OC vRAM Fan Kit (remix)](https://www.thingiverse.com/thing:7271946) | marccyberwiz | Fan kit **dedicated to the VRAM** for overclocking |
+| [NexGen3D — DIY Steam Machine (Bazzite)](https://www.printables.com/model/1499974-nexgen3d-diy-steam-machine-powered-by-bazzite) | NexGen3D | Full **Steam Machine**-style case for the BC-250 |
+| [NexGen3D — Steam Machine PRO (liquid-cooled)](https://www.printables.com/model/1614131-nexgen3d-diy-steam-machine-pro-liquid-cooled-bc-25/files) | NexGen3D | **Liquid-cooled PRO** (AIO) version — maximum cooling |
+| [NexGen3D — AIO mount for BC-250](https://www.printables.com/model/1554003-nexgen3d-aio-mount-for-the-bc-250) | NexGen3D | Bracket to mount an **AIO** (liquid cooler) on the BC-250 |
 
 > Reference cooling guide: [Cooling Solutions — amd-bc250-docs](https://elektricm.github.io/amd-bc250-docs/hardware/cooling/).
 
