@@ -124,6 +124,22 @@ const snaps = [
       backdrop-filter:blur(6px);transition:.2s}
   .bi-skip:hover{color:#f6e2a0;border-color:rgba(246,226,160,.55)}
 
+  /* --- mobile / portrait tuning --- */
+  @media(max-width:640px){
+    /* show the WHOLE splash (fish + SkillFishOS plate) instead of a cropped center strip;
+       the #0b100b backdrop matches the splash so the letterbox is invisible */
+    .bi-ply{background-size:contain}
+    .bi-bar{top:74%;width:72vw;height:7px}
+    .bi-grub-inner{width:90vw;top:50%}
+    .bi-menu{font-size:1.05rem}
+    .bi-menu li{padding:8px 12px}
+    .bi-grub-head{font-size:.74rem;margin-bottom:10px}
+    .bi-snap{font-size:.74rem}
+    .bi-snap-hint{font-size:.74rem}
+    .bi-count{font-size:.8rem;margin-top:16px}
+    .bi-skip{right:12px;bottom:12px;padding:8px 14px;font-size:.82rem}
+  }
+
   @media(prefers-reduced-motion:reduce){.bi:not(.force){display:none}}
 </style>
 

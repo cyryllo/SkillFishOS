@@ -130,6 +130,26 @@ const cmpGPU = { max: 16500, bars: [
 </section>
 
 <section class="features" style="padding-top:0">
+  <div class="wrap" style="max-width:1000px">
+    <div class="sec-head"><div class="eyebrow">📸 Benchmark</div><h2>{t('bs.h', lang)}</h2><p set:html={t('bs.sub', lang)} /></div>
+    <div class="shotgrid">
+      <a class="shot shot-wide" href="/img/benchmarks/wukong-112fps.jpg" target="_blank" rel="noopener">
+        <img src="/img/benchmarks/wukong-112fps.jpg" alt="Black Myth: Wukong benchmark — 112 FPS average on AMD BC-250 with SkillFishOS" loading="lazy" width="1280" height="720" />
+        <span class="shot-cap" set:html={t('bs.wk.c', lang)} />
+      </a>
+      <a class="shot" href="/img/benchmarks/heaven-113fps.jpg" target="_blank" rel="noopener">
+        <img src="/img/benchmarks/heaven-113fps.jpg" alt="Unigine Heaven 4.0 — 113.7 FPS, score 2865 on AMD BC-250" loading="lazy" width="1280" height="720" />
+        <span class="shot-cap" set:html={t('bs.hv.c', lang)} />
+      </a>
+      <a class="shot" href="/img/benchmarks/heaven-scene.jpg" target="_blank" rel="noopener">
+        <img src="/img/benchmarks/heaven-scene.jpg" alt="Unigine Heaven scene rendered in real time on the AMD BC-250" loading="lazy" width="1280" height="720" />
+        <span class="shot-cap" set:html={t('bs.sc.c', lang)} />
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="features" style="padding-top:0">
   <div class="wrap" style="max-width:920px">
     <div class="sec-head"><div class="eyebrow">🎮 Gaming</div><h2>{t('gb.h', lang)}</h2><p set:html={t('gb.sub', lang)} /></div>
     <div class="chips">
@@ -179,3 +199,17 @@ const cmpGPU = { max: 16500, bars: [
     </div>
   </div>
 </section>
+
+<style>
+  .shotgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px}
+  .shot-wide{grid-column:1 / -1}
+  .shot{display:block;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    background:rgba(12,10,6,.4);text-decoration:none;transition:border-color .2s,transform .2s,box-shadow .2s;
+    box-shadow:0 6px 22px rgba(0,0,0,.32)}
+  .shot:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 12px 30px rgba(0,0,0,.45)}
+  .shot img{display:block;width:100%;height:auto}
+  .shot-cap{display:block;padding:12px 16px;font-size:.9rem;line-height:1.5;color:var(--muted);
+    border-top:1px solid var(--line)}
+  .shot-cap :global(strong){color:var(--gold-lt)}
+  @media(max-width:640px){.shotgrid{grid-template-columns:1fr;gap:14px}.shot-cap{font-size:.85rem}}
+</style>

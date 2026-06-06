@@ -81,7 +81,7 @@ export const strings: Record<string, Entry> = {
   'hw.c4': { it: "GDDR6 condivisa", en: "shared GDDR6" },
 
   'cta.h2': { it: 'Accendi. <span class="gold-text">Gioca.</span> Impara.', en: 'Power on. <span class="gold-text">Play.</span> Learn.' },
-  'cta.p': { it: "Un sistema operativo open-source che rende una scheda essenziale una vera console-PC. Questa release è dedicata alla AMD BC-250; una versione per PC x86-64 arriverà in seguito.", en: "An open-source operating system that turns a bare board into a real console-PC. This release targets the AMD BC-250; a generic x86-64 PC version will follow." },
+  'cta.p': { it: "Un sistema operativo open-source che rende una scheda essenziale una vera console-PC. Questa release è dedicata alla AMD BC-250; una versione per architettura x86_64 arriverà in seguito.", en: "An open-source operating system that turns a bare board into a real console-PC. This release targets the AMD BC-250; an x86_64 architecture version will follow." },
   'cta.btn': { it: "⬇ Scarica SkillFishOS", en: "⬇ Download SkillFishOS" },
 
   'foot.based': { it: "Open-source · Basato su Debian · KDE Plasma · © 2026 SkillFishOS", en: "Open-source · Based on Debian · KDE Plasma · © 2026 SkillFishOS" },
@@ -92,11 +92,11 @@ export const strings: Record<string, Entry> = {
   'dl.h2': { it: "Scarica SkillFish<span class=\"gold-text\">OS</span>", en: "Download SkillFish<span class=\"gold-text\">OS</span>" },
   'dl.sub': { it: "La ISO installabile, brandizzata e pronta all'uso per l'AMD BC-250.", en: "The installable, branded, ready-to-use ISO for the AMD BC-250." },
   'dl.badge': { it: "26.06 «Aetherium»", en: "26.06 “Aetherium”" },
-  'dl.notice': { it: "La release <strong>26.06 «Aetherium»</strong> di SkillFishOS, dedicata alla scheda <strong>AMD BC-250</strong>: completa e pronta all'uso. Una versione per PC <strong>x86-64</strong> generico arriverà in seguito. Progetto <strong>open-source</strong>.", en: "The <strong>26.06 “Aetherium”</strong> release of SkillFishOS, built for the <strong>AMD BC-250</strong> board: complete and ready to use. A generic <strong>x86-64</strong> PC version will follow later. <strong>Open-source</strong> project." },
+  'dl.notice': { it: "La release <strong>26.06 «Aetherium»</strong> di SkillFishOS, dedicata alla scheda <strong>AMD BC-250</strong>: completa e pronta all'uso. Una versione per <strong>architettura x86_64</strong> arriverà in seguito. Progetto <strong>open-source</strong>.", en: "The <strong>26.06 “Aetherium”</strong> release of SkillFishOS, built for the <strong>AMD BC-250</strong> board: complete and ready to use. An <strong>x86_64 architecture</strong> version will follow later. <strong>Open-source</strong> project." },
   'dl.btnsoon': { it: "🚀 ISO in arrivo", en: "🚀 ISO coming soon" },
   'dl.btn': { it: "⬇ Scarica la ISO", en: "⬇ Download the ISO" },
   'dl.size': { it: "amd64 · ~{size} GB · btrfs + KDE Plasma", en: "amd64 · ~{size} GB · btrfs + KDE Plasma" },
-  'dl.ver': { it: "Versione <strong>26.06 «Aetherium»</strong> · release per <strong>AMD BC-250</strong> · parte in inglese, lingua scegliibile in installazione", en: "Version <strong>26.06 “Aetherium”</strong> · <strong>AMD BC-250</strong> release · boots in English, language selectable at install" },
+  'dl.ver': { it: "Versione <strong>26.06 «Aetherium»</strong> · release per <strong>AMD BC-250</strong> · parte in inglese, lingua selezionabile in installazione", en: "Version <strong>26.06 “Aetherium”</strong> · <strong>AMD BC-250</strong> release · boots in English, language selectable at install" },
   'dl.bugs.h': { it: "Hai trovato un problema?", en: "Found a problem?" },
   'dl.bugs.d': { it: "SkillFishOS è in continuo miglioramento. Per segnalare bug o problemi apri una <em>issue</em> su GitHub. (Presto aggiungeremo anche un indirizzo email.)", en: "SkillFishOS is continuously improving. To report bugs or problems, open an <em>issue</em> on GitHub. (We'll add an email address soon.)" },
   'dl.bugs.btn': { it: "🐛 Segnala su GitHub", en: "🐛 Report on GitHub" },
@@ -184,6 +184,13 @@ export const strings: Record<string, Entry> = {
   'wk.l.cpu': { it: "CPU (overclock)", en: "CPU (overclock)" },
   'wk.l.vram': { it: "VRAM in uso", en: "VRAM in use" },
   'wk.l.fan': { it: "Ventola", en: "Fan" },
+
+  // --- Benchmark screenshots (captured on our own BC-250) ---
+  'bs.h': { it: "Screenshot reali — catturati sul nostro ferro", en: "Real screenshots — captured on our own hardware" },
+  'bs.sub': { it: "Niente render né mockup: catture dello schermo durante i benchmark, sulla <strong>nostra</strong> BC-250 con SkillFishOS. Tocca un'immagine per ingrandirla.", en: "No renders, no mockups: actual screen captures taken during the benchmarks, on <strong>our own</strong> BC-250 running SkillFishOS. Tap an image to enlarge." },
+  'bs.wk.c': { it: "Black Myth: Wukong — <strong>112 FPS</strong> di media a 1080p (max 128, 1% basso 101). APU AMD BC-250, GPU RADV gfx1013.", en: "Black Myth: Wukong — <strong>112 FPS</strong> average at 1080p (max 128, 1% low 101). AMD BC-250 APU, RADV gfx1013 GPU." },
+  'bs.hv.c': { it: "Unigine Heaven 4.0 — <strong>113.7 FPS</strong>, punteggio <strong>2865</strong> (1080p Ultra, 8× AA, tassellazione Extreme). Kernel 7.0.10-skillfishos.", en: "Unigine Heaven 4.0 — <strong>113.7 FPS</strong>, score <strong>2865</strong> (1080p Ultra, 8× AA, Extreme tessellation). Kernel 7.0.10-skillfishos." },
+  'bs.sc.c': { it: "Unigine Heaven — la scena renderizzata in tempo reale sulla BC-250 durante il test.", en: "Unigine Heaven — the scene rendered in real time on the BC-250 during the run." },
 
   // --- Gaming benchmarks (real results) ---
   'gb.h': { it: "Benchmark di gioco — risultati reali", en: "Game benchmarks — real results" },
