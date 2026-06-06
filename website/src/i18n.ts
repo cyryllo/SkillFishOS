@@ -97,6 +97,7 @@ export const strings: Record<string, Entry> = {
   'dl.btnsoon': { it: "🚀 ISO in arrivo", en: "🚀 ISO coming soon" },
   'dl.btn': { it: "⬇ Scarica la ISO (Preview)", en: "⬇ Download the ISO (Preview)" },
   'dl.size': { it: "amd64 · ~{size} GB · btrfs + KDE Plasma · preview", en: "amd64 · ~{size} GB · btrfs + KDE Plasma · preview" },
+  'dl.ver': { it: "Versione <strong>26.06 «Aetherium»</strong> · release per <strong>AMD BC-250</strong> · parte in inglese, lingua scegliibile in installazione", en: "Version <strong>26.06 “Aetherium”</strong> · <strong>AMD BC-250</strong> release · boots in English, language selectable at install" },
   'dl.bugs.h': { it: "Hai trovato un problema?", en: "Found a problem?" },
   'dl.bugs.d': { it: "La preview è in continuo miglioramento. Per segnalare bug o problemi apri una <em>issue</em> su GitHub. (Presto aggiungeremo anche un indirizzo email.)", en: "The preview is continuously improving. To report bugs or problems, open an <em>issue</em> on GitHub. (We'll add an email address soon.)" },
   'dl.bugs.btn': { it: "🐛 Segnala su GitHub", en: "🐛 Report on GitHub" },
@@ -130,6 +131,10 @@ export const strings: Record<string, Entry> = {
   'gal.ai.d': { it: "Accendi e spegni lo stack AI locale (Vulkan) con un clic.", en: "Turn the local AI stack (Vulkan) on and off with one click." },
   'gal.tuner.t': { it: "Tuner", en: "Tuner" },
   'gal.tuner.d': { it: "Controllo di CPU, GPU, ventola e Compute Unit, con test e rollback.", en: "Control CPU, GPU, fan and Compute Units, with test and rollback." },
+  'gal.b1.t': { it: "Stesso hardware, +34% — vs Bazzite", en: "Same hardware, +34% — vs Bazzite" },
+  'gal.b1.d': { it: "Superposition 1080p Extreme: la stessa BC-250 segna 4102 a clock di fabbrica su un'altra distro; SkillFishOS arriva a 5513. Leaderboard ufficiale Unigine (username oscurato).", en: "Superposition 1080p Extreme: the same BC-250 scores 4102 at stock clocks on another distro; SkillFishOS reaches 5513. Official Unigine leaderboard (username blurred)." },
+  'gal.b2.t': { it: "Pari a una Radeon RX 6600", en: "On par with a Radeon RX 6600" },
+  'gal.b2.d': { it: "Superposition 1080p High: la BC-250 con SkillFishOS (12 938) eguaglia una RX 6600/6600 XT (12 454) da 200 €+. Leaderboard ufficiale Unigine (username oscurato).", en: "Superposition 1080p High: the BC-250 with SkillFishOS (12,938) matches a €200+ RX 6600/6600 XT (12,454). Official Unigine leaderboard (username blurred)." },
 
   // --- Hardware page ---
   'hwp.title': { it: "Hardware AMD BC-250 — SkillFishOS", en: "AMD BC-250 hardware — SkillFishOS" },
