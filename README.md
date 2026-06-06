@@ -6,6 +6,8 @@
 
 [**skillfishos.com**](https://skillfishos.com) · Based on Debian · KDE Plasma · GPL‑3.0
 
+**Release 26.06 "Aetherium"** — BC‑250 edition · boots in English, language chosen at install · a generic x86‑64 build will follow
+
 ![SkillFishOS desktop](screenshots/desktop.jpg)
 
 </div>
@@ -27,7 +29,7 @@ SkillFishOS takes the cheap, abundant **AMD BC‑250** compute board — a semi�
 | | |
 |---|---|
 | Board | AMD BC‑250 (*Cyan Skillfish*, `GFX1013`) |
-| CPU | AMD Zen 2 (*Oberon*), 6 cores active — OC to **3.7 GHz** |
+| CPU | AMD Zen 2 (*Oberon*), 6 cores active — OC to **3.9 GHz** (Turbo), **4.0 GHz** validated |
 | GPU | RDNA 2, 24 CUs default → **40 CUs unlockable** |
 | Memory | 16 GB GDDR6 (shared / UMA) |
 | Base distro | Debian **sid** |
@@ -39,8 +41,8 @@ The BC‑250 is fantastic value but a difficult target: non‑standard clock con
 ## Highlights
 
 - 🐧 **Custom `linux-tkg` kernel** `7.0.10-skillfishos` — BORE scheduler, GCC `-O3`, `-march=znver2`, 1000 Hz, NTsync + fsync, with BC‑250 patches: GPU clock range unlocked **350–2230 MHz**, **40‑CU unlock** (opt‑in), and the cosmetic *"RDSEED is not reliable…"* boot spam silenced. Prebuilt `.deb` in [**Releases**](../../releases) — see [docs/BUILD.md](docs/BUILD.md).
-- ⚡ **Real clock control** — the `cyan-skillfish-governor` drives the GPU to its safe‑point and idles it at 350 MHz; a persistent SMU **CPU overclock** holds **3.7 GHz** under a thermal guard. **~11,330 GFLOPS** fp32 with the 40‑CU unlock (≈1.8× a stock build).
-- 🎛️ **SkillFishOS Tuner** — a native GTK4 / libadwaita app to overclock & undervolt CPU and GPU, control the fan, resize the UMA VRAM split, and toggle the 40‑CU unlock — each with built‑in *benchmark‑and‑rollback* testing. No terminal needed.
+- ⚡ **Real clock control** — the `cyan-skillfish-governor` drives the GPU to its safe‑point and idles it at 350 MHz; an SMU **CPU overclock & undervolt** reaches **4.0 GHz** (validated) under an 85 °C thermal guard. **~11,330 GFLOPS** fp32 with the 40‑CU unlock (≈1.8× a stock build). The ISO ships the safe **Stock** profile; users opt into more from the Tuner.
+- 🎛️ **SkillFishOS Tuner** — a native **PyQt6** app to overclock & undervolt CPU and GPU, control the fan, resize the UMA VRAM split, and toggle the 40‑CU unlock, with **four ready presets** (Stock · Performance · Turbo · Crazy) and built‑in *benchmark‑and‑rollback* testing. Bilingual **IT/EN**. No terminal needed.
 - 📊 **Live system HUD** — a translucent overlay with per‑core CPU load, clocks, temps, power draw, VRAM/RAM, fan RPM and Bluetooth controller battery, all from real sensors.
 - 📸 **Btrfs + Snapper + grub‑btrfs** — automatic pre/post‑apt snapshots and bootable rollbacks straight from the GRUB menu, with `@home` kept separate so a rollback never touches user data.
 - 🎮 **Gaming, ready** — Steam, Heroic, Proton, gamescope (+ FSR 1), GameMode, MangoHud, plus **EmuDeck** and the **ES‑DE** frontend to install and configure emulators in a few clicks. *(SkillFishOS ships the tools, not the games — you bring your own games and ROMs.)*
@@ -72,7 +74,7 @@ The BC‑250 is fantastic value but a difficult target: non‑standard clock con
 | tkg + governor, 24 CU | 6868 | +12 % |
 | **tkg + governor + 40‑CU unlock** | **11329** | **≈1.84× baseline** |
 
-CPU OC validated stable at **3.7 GHz** under sustained load; the APU shares its power budget gracefully, easing CPU clocks under combined CPU+GPU load to stay within thermal limits. Full methodology and benchmarks: [docs/OPTIMIZATIONS.md](docs/OPTIMIZATIONS.md).
+CPU OC validated up to **4.0 GHz** (~1224 mV, 120 s stress, 83 °C peak) on the reference board; under combined CPU+GPU load the APU shares its power budget gracefully, easing CPU clocks to stay within the 85 °C limit. Full methodology and benchmarks: [docs/OPTIMIZATIONS.md](docs/OPTIMIZATIONS.md).
 
 ---
 
@@ -90,11 +92,13 @@ sudo apt-mark hold linux-image-7.0.10-skillfishos linux-headers-7.0.10-skillfish
 
 To build it yourself, see [docs/BUILD.md](docs/BUILD.md) and [`kernel-build/`](kernel-build/).
 
-### Installable ISO
+### Installable ISO — **26.06 "Aetherium"**
 
-The live‑build recipe in [`iso/`](iso/) reproduces the full system (KDE Plasma steampunk desktop, gamescope console session, Btrfs + Snapper + grub‑btrfs, Calamares installer). See [docs/BUILD.md](docs/BUILD.md).
+The installable live ISO (`SkillFishOS-26.06-Aetherium-BC250-amd64.iso`, ~5.6 GB) is captured from the real system with [penguins‑eggs](https://github.com/pieroproietti/penguins-eggs): KDE Plasma steampunk desktop, Btrfs + Snapper + grub‑btrfs, the **Calamares** installer. It **boots in English** and lets you pick your **language and keyboard** at install; the bilingual apps and HUD follow the chosen locale.
 
-> The bootable ISO and an update repository are **coming soon** — track progress on [skillfishos.com](https://skillfishos.com).
+The publishing flow (ISO hosting on SourceForge, the **`aetherium`** APT update repository, and the DistroWatch submission) is scaffolded under [`distribution/`](distribution/).
+
+> Download link and the update repository go live with the SourceForge upload — track progress on [skillfishos.com](https://skillfishos.com).
 
 ---
 
@@ -112,6 +116,7 @@ docs/              full documentation
   BUILD.md           building the kernel and the ISO
 kernel-build/      linux-tkg recipe (customization.cfg + BC-250 userpatches)
 theme/             the "SkillFish Steampunk" theme (icons, cursors, Kvantum, wallpapers, palettes)
+distribution/      release & publishing: APT repo (suite aetherium), SourceForge, DistroWatch
 iso/               live-build configuration for the installable ISO
 scripts/           helper scripts (e.g. publish-kernel.sh)
 screenshots/       images used in this README
@@ -150,7 +155,7 @@ Built on the shoulders of:
 - [Magnap/cyan‑skillfish‑governor](https://github.com/Magnap/cyan-skillfish-governor) — GPU SMU clock control
 - [bc250‑collective/bc250_smu_oc](https://github.com/bc250-collective/bc250_smu_oc) · [fanoush/bc250_memcfg](https://github.com/fanoush/bc250_memcfg) · [duggasco/bc250‑40cu‑unlock](https://github.com/duggasco/bc250-40cu-unlock)
 - [EmuDeck](https://www.emudeck.com/) · [ES‑DE](https://es-de.org/) · [Ollama](https://ollama.com/)
-- BC‑250 community docs: [bc250.info](https://bc250.info) · [elektricm.github.io/amd-bc-250-docs](https://elektricm.github.io/amd-bc-250-docs)
+- BC‑250 community docs: [bc250.info](https://bc250.info) · [elektricm.github.io/amd-bc250-docs](https://elektricm.github.io/amd-bc250-docs) · [mothenjoyer69/bc250-documentation](https://github.com/mothenjoyer69/bc250-documentation)
 
 ## License
 

@@ -11,13 +11,14 @@ On a normal APU you tune clocks through the `amdgpu` sysfs. On the BC-250 **that
 
 ## The three profiles
 
-The [Tuner](/docs/app-native) exposes three presets. The ISO boots in **Stock**; the other two are one click away after the test.
+The [Tuner](/docs/app-native) exposes **four presets**. The ISO boots in **Stock**; the others are one click away after the test.
 
 | Profile | CPU | GPU | Notes |
 |---|---|---|---|
 | **Stock** *(ISO default)* | 3500 MHz | 1500 MHz | Maximum compatibility on any BC-250 |
-| **Performance** | 3700 MHz | 2000 MHz | Good performance/heat balance |
-| **Turbo** | 3900 MHz | 2230 MHz | Peak performance, validated under the 85 °C cap |
+| **Performance** | 3700 MHz · ~1106 mV | 2000 MHz | Balanced and undervolted |
+| **Turbo** | 3900 MHz · ~1199 mV | 2230 MHz | High boost, validated under the 85 °C cap |
+| **Crazy** | 4.0 GHz · ~1224 mV | 2230 MHz | Validated maximum (~83 °C under stress) |
 
 All profiles honour the same **85 °C thermal cap** and keep the **fan on auto**.
 
@@ -33,9 +34,9 @@ The CPU (6× Zen 2 "Oberon" cores) is handled by a one-shot service **`bc250-smu
 
 What we measured pushing **our** card:
 
-- **3700 MHz** stable at a real voltage (Vid) of ~**1.23 V**, under 85 °C;
-- **3900 MHz** (Turbo) validated with a curve undervolt (`scale −24`);
-- **4.0 GHz** reached and validated at ~**1206 mV** for 120 s of sustained stress, peaking at **83 °C** — the usable ceiling before instability on this sample;
+- **3700 MHz** (*Performance* preset) undervolted to ~**1106 mV** (`scale −16`);
+- **3900 MHz** (*Turbo* preset) at ~**1199 mV** (`scale −24`);
+- **4.0 GHz** (*Crazy* preset) validated at ~**1224 mV** (`scale −36`) for 120 s of sustained stress, peaking at **83 °C** — the usable maximum on this sample;
 - **Hard Vid ceiling: 1.325 V** (never exceeded).
 
 **Undervolting** isn't about "pushing" — it's about doing the same work with **less heat and less power**: at a given frequency, lowering the voltage until it stays stable drops the temperature and leaves thermal headroom for the rest of the APU.
@@ -67,7 +68,7 @@ Some titles — like *Black Myth: Wukong* — are **CPU/draw-call bound**: FPS d
 
 ## All of this, without a terminal
 
-Clocks, undervolt, fan and Compute Units are tuned from the **Tuner** GUI, with the three ready presets and **automatic test + rollback** if your card can't hold a value — see [Native apps](/docs/app-native). It's the recommended way: start at Stock, move to Performance, try Turbo, and the Tuner validates everything on **your** BC-250.
+Clocks, undervolt, fan and Compute Units are tuned from the **Tuner** GUI, with the four ready presets and **automatic test + rollback** if your card can't hold a value — see [Native apps](/docs/app-native). It's the recommended way: start at Stock, move to Performance, try Turbo or Crazy, and the Tuner validates everything on **your** BC-250.
 
 ## Sources
 

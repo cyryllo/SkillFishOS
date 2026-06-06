@@ -13,7 +13,7 @@ export const SITE = {
   // Masked download URL: skillfishos.com/dl/... → 302 to Dropbox (see public/.htaccess).
   // Currently a fully-functional preview ISO hosted on Dropbox.
   isoUrl: '/dl/skillfishos-preview.iso',
-  isoSizeGb: '5.78',
+  isoSizeGb: '5.6',
   repoUrl: 'http://192.168.5.22',
 };
 
@@ -71,7 +71,7 @@ export const strings: Record<string, Entry> = {
   's4.t': { it: "AI in casa, con un clic", en: "On-device AI, one click away" },
   's4.d': { it: "Un pannello dedicato accende o spegne il motore AI locale (Qwen su GPU Vulkan). Chat web, terminale di coding e gestione: l'intelligenza artificiale gira in casa, e libera la GPU quando vuoi giocare.", en: "A dedicated panel turns the local AI engine (Qwen on the Vulkan GPU) on or off. Web chat, a coding terminal and management: AI runs at home, and frees the GPU when it's time to play." },
   's5.t': { it: "Tuning a portata di clic", en: "One-click tuning" },
-  's5.d': { it: "Il Tuner regola frequenze, undervolt, ventola e Compute Unit con preset pronti (Stock, Performance, Crazy) e un thermal-guard che protegge l'hardware. Tutta la potenza, in sicurezza, senza riga di comando.", en: "The Tuner adjusts clocks, undervolt, fan and Compute Units with ready presets (Stock, Performance, Crazy) and a thermal-guard that protects the hardware. All the power, safely, with no command line." },
+  's5.d': { it: "Il Tuner regola frequenze, undervolt, ventola e Compute Unit con quattro preset pronti (Stock, Performance, Turbo, Crazy) e un thermal-guard che protegge l'hardware. Tutta la potenza, in sicurezza, senza riga di comando.", en: "The Tuner adjusts clocks, undervolt, fan and Compute Units with four ready presets (Stock, Performance, Turbo, Crazy) and a thermal-guard that protects the hardware. All the power, safely, with no command line." },
 
   'hw.eye': { it: "Hardware", en: "Hardware" },
   'hw.h2': { it: "Nato per l'AMD BC-250.", en: "Born for the AMD BC-250." },

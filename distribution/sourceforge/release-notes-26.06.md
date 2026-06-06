@@ -6,8 +6,8 @@ First public release, built and dogfooded directly on real AMD BC-250 hardware.
 - **Custom kernel** linux-tkg **7.0.10-skillfishos** with the **40 CU unlock** (≈ +85 % FP32,
   measured 11385 GFLOPS vkpeak vs 6141 baseline), RDSEED log spam removed, BC-250 quirks patched.
 - **SMU GPU governor** + **CPU overclock/undervolt** with an **85 °C** thermal-guard. Ships in
-  the safe **Stock** profile; **Performance** and **Turbo** (3900 MHz CPU / 2230 MHz GPU) are one
-  click away in the **Tuner**, validated per-card with test + rollback.
+  the safe **Stock** profile; **Performance**, **Turbo** and **Crazy** (up to 4.0 GHz CPU /
+  2230 MHz GPU) are one click away in the **Tuner**, validated per-card with test + rollback.
 - **KDE Plasma 6** with a full **steampunk** theme (boot → SDDM → desktop), live system **HUD**
   (bilingual IT/EN), Btrfs snapshots with **one-click rollback** from GRUB.
 - **Gaming & emulation**: Steam, EmuDeck, ES-DE, Heroic, Proton-GE, gamescope/gamemode/MangoHud.

@@ -11,13 +11,14 @@ Su una APU normale le frequenze si regolano via sysfs `amdgpu`. Sulla BC-250 **n
 
 ## I tre profili
 
-Il [Tuner](/docs/app-native) espone tre preset. La ISO si avvia con **Stock**; gli altri due si attivano con un clic dopo il test.
+Il [Tuner](/docs/app-native) espone **quattro preset**. La ISO si avvia con **Stock**; gli altri si attivano con un clic dopo il test.
 
 | Profilo | CPU | GPU | Note |
 |---|---|---|---|
 | **Stock** *(default ISO)* | 3500 MHz | 1500 MHz | Massima compatibilità su qualunque BC-250 |
-| **Performance** | 3700 MHz | 2000 MHz | Buon compromesso prestazioni/calore |
-| **Turbo** | 3900 MHz | 2230 MHz | Massime prestazioni, validato sotto cap 85 °C |
+| **Performance** | 3700 MHz · ~1106 mV | 2000 MHz | Bilanciato e undervoltato |
+| **Turbo** | 3900 MHz · ~1199 mV | 2230 MHz | Spinta alta, validato sotto cap 85 °C |
+| **Crazy** | 4.0 GHz · ~1224 mV | 2230 MHz | Massimo validato (~83 °C in stress) |
 
 Tutti i profili rispettano lo stesso **cap termico a 85 °C** e tengono la **ventola in automatico**.
 
@@ -33,9 +34,9 @@ La CPU (6 core Zen 2 "Oberon") è gestita da un servizio one-shot **`bc250-smu-o
 
 Cosa abbiamo misurato spingendo la **nostra** scheda:
 
-- **3700 MHz** stabili con tensione (Vid) reale ~**1.23 V**, sotto gli 85 °C;
-- **3900 MHz** (Turbo) validati con un undervolt di curva (`scale −24`);
-- **4.0 GHz** raggiunti e validati a ~**1206 mV** per 120 s di stress continuo, picco **83 °C** — il limite utile prima dell'instabilità su questo esemplare;
+- **3700 MHz** (preset *Performance*) con undervolt a ~**1106 mV** (`scale −16`);
+- **3900 MHz** (preset *Turbo*) a ~**1199 mV** (`scale −24`);
+- **4.0 GHz** (preset *Crazy*) validati a ~**1224 mV** (`scale −36`) per 120 s di stress continuo, picco **83 °C** — il massimo utile su questo esemplare;
 - **Vid massimo invalicabile: 1.325 V** (mai superato).
 
 L'**undervolt** non serve a "spingere" ma a fare lo stesso lavoro con **meno calore e meno consumo**: a parità di frequenza, abbassare la tensione finché resta stabile abbassa la temperatura e lascia margine termico al resto dell'APU.
@@ -67,7 +68,7 @@ Alcuni titoli — come *Black Myth: Wukong* — sono **CPU/draw-call bound**: gl
 
 ## Tutto questo, senza terminale
 
-Frequenze, undervolt, ventola e Compute Unit si regolano dalla GUI **Tuner**, con i tre preset pronti, **test automatico e rollback** se la tua scheda non regge un valore — vedi [App native](/docs/app-native). È il modo consigliato: parti da Stock, sali a Performance, prova Turbo, e il Tuner valida tutto sulla **tua** BC-250.
+Frequenze, undervolt, ventola e Compute Unit si regolano dalla GUI **Tuner**, con i quattro preset pronti, **test automatico e rollback** se la tua scheda non regge un valore — vedi [App native](/docs/app-native). È il modo consigliato: parti da Stock, sali a Performance, prova Turbo o Crazy, e il Tuner valida tutto sulla **tua** BC-250.
 
 ## Fonti
 
