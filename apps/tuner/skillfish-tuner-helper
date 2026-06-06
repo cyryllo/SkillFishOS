@@ -75,8 +75,11 @@ def get():
             fan={"mode":("manual" if en=="1" else "auto"),"pct":pwm*100//255,"rpm":rpm}
         except Exception: pass
     out["fan"]=fan
-    cu={"unlocked":False,"active":active_cu()}
-    try: cu["unlocked"]=("amdgpu.bc250_cc_write_mode=3" in open("/etc/default/grub").read())
+    cu={"active":active_cu(),"max":40,"floor":7,"rows":{"0.0":7,"0.1":7,"1.0":7,"1.1":7},"live":False}
+    try:
+        j=json.loads(sh("/usr/local/bin/skillfish-cu get").stdout)
+        cu["active"]=j.get("active_cu",cu["active"]); cu["rows"]=j.get("rows",cu["rows"])
+        cu["floor"]=j.get("floor",7); cu["live"]=True
     except Exception: pass
     out["cu"]=cu
     return out
@@ -114,6 +117,17 @@ def fan_set(mode,pct):
 def set_vram(mb):
     if not os.path.exists(MEMCFG): return False
     return sh("%s UMA_SIZE %d"%(MEMCFG,max(256,int(mb)))).returncode==0
+
+def cu_apply(rows):
+    """Apply live per-row WGP masks (24..40 CU) via skillfish-cu. No reboot."""
+    try:
+        r=[int(x)&0x1f for x in rows][:4]
+        while len(r)<4: r.append(0x07)
+        rc=sh("/usr/local/bin/skillfish-cu set-rows %s"%(" ".join(str(x) for x in r))).returncode
+        j=json.loads(sh("/usr/local/bin/skillfish-cu get").stdout)
+        return {"ok":rc==0,"active":j.get("active_cu"),"rows":j.get("rows")}
+    except Exception as e:
+        return {"ok":False,"err":str(e)}
 
 def set_cu(unlock):
     """Abilita/disabilita lo sblocco 40 CU via parametro di boot GRUB. Richiede riavvio."""
@@ -225,6 +239,7 @@ def handle(req):
         ok,rpm=fan_set(req["mode"],req.get("pct",50)); return {"ok":ok,"rpm":rpm}
     if c=="set-vram": return {"ok":set_vram(req["mb"]),"reboot":True}
     if c=="set-cu": return {"ok":set_cu(req["unlock"]),"reboot":True}
+    if c=="cu-apply": return cu_apply(req.get("rows",[]))
     if c=="thermal-guard": return {"ok":thermal_guard(req["limit"])}
     if c=="test-cpu": return test_cpu(req["mhz"],req["scale"],req["temp"])
     if c=="test-gpu": return test_gpu(req["minmhz"],req["minmv"],req["maxmhz"],req["maxmv"])
