@@ -96,9 +96,9 @@ To build it yourself, see [docs/BUILD.md](docs/BUILD.md) and [`kernel-build/`](k
 
 The installable live ISO (`SkillFishOS-26.06-Aetherium-BC250-amd64.iso`, ~5.6 GB) is captured from the real system with [penguins‑eggs](https://github.com/pieroproietti/penguins-eggs): KDE Plasma steampunk desktop, Btrfs + Snapper + grub‑btrfs, the **Calamares** installer. It **boots in English** and lets you pick your **language and keyboard** at install; the bilingual apps and HUD follow the chosen locale.
 
-The publishing flow (ISO hosting on SourceForge, the **`aetherium`** APT update repository, and the DistroWatch submission) is scaffolded under [`distribution/`](distribution/).
+The project is on **SourceForge** too: [sourceforge.net/projects/skillfishos](https://sourceforge.net/projects/skillfishos/) (code mirror, blog, forum, wiki). The publishing flow (ISO hosting on SourceForge Files, the **`aetherium`** APT update repository, and the DistroWatch submission) is documented under [`distribution/`](distribution/).
 
-> Download link and the update repository go live with the SourceForge upload — track progress on [skillfishos.com](https://skillfishos.com).
+> The signed **APT repo is live** at <https://mtsistemi.github.io/SkillFishOS/> (`apt install skillfishos-kernel`). The ISO download link goes live with the SourceForge Files upload — track progress on [skillfishos.com](https://skillfishos.com).
 
 ---
 

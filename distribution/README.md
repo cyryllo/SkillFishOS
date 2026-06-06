@@ -5,8 +5,8 @@ Everything needed to publish SkillFishOS **26.06 "Aetherium"** (BC-250 release).
 | Folder | What | Status |
 |---|---|---|
 | [`apt/`](apt/) | APT repository (suite `aetherium`, GPG-signed, kernel via wrapper) | ✅ **LIVE** at <https://mtsistemi.github.io/SkillFishOS/> (GitHub Pages, `gh-pages` branch) |
-| [`sourceforge/`](sourceforge/) | Project metadata, release notes, ISO upload checklist (+ SHA-256) | ⏳ needs a SourceForge account |
-| [`distrowatch/`](distrowatch/) | New-distribution submission draft | ⏳ submit after the ISO is public |
+| [`sourceforge/`](sourceforge/) | Project metadata, release notes, ISO upload checklist (+ SHA-256) | ✅ **project live & populated** at [sourceforge.net/projects/skillfishos](https://sourceforge.net/projects/skillfishos/) (description, blog, forum, wiki, GPLv3/Linux categories, GitHub code import); ⏳ ISO upload to Files + "default download" pending |
+| [`distrowatch/`](distrowatch/) | New-distribution submission draft | ⏳ submit after the ISO is on SourceForge Files (gives the rule-compliant download URL) |
 
 ## Order of operations
 
