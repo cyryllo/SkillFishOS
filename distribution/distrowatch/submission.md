@@ -19,9 +19,10 @@ of its stated rules affect us directly:
 2. **Waiting list + maturity.** New distros go on a waiting list — *"be prepared for a
    year-long wait"* — and are expected to have *"proper infrastructure, including forums,
    mailing lists, documentation, bug tracking databases, etc."*
-   → We have **docs** + **GitHub issues** (bug tracking). We do **not** have a forum or
-   mailing list. Optional but it strengthens the submission: a Discussions/forum and a
-   contact/mailing channel.
+   → We now have: **documentation** (skillfishos.com/docs), **bug tracking**
+   (GitHub issues), and a **forum** (GitHub Discussions:
+   <https://github.com/MTSistemi/SkillFishOS/discussions>). A mailing list is still missing
+   (optional) — a contact form exists at skillfishos.com/contact.
 
 (There's also a paid fast-track: buy ≥100,000 ad impressions / $250 for immediate evaluation —
 *no guarantee* of inclusion. Only if you want to skip the queue.)
@@ -33,7 +34,7 @@ of its stated rules affect us directly:
 | **Project / distribution name** | SkillFishOS |
 | **Website URL** | https://skillfishos.com |
 | **Description (with base)** | Steampunk gaming Linux for the AMD BC-250, based on **Debian sid** + KDE Plasma 6 (see 100-word version below) |
-| **ISO download link** | ⚠️ **SourceForge URL — upload first** (NOT the Dropbox-backed `skillfishos.com/dl/…`) |
+| **ISO download link** | `https://sourceforge.net/projects/skillfishos/files/26.06-Aetherium/SkillFishOS-26.06-Aetherium-BC250-amd64.iso/download` — **upload first** (see `../sourceforge/UPLOAD.md`); do **not** use the Dropbox-backed `skillfishos.com/dl/…` |
 
 ## Useful extra context (DistroWatch fills the DB entry themselves)
 
