@@ -2,18 +2,18 @@
 
 Everything needed to publish SkillFishOS **26.06 "Aetherium"** (BC-250 release).
 
-| Folder | What | Who acts |
+| Folder | What | Status |
 |---|---|---|
-| [`apt/`](apt/) | APT repository (reprepro, suite `aetherium`, GPG-signed) + user install docs | maintainer builds; host on skillfishos.com / SourceForge |
-| [`sourceforge/`](sourceforge/) | Project metadata, release notes, ISO upload checklist (+ SHA-256) | needs a SourceForge account |
-| [`distrowatch/`](distrowatch/) | New-distribution submission draft | submit after the ISO is public |
+| [`apt/`](apt/) | APT repository (suite `aetherium`, GPG-signed, kernel via wrapper) | ✅ **LIVE** at <https://mtsistemi.github.io/SkillFishOS/> (GitHub Pages, `gh-pages` branch) |
+| [`sourceforge/`](sourceforge/) | Project metadata, release notes, ISO upload checklist (+ SHA-256) | ⏳ needs a SourceForge account |
+| [`distrowatch/`](distrowatch/) | New-distribution submission draft | ⏳ submit after the ISO is public |
 
 ## Order of operations
 
-1. **Host the ISO** → `sourceforge/UPLOAD.md` (5.6 GB, exceeds GitHub's 2 GB → SourceForge).
-2. **Point the site** at the new download URL (`website/src/i18n.ts` → `SITE.isoUrl`, `isoSizeGb`).
-3. **Stand up the APT repo** → `apt/README.md` (`build-repo.sh keygen` → `kernel` → publish `public/`).
-4. **Submit to DistroWatch** → `distrowatch/submission.md` (only after step 1 — they need a working download).
+1. ~~**Stand up the APT repo**~~ → **done**, live on GitHub Pages (`apt/README.md`).
+2. **Host the ISO** → `sourceforge/UPLOAD.md` (5.6 GB, exceeds GitHub's 2 GB → SourceForge).
+3. **Point the site** at the new download URL (`website/src/i18n.ts` → `SITE.isoUrl`, `isoSizeGb`).
+4. **Submit to DistroWatch** → `distrowatch/submission.md` (only after step 2 — they need a working download).
 
 ## Release facts (single source of truth)
 

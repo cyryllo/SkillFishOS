@@ -1,11 +1,11 @@
 ---
 title: Aggiornamenti e repository
-description: Come SkillFishOS si aggiorna in sicurezza, senza farsi rompere da Debian sid.
+description: Come SkillFishOs si aggiorna in sicurezza, senza farsi rompere da Debian sid.
 group: Uso
 order: 4
 ---
 
-SkillFishOS è basato su **Debian sid** (*unstable*), il ramo di sviluppo di Debian: sempre aggiornato, ma per natura soggetto a regressioni occasionali. Su hardware "esotico" come la BC-250, un aggiornamento sbagliato (di Mesa, del firmware o del kernel) può rompere il sistema. SkillFishOS affronta questo problema con due strumenti.
+SkillFishOs è basato su **Debian sid** (*unstable*), il ramo di sviluppo di Debian: sempre aggiornato, ma per natura soggetto a regressioni occasionali. Su hardware "esotico" come la BC-250, un aggiornamento sbagliato (di Mesa, del firmware o del kernel) può rompere il sistema. SkillFishOs affronta questo problema con due strumenti.
 
 ## 1. Componenti nostri, da un repository dedicato
 
@@ -21,7 +21,7 @@ Pubblicare un componente da un nostro repo significa poterlo **testare prima** s
 
 ## 2. "Pinning" dei pacchetti fragili
 
-Per i pacchetti che vengono da Debian ma che su questo hardware sono delicati, SkillFishOS usa l'**APT pinning**: li tiene a una versione **verificata** finché non ne testiamo una più recente. I principali candidati al pinning sono:
+Per i pacchetti che vengono da Debian ma che su questo hardware sono delicati, SkillFishOs usa l'**APT pinning**: li tiene a una versione **verificata** finché non ne testiamo una più recente. I principali candidati al pinning sono:
 
 - **Mesa / driver Vulkan (RADV)** — un aggiornamento può regredire la `gfx1013`;
 - **firmware AMD / `linux-firmware`** — microcodice della GPU;
@@ -44,7 +44,7 @@ sudo apt update && sudo apt full-upgrade
 
 ## Architettura del server di aggiornamenti
 
-Lato infrastruttura, il repository è un classico repo APT firmato (gestito con **[reprepro](https://salsa.debian.org/debian/reprepro)**) servito via HTTP, con il client che verifica la firma GPG tramite un *keyring* dedicato. Il sistema arriva già configurato per puntare al repository ufficiale di SkillFishOS.
+Lato infrastruttura, il repository è un classico repo APT firmato (gestito con **[reprepro](https://salsa.debian.org/debian/reprepro)**) servito via HTTP, con il client che verifica la firma GPG tramite un *keyring* dedicato. Il sistema arriva già configurato per puntare al repository ufficiale di SkillFishOs.
 
 ## Fonti
 
