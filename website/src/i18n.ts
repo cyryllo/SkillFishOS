@@ -76,7 +76,7 @@ export const strings: Record<string, Entry> = {
   'hw.eye': { it: "Hardware", en: "Hardware" },
   'hw.h2': { it: "Nato per l'AMD BC-250.", en: "Born for the AMD BC-250." },
   'hw.sub': { it: "Tutta la potenza della famiglia AMD Zen 2 + RDNA 2, liberata su Linux.", en: "All the power of the AMD Zen 2 + RDNA 2 family, unleashed on Linux." },
-  'hw.c1': { it: 'CPU "Oberon" · fino a 3.7 GHz', en: '"Oberon" CPU · up to 3.7 GHz' },
+  'hw.c1': { it: 'CPU "Oberon" · fino a 4.0 GHz', en: '"Oberon" CPU · up to 4.0 GHz' },
   'hw.c2': { it: 'GPU "Cyan Skillfish" · 40 CU', en: '"Cyan Skillfish" GPU · 40 CU' },
   'hw.c3': { it: "FP32 · accelerazione Vulkan", en: "FP32 · Vulkan acceleration" },
   'hw.c4': { it: "GDDR6 condivisa", en: "shared GDDR6" },
@@ -138,7 +138,7 @@ export const strings: Record<string, Entry> = {
   'hwp.sub': { it: "Un'APU semi-custom AMD Zen 2 + RDNA 2 con 16 GB di GDDR6, liberata su Linux.", en: "A semi-custom AMD Zen 2 + RDNA 2 APU with 16 GB of GDDR6, unleashed on Linux." },
   'hwp.specs.h': { it: "Specifiche", en: "Specifications" },
   'hwp.cpu.t': { it: "CPU — 6× Zen 2", en: "CPU — 6× Zen 2" },
-  'hwp.cpu.d': { it: '"Oberon", 6 core / 12 thread, fino a ~3.7 GHz in overclock.', en: '"Oberon", 6 cores / 12 threads, up to ~3.7 GHz overclocked.' },
+  'hwp.cpu.d': { it: '"Oberon", 6 core / 12 thread, fino a <strong>4.0 GHz all-core</strong> in overclock (~1206 mV, validato).', en: '"Oberon", 6 cores / 12 threads, up to <strong>4.0 GHz all-core</strong> overclocked (~1206 mV, validated).' },
   'hwp.gpu.t': { it: "GPU — RDNA 2", en: "GPU — RDNA 2" },
   'hwp.gpu.d': { it: '"Cyan Skillfish" (gfx1013), fino a 40 Compute Unit sbloccabili.', en: '"Cyan Skillfish" (gfx1013), up to 40 unlockable Compute Units.' },
   'hwp.mem.t': { it: "Memoria — 16 GB GDDR6", en: "Memory — 16 GB GDDR6" },
@@ -206,6 +206,19 @@ export const strings: Record<string, Entry> = {
   'cmp.gpu.b3': { it: "Radeon RX 6700 / 6750 XT", en: "Radeon RX 6700 / 6750 XT" },
   'cmp.gpu.note': { it: "Compute grezzo da RX&nbsp;6700 (~11,3 TFLOPS), prestazioni di gioco da RX&nbsp;6600/6600&nbsp;XT — su una scheda da ~50&nbsp;€. Un die <strong>RDNA&nbsp;2 semi-custom di classe console</strong> («Oberon», gfx1013), liberato su Linux.", en: "Raw compute of an RX&nbsp;6700 (~11.3 TFLOPS), gaming performance of an RX&nbsp;6600/6600&nbsp;XT — on a ~€50 board. A <strong>semi-custom, console-class RDNA&nbsp;2 die</strong> (“Oberon”, gfx1013), unleashed on Linux." },
   'cmp.axis': { it: "Score Superposition", en: "Superposition score" },
+
+  // --- Overclock & Undervolt (real, hand-characterized data) ---
+  'oc.h': { it: "Overclock & undervolt — caratterizzati a mano", en: "Overclock & undervolt — hand-characterized" },
+  'oc.sub': { it: "Curve V/F misurate via SMU sull'APU «Oberon», con validazione termica reale. Tutto pilotabile dal <strong>Tuner</strong> con preset pronti.", en: "V/F curves measured via the SMU on the “Oberon” APU, with real thermal validation. All driveable from the <strong>Tuner</strong> with ready presets." },
+  'oc.cpu.v': { it: "4.0 GHz", en: "4.0 GHz" },
+  'oc.cpu.l': { it: "CPU 6 core all-core · ~1206 mV · validato 120s a 83 °C", en: "CPU 6-core all-core · ~1206 mV · 120s-validated at 83 °C" },
+  'oc.uv.v': { it: "−194 mV", en: "−194 mV" },
+  'oc.uv.l': { it: "Undervolt CPU a 3.7 GHz (1206→1012 mV) senza perdite", en: "CPU undervolt at 3.7 GHz (1206→1012 mV) with no loss" },
+  'oc.gpu.v': { it: "2230 MHz", en: "2230 MHz" },
+  'oc.gpu.l': { it: "GPU · 40 CU · governor SMU dedicato", en: "GPU · 40 CU · dedicated SMU governor" },
+  'oc.cap.v': { it: "85 °C", en: "85 °C" },
+  'oc.cap.l': { it: "Cap termico CPU+GPU: throttla il clock, non si spacca mai", en: "CPU+GPU thermal cap: throttles the clock, never breaks" },
+  'oc.note': { it: "Per ogni frequenza abbiamo trovato il <strong>voltaggio minimo stabile</strong> leggendo il VID reale dall'SMU e validando con stress di 120s. I preset <strong>Stock · Performance · Turbo · Crazy</strong> applicano questi profili in un clic; un thermal-guard tiene tutto entro 85 °C. Dettagli completi nella documentazione.", en: "For every frequency we found the <strong>lowest stable voltage</strong> by reading the real VID from the SMU and validating with 120s stress. The <strong>Stock · Performance · Turbo · Crazy</strong> presets apply these profiles in one click; a thermal-guard keeps everything within 85 °C. Full details in the docs." },
 
   // --- Contact page ---
   'ct.title': { it: "Contatti — SkillFishOS", en: "Contact — SkillFishOS" },
