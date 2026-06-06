@@ -383,23 +383,27 @@ class TunerWindow(QMainWindow):
     def _cu_test_done(self, res):
         if not res.get("ok"):
             self.toast(L("Test CU fallito: %s", "CU test failed: %s") % res.get("err", "?"), 7); return
-        sym = {"OK": "✓ OK", "WARN": "⚠ WARN", "FAIL": "✗ FAIL", "N/A": "— n/d"}
-        lines = [L("Baseline 24 CU: %s GFLOPS", "Baseline 24 CU: %s GFLOPS") % res.get("baseline", "?"), ""]
+        sym = {"OK": "✓ OK", "FAIL": "✗ FAIL", "N/A": "— n/d"}
+        f_err = res.get("full40_err", 0)
+        lines = [L("40 CU sotto sforzo (vkpeak): %s GFLOPS%s",
+                   "40 CU under load (vkpeak): %s GFLOPS%s") % (
+                   res.get("full40", "?"),
+                   (L(" · %d errori GPU" % f_err, " · %d GPU errors" % f_err) if f_err else "")),
+                 L("Baseline 24 CU: %s GFLOPS", "Baseline 24 CU: %s GFLOPS") % res.get("baseline", "?"),
+                 L("(atteso ~11300 a 40 CU)", "(expected ~11300 at 40 CU)"), "",
+                 L("Stabilità per coppia di CU extra:", "Per extra-CU-pair stability:")]
         for r in res.get("results", []):
-            lines.append("SE%s.SH%s  WGP%d (CU %s):  %-7s  %s GFLOPS%s" % (
+            lines.append("  SE%s.SH%s  WGP%d (CU %s):  %s%s" % (
                 r["row"][0], r["row"][2], r["wgp"], r["cu"], sym.get(r["verdict"], r["verdict"]),
-                r["gflops"], (" · %d err" % r["errors"]) if r["errors"] else ""))
-        bad = res.get("bad", 0); warn = res.get("warn", 0)
+                (" · %d err" % r["errors"]) if r["errors"] else ""))
+        bad = res.get("bad", 0)
         lines.append("")
-        if bad:
-            lines.append(L("⚠ %d coppia/e di CU DIFETTOSA/E (FAIL) — consigliato non abilitarle." % bad,
-                           "⚠ %d CU pair(s) DEFECTIVE (FAIL) — better not to enable them." % bad))
-        elif warn:
-            lines.append(L("Tutte stabili; %d coppia/e senza guadagno prestazionale (WARN)." % warn,
-                           "All stable; %d pair(s) with no performance gain (WARN)." % warn))
+        if bad or f_err:
+            lines.append(L("⚠ Rilevati problemi GPU sotto carico: possibile CU difettosa (lotteria del silicio). Valuta di tenere meno CU.",
+                           "⚠ GPU problems under load detected: possible defective CU (silicon lottery). Consider keeping fewer CUs."))
         else:
-            lines.append(L("✓ Tutte le CU extra sane, stabili e prestanti.",
-                           "✓ All extra CUs healthy, stable and performing."))
+            lines.append(L("✓ Nessun difetto: tutte le CU reggono lo sforzo senza errori GPU.",
+                           "✓ No defects: all CUs sustain the load with no GPU errors."))
         QMessageBox.information(self, L("Risultato Test CU", "CU test result"), "\n".join(lines))
 
     # ---------- FAN ----------

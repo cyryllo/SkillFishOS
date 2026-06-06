@@ -148,19 +148,25 @@ def cu_test():
             sh("/usr/local/bin/skillfish-cu set-rows %d %d %d %d"%(rows["0.0"],rows["0.1"],rows["1.0"],rows["1.1"]))
             time.sleep(1)
             g,rc=vk(); e=errs(); al=alive()
-            # a real defect = GPU fault/hang; rc is ignored (timeout always kills vkpeak)
-            if not al or e>0:      verdict="FAIL"
-            elif g<=0:             verdict="N/A"
-            elif base>0 and g>=base*1.01: verdict="OK"
-            else:                  verdict="WARN"
+            # defect = GPU fault/hang/no-response under load (the silicon-lottery symptom).
+            # per-WGP throughput delta is below vkpeak noise, so verdict is stability-based.
+            if not al or e>0: verdict="FAIL"
+            elif g<=0:        verdict="N/A"
+            else:             verdict="OK"
             res.append({"row":rk,"wgp":wgp,"cu":"%d-%d"%(wgp*2,wgp*2+1),
                         "gflops":round(g),"errors":e,"verdict":verdict})
             time.sleep(1.5)
+    # headline: full 40-CU sustained run (vkpeak to completion) + GPU error scan
+    sh("/usr/local/bin/skillfish-cu max"); time.sleep(1)
+    rf=sh("cd %s && ./vkpeak"%vdir, t=120)
+    mf=re.search(r'fp32-scalar\s*=\s*([\d.]+)', rf.stdout)
+    full=round(float(mf.group(1)) if mf else 0.0); full_err=errs()
     g0=lambda k: int(cur.get(k,31))
     sh("/usr/local/bin/skillfish-cu set-rows %d %d %d %d"%(g0("0.0"),g0("0.1"),g0("1.0"),g0("1.1")))
     bad=sum(1 for x in res if x["verdict"]=="FAIL")
-    warn=sum(1 for x in res if x["verdict"]=="WARN")
-    return {"ok":True,"baseline":round(base),"results":res,"bad":bad,"warn":warn}
+    na=sum(1 for x in res if x["verdict"]=="N/A")
+    return {"ok":True,"baseline":round(base),"results":res,"bad":bad,"na":na,
+            "full40":full,"full40_err":full_err}
 
 def cu_apply(rows):
     """Apply live per-row WGP masks (24..40 CU) via skillfish-cu. No reboot."""
