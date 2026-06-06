@@ -66,15 +66,38 @@ The BC‑250 is fantastic value but a difficult target: non‑standard clock con
 
 ## Performance
 
-`vkpeak` fp32‑scalar throughput (GFLOPS):
+> All measured on **our own BC-250** with SkillFishOS at **1080p** (40 CUs unlocked, kernel 7.0.10‑skillfishos, Mesa 26.0.8). Full per‑benchmark detail — every setting, clock, voltage, temperature and power reading — is on the **[Performance & benchmarks page →](https://skillfishos.com/docs/prestazioni/)**
+
+### Real benchmarks
+
+| Benchmark | Settings | Result |
+|---|---|---|
+| **Black Myth: Wukong** | 1080p, uncapped (CPU/draw‑call bound) | **112 FPS** avg · 128 max · 101 (1% low) |
+| **Unigine Superposition** | 1080p **High**, OpenGL | **12 938** · 96.8 FPS avg |
+| **Unigine Superposition** | 1080p **Extreme**, OpenGL | **5 513** · 41.3 FPS avg |
+| **Unigine Heaven 4.0** | 1080p Ultra, 8× AA, Extreme tess. | **113.7 FPS** · score **2865** |
+
+| Black Myth: Wukong — 112 FPS | Unigine Superposition — 12938 (High) |
+|---|---|
+| ![Wukong 112 FPS](screenshots/benchmarks/wukong-112fps.jpg) | ![Superposition High 12938](screenshots/benchmarks/superposition-high.jpg) |
+
+| Unigine Superposition — 5513 (Extreme) | Unigine Heaven 4.0 — 113.7 FPS / 2865 |
+|---|---|
+| ![Superposition Extreme 5513](screenshots/benchmarks/superposition-extreme.jpg) | ![Heaven 113.7 FPS](screenshots/benchmarks/heaven-113fps.jpg) |
+
+### Synthetic compute — `vkpeak` fp32‑scalar (GFLOPS)
 
 | Configuration | GFLOPS | Notes |
 |---|---:|---|
 | Stock ~2000 MHz, 24 CU | 6141 | baseline |
 | tkg + governor, 24 CU | 6868 | +12 % |
-| **tkg + governor + 40‑CU unlock** | **11329** | **≈1.84× baseline** |
+| **tkg + governor + 40‑CU unlock** | **11329** | **≈1.84× baseline** (≈11.3 TFLOPS) |
 
-CPU OC validated up to **4.0 GHz** (~1224 mV, 120 s stress, 83 °C peak) on the reference board; under combined CPU+GPU load the APU shares its power budget gracefully, easing CPU clocks to stay within the 85 °C limit. Full methodology and benchmarks: [docs/OPTIMIZATIONS.md](docs/OPTIMIZATIONS.md).
+Also: FP16 vec4 **22 685**, int8 dot‑product **45 495 GIOPS**, memory bandwidth **~350–367 GB/s** (clpeak).
+
+**Same hardware, +34 % just by changing OS** — Superposition 1080p Extreme: SkillFishOS **5513** vs another distro at stock clocks **4102**. In gaming the BC‑250 lands in **Radeon RX 6600/6600 XT** territory.
+
+CPU OC validated up to **4.0 GHz** (~1224 mV, 120 s stress, 83 °C peak) on the reference board; under combined CPU+GPU load the APU shares its power budget gracefully, easing CPU clocks to stay within the 85 °C limit. Full methodology and benchmarks: **[skillfishos.com/docs/prestazioni](https://skillfishos.com/docs/prestazioni/)** · [docs/OPTIMIZATIONS.md](docs/OPTIMIZATIONS.md).
 
 ---
 
