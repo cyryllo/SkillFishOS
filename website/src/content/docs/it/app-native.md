@@ -41,6 +41,8 @@ Architettura: una GUI utente più un piccolo **daemon di root** che esegue le op
 
 Il **pannello AI** accende e spegne lo stack LLM locale con un clic, liberando GPU e RAM per i giochi quando non serve. È il front-end "facile" dello stack descritto in [AI in locale](/docs/ai-locale).
 
+![Pannello AI di SkillFishOS — motore LLM locale (Qwen3 14B) su GPU Vulkan, acceso/spento con un clic](/img/ai-panel.jpg)
+
 ## Perché esistono
 
 L'obiettivo di SkillFishOS è che **chiunque** — compresi i più piccoli — possa usare e regolare il sistema senza dover imparare comandi da terminale. Queste app traducono operazioni complesse (governor SMU, parametri del kernel, container Docker) in pochi clic, mantenendo le **protezioni** (thermal-guard, test-and-rollback) sempre attive.
