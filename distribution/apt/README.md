@@ -26,18 +26,25 @@ GitHub (repos *and* Pages) rejects any file over **100 MB**, and the
 sudo curl -fsSL https://mtsistemi.github.io/SkillFishOS/skillfishos-archive-keyring.gpg \
   -o /usr/share/keyrings/skillfishos-archive-keyring.gpg
 
-# 2. add the repo (suite = aetherium)
-echo "deb [signed-by=/usr/share/keyrings/skillfishos-archive-keyring.gpg] \
-https://mtsistemi.github.io/SkillFishOS aetherium main" \
-  | sudo tee /etc/apt/sources.list.d/skillfishos.list
+# 2. add the repo (suite = aetherium) in the modern deb822 .sources format
+sudo tee /etc/apt/sources.list.d/skillfishos.sources >/dev/null <<'EOF'
+Types: deb
+URIs: https://mtsistemi.github.io/SkillFishOS/
+Suites: aetherium
+Components: main
+Signed-By: /usr/share/keyrings/skillfishos-archive-keyring.gpg
+EOF
 
 # 3. update and install the kernel via apt
 sudo apt update
 sudo apt install skillfishos-kernel
 ```
 
-On SkillFishOS the suite is `aetherium`; the Debian `sid` lines in `sources.list` are
-independent and unaffected.
+On SkillFishOS the suite is `aetherium`; the Debian `sid` lines are independent and
+unaffected. The repo serves both **amd64** and **i386** (the `Architecture: all` apps are
+available to i386 too), so systems with the i386 multiarch enabled for 32-bit gaming
+(Steam/Wine/Proton) get **no "architecture not supported" warning**. No `[arch=…]` pin is
+needed.
 
 ## Build / refresh (maintainer)
 
