@@ -13,3 +13,21 @@ Small native apps shipped with SkillFishOS (KDE Plasma), all themed by Kvantum.
 
 The Tuner/AI panels were originally GTK4/libadwaita; they were rewritten in PyQt6
 so Kvantum themes them natively with no GTK CSS hacks.
+
+## Install the prebuilt `.deb` packages
+
+The apps are published as Debian packages (architecture `all`) in the
+[**`apps-26.06`** release](https://github.com/MTSistemi/SkillFishOS/releases/tag/apps-26.06):
+
+```sh
+# download the three .deb from the release, then:
+sudo apt install ./skillfish-tuner_26.06_all.deb \
+                 ./skillfish-ai-panel_26.06_all.deb \
+                 ./skillfish-iso-mount_26.06_all.deb
+```
+
+`apt install ./file.deb` resolves the dependencies (`python3-pyqt6`, `udisks2`,
+`polkitd`, …) automatically. They are already preinstalled on the SkillFishOS ISO.
+
+To rebuild the packages from the installed files on a SkillFishOS system, run
+[`build-debs.sh`](build-debs.sh) (output in `/tmp/debs/out/`).
