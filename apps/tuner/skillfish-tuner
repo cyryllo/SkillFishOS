@@ -450,10 +450,10 @@ class TunerWindow(QMainWindow):
         for lbl, mk in (("24 CU", 0x07), ("32 CU", 0x0f), (L("40 CU (max)", "40 CU (max)"), 0x1f)):
             b = QPushButton(lbl); b.clicked.connect(lambda _=False, m=mk: self._cu_preset(m)); pr.addWidget(b)
         pr.addWidget(self._help_btn("cu"))
-        pr.addStretch(1); pw = QWidget(); pw.setLayout(pr); v.addWidget(pw)
-        v.addWidget(self._btns(
-            (L("Test CU", "Test CU"), self._test_cu, False),
-            (L("Applica a caldo", "Apply live"), self._apply_cu, True)))
+        pr.addStretch(1)
+        bt = QPushButton(L("Test CU", "Test CU")); bt.clicked.connect(self._test_cu); pr.addWidget(bt)
+        ba = QPushButton(L("Applica", "Apply")); ba.setDefault(True); ba.clicked.connect(self._apply_cu); pr.addWidget(ba)
+        pw = QWidget(); pw.setLayout(pr); v.addWidget(pw)
         return g
 
     def _cu_toggle(self, rk, wgp, on):
