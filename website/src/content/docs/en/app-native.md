@@ -19,15 +19,21 @@ The **Tuner** is the hardware control panel. It lets you adjust:
 
 ### Live Compute Units (grid)
 
-The Tuner shows the GPU's CUs as a **grid of squares** (4 SE/SH rows × 5 WGP): **green = active, red = off**. You toggle them **live, no reboot** — click the pairs (1 WGP = 2 CU) or use the **24 / 32 / 40 CU presets** — then *Apply live*. The first 24 CUs are the driver minimum and stay always on (see [GPU and overclock](/en/docs/gpu-overclock)).
+The Tuner shows the GPU's CUs as a **grid of squares** (4 SE/SH rows × 5 WGP): **green = active, red = off**. You toggle them **live, no reboot** — click the pairs (1 WGP = 2 CU) or use the **24 / 32 / 40 CU presets** — then *Apply*. The first 24 CUs are the driver minimum and stay always on (see [GPU and overclock](/en/docs/gpu-overclock)).
+
+![SkillFishOS Tuner — the live Compute Unit grid, presets and CU test](/img/tuner.jpg)
 
 ### CU test (silicon lottery)
 
 The **"CU test"** button checks the health of the extra CUs: it enables each pair alone, stresses it with **vkpeak** and watches for **GPU faults/hangs**, plus a final full-40 stress. It's there to catch **defective CUs** on salvaged/"discard" APUs, so you know whether your chip sustains all 40 CUs.
 
+![CU test result — all pairs OK, 40 CUs stable at 11380 GFLOPS, no defects](/img/cu-test.jpg)
+
 ### "Test" flow and live monitor
 
 The **"Test"** flow (CPU, GPU, CU, fan): apply a change → run a benchmark → **verify** stability and, if something is wrong, perform an automatic **rollback**. When any test starts, a **Monitor window** opens with live charts of **temperature, frequency, voltage and fan** (closable at will).
+
+![Tuner Monitor window — live temperature, frequency, GPU voltage and fan charts during a test](/img/monitor.jpg)
 
 Architecture: a user GUI plus a small **root daemon** that performs the privileged operations. On a personal PC it is configured not to ask for a password on every operation. The desktop HUD also shows the **active CUs** live.
 
