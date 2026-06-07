@@ -19,3 +19,6 @@ iso/SkillFishOS-amd64.*
 # Kernel build scratch
 kernel-build/linux-tkg/
 *.deb
+__pycache__/
+*.pyc
+website/debug.log

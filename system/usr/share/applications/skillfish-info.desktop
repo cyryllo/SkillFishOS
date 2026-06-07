@@ -6,5 +6,5 @@ Exec=alacritty -e sh -c "fastfetch; echo; echo 'Premi Invio per chiudereâ€¦'
 Icon=/usr/share/icons/hicolor/256x256/apps/skillfish-tuner.png
 Terminal=false
 Type=Application
-Categories=System;
+Categories=System;X-SkillFishOS;
 Keywords=info;sistema;about;hardware;

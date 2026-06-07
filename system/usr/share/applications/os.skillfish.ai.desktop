@@ -6,6 +6,6 @@ Exec=/usr/local/bin/skillfish-ai-panel
 Icon=/usr/share/icons/hicolor/256x256/apps/skillfish-tuner.png
 Terminal=false
 Type=Application
-Categories=System;Utility;Development;
+Categories=System;X-SkillFishOS;
 Keywords=AI;LLM;Ollama;Qwen;OpenWebUI;SkillFish;
 StartupWMClass=os.skillfish.ai

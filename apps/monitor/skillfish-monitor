@@ -2,8 +2,8 @@
 # SkillFishOS Monitor - standalone live sensor dashboard (temperature, frequency,
 # GPU voltage, fan). Extracted from the Tuner's monitor; to grow with more panels.
 # KDE-native PyQt6, brass/steampunk look. Bilingual (IT/EN). Sensors via skillfish-hud-val.
-import sys, os, re, subprocess, collections
-from PyQt6.QtCore import Qt, QTimer
+import sys, os, re, signal, subprocess, collections
+from PyQt6.QtCore import Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import (QIcon, QPainter, QColor, QPen, QBrush, QLinearGradient, QPainterPath, QFont)
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QGridLayout, QLabel, QComboBox)
@@ -32,46 +32,59 @@ class Chart(QWidget):
         self.update()
 
     def paintEvent(self, _e):
-        p = QPainter(self); p.setRenderHint(QPainter.RenderHint.Antialiasing)
         w, h = self.width(), self.height()
-        p.setPen(QPen(QColor(216, 168, 73, 80), 1)); p.setBrush(QColor(18, 15, 9, 240))
-        p.drawRoundedRect(1, 1, w - 2, h - 2, 14, 14)
-        gx0, gy0, gx1, gy1 = 14, 34, w - 14, h - 16
-        gw, gh = gx1 - gx0, gy1 - gy0
-        f = QFont("Inter"); f.setBold(True); f.setPointSize(10); p.setFont(f)
-        p.setPen(QColor(216, 168, 73)); p.drawText(14, 22, self.title)
-        allv = [v for d in self.data for v in d]
-        if not allv: p.end(); return
-        lo, hi = min(allv), max(allv)
-        if hi - lo < 1e-6: hi = lo + 1.0
-        m = (hi - lo) * 0.14; lo -= m; hi += m
-        p.setPen(QPen(QColor(216, 168, 73, 26), 1))
-        for i in range(4):
-            yy = int(gy0 + gh * i / 3); p.drawLine(gx0, yy, gx1, yy)
-        fv = QFont("DejaVu Sans Mono"); fv.setPointSize(9); fv.setBold(True)
-        lx = gx1
-        for si, (label, col) in enumerate(self.series):
-            d = self.data[si]; n = len(d); color = QColor(col)
-            if n >= 2:
-                line = QPainterPath(); fill = QPainterPath()
-                for i, v in enumerate(d):
-                    x = gx0 + gw * (i / (n - 1)); y = gy1 - gh * ((v - lo) / (hi - lo))
-                    if i == 0: line.moveTo(x, y); fill.moveTo(x, gy1); fill.lineTo(x, y)
-                    else: line.lineTo(x, y); fill.lineTo(x, y)
-                fill.lineTo(gx1, gy1); fill.closeSubpath()
-                grad = QLinearGradient(0, gy0, 0, gy1)
-                c0 = QColor(color); c0.setAlpha(75); c1 = QColor(color); c1.setAlpha(0)
-                grad.setColorAt(0, c0); grad.setColorAt(1, c1)
-                p.setPen(Qt.PenStyle.NoPen); p.setBrush(QBrush(grad)); p.drawPath(fill)
-                glow = QColor(color); glow.setAlpha(55)
-                p.setBrush(Qt.BrushStyle.NoBrush); p.setPen(QPen(glow, 5)); p.drawPath(line)
-                p.setPen(QPen(color, 2)); p.drawPath(line)
-            cur = d[-1] if n else 0.0
-            txt = "%s %s" % (label, ("%d" % round(cur)) if abs(cur) >= 10 else ("%.2f" % cur))
-            p.setFont(fv); p.setPen(color)
-            tw = p.fontMetrics().horizontalAdvance(txt)
-            lx -= tw + 14; p.drawText(int(lx), 22, txt)
-        p.end()
+        if w <= 2 or h <= 2:
+            return  # nothing sane to paint on a collapsed widget
+        p = QPainter()
+        # begin() can fail (e.g. device not ready); never paint on a dead device.
+        if not p.begin(self):
+            return
+        try:
+            p.setRenderHint(QPainter.RenderHint.Antialiasing)
+            p.setPen(QPen(QColor(216, 168, 73, 80), 1)); p.setBrush(QColor(18, 15, 9, 240))
+            p.drawRoundedRect(1, 1, w - 2, h - 2, 14, 14)
+            gx0, gy0, gx1, gy1 = 14, 34, w - 14, h - 16
+            gw, gh = gx1 - gx0, gy1 - gy0
+            f = QFont("Inter"); f.setBold(True); f.setPointSize(10); p.setFont(f)
+            p.setPen(QColor(216, 168, 73)); p.drawText(14, 22, self.title)
+            allv = [v for d in self.data for v in d]
+            if not allv:
+                return
+            lo, hi = min(allv), max(allv)
+            if hi - lo < 1e-6: hi = lo + 1.0
+            m = (hi - lo) * 0.14; lo -= m; hi += m
+            span = (hi - lo) or 1.0
+            p.setPen(QPen(QColor(216, 168, 73, 26), 1))
+            for i in range(4):
+                yy = int(gy0 + gh * i / 3); p.drawLine(gx0, yy, gx1, yy)
+            fv = QFont("DejaVu Sans Mono"); fv.setPointSize(9); fv.setBold(True)
+            lx = gx1
+            for si, (label, col) in enumerate(self.series):
+                d = self.data[si]; n = len(d); color = QColor(col)
+                if n >= 2:
+                    line = QPainterPath(); fill = QPainterPath()
+                    for i, v in enumerate(d):
+                        x = gx0 + gw * (i / (n - 1)); y = gy1 - gh * ((v - lo) / span)
+                        if i == 0: line.moveTo(x, y); fill.moveTo(x, gy1); fill.lineTo(x, y)
+                        else: line.lineTo(x, y); fill.lineTo(x, y)
+                    fill.lineTo(gx1, gy1); fill.closeSubpath()
+                    grad = QLinearGradient(0, gy0, 0, gy1)
+                    c0 = QColor(color); c0.setAlpha(75); c1 = QColor(color); c1.setAlpha(0)
+                    grad.setColorAt(0, c0); grad.setColorAt(1, c1)
+                    p.setPen(Qt.PenStyle.NoPen); p.setBrush(QBrush(grad)); p.drawPath(fill)
+                    glow = QColor(color); glow.setAlpha(55)
+                    p.setBrush(Qt.BrushStyle.NoBrush); p.setPen(QPen(glow, 5)); p.drawPath(line)
+                    p.setPen(QPen(color, 2)); p.drawPath(line)
+                cur = d[-1] if n else 0.0
+                txt = "%s %s" % (label, ("%d" % round(cur)) if abs(cur) >= 10 else ("%.2f" % cur))
+                p.setFont(fv); p.setPen(color)
+                tw = p.fontMetrics().horizontalAdvance(txt)
+                lx -= tw + 14; p.drawText(int(lx), 22, txt)
+        except Exception:
+            pass  # never let a paint glitch tear down the painter mid-flight
+        finally:
+            if p.isActive():
+                p.end()
 
 
 def rd(key):
@@ -81,6 +94,36 @@ def rd(key):
         return float(m.group()) if m else None
     except Exception:
         return None
+
+
+class Sampler(QThread):
+    """Reads sensors off the GUI thread so the UI never blocks on subprocess calls."""
+    sample = pyqtSignal(dict)
+    KEYS = ("cpu_temp", "gpu_temp", "cpu_mhz", "gpu_freq", "gpu_mv", "fan")
+
+    def __init__(self):
+        super().__init__()
+        self._interval = 0.7
+        self._stop = False
+
+    def setIntervalMs(self, ms):
+        try:
+            self._interval = max(0.1, float(ms) / 1000.0)
+        except Exception:
+            self._interval = 0.7
+
+    def stop(self):
+        self._stop = True
+
+    def run(self):
+        while not self._stop:
+            vals = {k: rd(k) for k in self.KEYS}
+            if self._stop:
+                break
+            self.sample.emit(vals)
+            t = 0.0
+            while t < self._interval and not self._stop:
+                self.msleep(50); t += 0.05
 
 
 class Monitor(QMainWindow):
@@ -102,7 +145,7 @@ class Monitor(QMainWindow):
         for ms, lab in [(300, "0.3 s"), (700, "0.7 s"), (1000, "1 s"), (2000, "2 s")]:
             self.iv.addItem(lab, ms)
         self.iv.setCurrentIndex(1)
-        self.iv.currentIndexChanged.connect(lambda: self.timer.setInterval(self.iv.currentData()))
+        self.iv.currentIndexChanged.connect(lambda: self.sampler.setIntervalMs(self.iv.currentData()))
         top.addWidget(self.iv)
         v.addLayout(top)
 
@@ -115,15 +158,24 @@ class Monitor(QMainWindow):
         grid.addWidget(self.ch_volt, 1, 0); grid.addWidget(self.ch_fan, 1, 1)
         v.addLayout(grid)
 
-        self.timer = QTimer(self); self.timer.setInterval(700)
-        self.timer.timeout.connect(self._tick); self.timer.start()
-        self._tick()
+        self.sampler = Sampler()
+        self.sampler.setIntervalMs(self.iv.currentData())
+        self.sampler.sample.connect(self._apply)  # queued: runs on GUI thread
+        self.sampler.start()
 
-    def _tick(self):
-        self.ch_temp.push([rd("cpu_temp"), rd("gpu_temp")])
-        self.ch_freq.push([rd("cpu_mhz"), rd("gpu_freq")])
-        self.ch_volt.push([rd("gpu_mv")])
-        self.ch_fan.push([rd("fan")])
+    def _apply(self, vals):
+        self.ch_temp.push([vals.get("cpu_temp"), vals.get("gpu_temp")])
+        self.ch_freq.push([vals.get("cpu_mhz"), vals.get("gpu_freq")])
+        self.ch_volt.push([vals.get("gpu_mv")])
+        self.ch_fan.push([vals.get("fan")])
+
+    def closeEvent(self, e):
+        try:
+            self.sampler.stop()
+            self.sampler.wait(1500)
+        except Exception:
+            pass
+        super().closeEvent(e)
 
 
 def main():
@@ -131,7 +183,19 @@ def main():
     app.setApplicationName("SkillFishOS Monitor")
     app.setDesktopFileName("os.skillfish.monitor")
     app.setWindowIcon(QIcon(ICON))
-    Monitor().show()
+    win = Monitor(); win.show()
+    # Always stop the sampler thread before the event loop tears widgets down,
+    # so we never destroy a chart while it (or a paint) is mid-flight.
+    app.aboutToQuit.connect(win.sampler.stop)
+    # Turn SIGTERM/SIGINT (logout, kill) into a graceful quit instead of a kill
+    # mid-paint. The keepalive timer lets the Python signal handlers actually run.
+    signal.signal(signal.SIGTERM, lambda *_a: app.quit())
+    signal.signal(signal.SIGINT, lambda *_a: app.quit())
+    _keepalive = QTimer(); _keepalive.start(250); _keepalive.timeout.connect(lambda: None)
+    win._keepalive = _keepalive  # keep a reference alive
+    sq = os.environ.get("SFX_SELFQUIT_MS")  # self-test hook: graceful close after N ms
+    if sq:
+        QTimer.singleShot(int(sq), win.close)
     sys.exit(app.exec())
 
 if __name__ == "__main__":
