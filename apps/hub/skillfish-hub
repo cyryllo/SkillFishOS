@@ -170,7 +170,9 @@ def main():
     app.setApplicationName("SkillFishOS Hub")
     app.setDesktopFileName("os.skillfish.hub")
     app.setWindowIcon(QIcon(ICON))
-    Hub().show()
+    w = Hub()                    # keep a reference: a top-level QWidget with no
+    w.show()                     # Python ref is GC'd immediately and never maps
+    w.raise_(); w.activateWindow()
     sys.exit(app.exec())
 
 if __name__ == "__main__":
