@@ -13,11 +13,18 @@ const issues = `${SITE.github}/issues`;
     <p class="sub" style="margin-bottom:30px">{t('dl.sub', lang)}</p>
     <div class="hero-btns">
       {hasIso ? (
-        <a class="btn btn-primary" href={SITE.isoUrl} target="_blank" rel="noopener" set:html={t('dl.btn', lang)} />
+        <>
+          <a class="btn btn-primary" href={SITE.isoUrl} target="_blank" rel="noopener" set:html={t('dl.ed.bc250', lang)} />
+          <a class="btn" href={SITE.isoUrlGeneric} target="_blank" rel="noopener" set:html={t('dl.ed.generic', lang)} />
+          <a class="btn" href={SITE.isoUrlSlim} target="_blank" rel="noopener" set:html={t('dl.ed.slim', lang)} />
+        </>
       ) : (
         <span class="btn btn-primary" style="cursor:default;opacity:.85" set:html={t('dl.btnsoon', lang)} />
       )}
     </div>
+    {hasIso && (
+      <p class="sub" style="margin-top:14px;font-size:.92rem"><a href={SITE.isoFilesUrl} target="_blank" rel="noopener" set:html={t('dl.ed.all', lang)} /></p>
+    )}
     <div class="pill" style="margin-top:24px">{sizeLine}</div>
     <p class="sub" style="margin-top:14px;font-size:.95rem" set:html={t('dl.ver', lang)} />
     <p class="sub" style="margin-top:24px;color:var(--gold-lt)" set:html={t('dl.notice', lang)} />

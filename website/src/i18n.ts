@@ -10,9 +10,12 @@ export const languages: Record<Lang, string> = { it: 'Italiano', en: 'English' }
 export const SITE = {
   github: 'https://github.com/MTSistemi/SkillFishOS',
   domain: 'skillfishos.com',
-  // 26.06 "Aetherium" BC-250 release ISO — hosted on SourceForge (reliable mirror + stats).
+  // 26.06 "Aetherium" release ISOs — three editions, hosted on SourceForge (reliable mirror + stats).
   isoUrl: 'https://sourceforge.net/projects/skillfishos/files/26.06-Aetherium/SkillFishOS-26.06-Aetherium-BC250-amd64.iso/download',
-  isoSizeGb: '6.0',
+  isoUrlGeneric: 'https://sourceforge.net/projects/skillfishos/files/26.06-Aetherium/SkillFishOS-26.06-Aetherium-Generic-amd64.iso/download',
+  isoUrlSlim: 'https://sourceforge.net/projects/skillfishos/files/26.06-Aetherium/SkillFishOS-26.06-Aetherium-Slim-BC250-amd64.iso/download',
+  isoFilesUrl: 'https://sourceforge.net/projects/skillfishos/files/26.06-Aetherium/',
+  isoSizeGb: '6.2',
   repoUrl: 'https://mtsistemi.github.io/SkillFishOS',
 };
 
@@ -81,7 +84,7 @@ export const strings: Record<string, Entry> = {
   'hw.c4': { it: "GDDR6 condivisa", en: "shared GDDR6" },
 
   'cta.h2': { it: 'Accendi. <span class="gold-text">Gioca.</span> Impara.', en: 'Power on. <span class="gold-text">Play.</span> Learn.' },
-  'cta.p': { it: "Un sistema operativo open-source che rende una scheda essenziale una vera console-PC. Questa release è dedicata alla AMD BC-250; una versione per architettura x86_64 arriverà in seguito.", en: "An open-source operating system that turns a bare board into a real console-PC. This release targets the AMD BC-250; an x86_64 architecture version will follow." },
+  'cta.p': { it: "Un sistema operativo open-source che rende una scheda essenziale una vera console-PC. Disponibile in tre edizioni: AMD BC-250, Generic (qualsiasi PC/VM x86-64) e Slim.", en: "An open-source operating system that turns a bare board into a real console-PC. Available in three editions: AMD BC-250, Generic (any x86-64 PC/VM) and Slim." },
   'cta.btn': { it: "⬇ Scarica SkillFishOS", en: "⬇ Download SkillFishOS" },
 
   'foot.based': { it: "Open-source · Basato su Debian · KDE Plasma · © 2026 SkillFishOS", en: "Open-source · Based on Debian · KDE Plasma · © 2026 SkillFishOS" },
@@ -90,13 +93,17 @@ export const strings: Record<string, Entry> = {
   'dl.title': { it: "Download — SkillFishOS", en: "Download — SkillFishOS" },
   'dl.eye': { it: "Download", en: "Download" },
   'dl.h2': { it: "Scarica SkillFish<span class=\"gold-text\">OS</span>", en: "Download SkillFish<span class=\"gold-text\">OS</span>" },
-  'dl.sub': { it: "La ISO installabile, brandizzata e pronta all'uso per l'AMD BC-250.", en: "The installable, branded, ready-to-use ISO for the AMD BC-250." },
+  'dl.sub': { it: "Le ISO installabili, brandizzate e pronte all'uso — per l'AMD BC-250 e per qualsiasi PC x86-64.", en: "The installable, branded, ready-to-use ISOs — for the AMD BC-250 and for any x86-64 PC." },
   'dl.badge': { it: "26.06 «Aetherium»", en: "26.06 “Aetherium”" },
-  'dl.notice': { it: "La release <strong>26.06 «Aetherium»</strong> di SkillFishOS, dedicata alla scheda <strong>AMD BC-250</strong>: completa e pronta all'uso. Una versione per <strong>architettura x86_64</strong> arriverà in seguito. Progetto <strong>open-source</strong>.", en: "The <strong>26.06 “Aetherium”</strong> release of SkillFishOS, built for the <strong>AMD BC-250</strong> board: complete and ready to use. An <strong>x86_64 architecture</strong> version will follow later. <strong>Open-source</strong> project." },
+  'dl.notice': { it: "La release <strong>26.06 «Aetherium»</strong> di SkillFishOS è disponibile in <strong>tre edizioni</strong>: <strong>BC-250</strong> (la scheda AMD), <strong>Generic</strong> (qualsiasi PC o VM x86-64) e <strong>Slim</strong> (BC-250, kernel minimale). Complete e pronte all'uso. Progetto <strong>open-source</strong>.", en: "The <strong>26.06 “Aetherium”</strong> release of SkillFishOS comes in <strong>three editions</strong>: <strong>BC-250</strong> (the AMD board), <strong>Generic</strong> (any x86-64 PC or VM) and <strong>Slim</strong> (BC-250, ultra-lean kernel). Complete and ready to use. <strong>Open-source</strong> project." },
   'dl.btnsoon': { it: "🚀 ISO in arrivo", en: "🚀 ISO coming soon" },
   'dl.btn': { it: "⬇ Scarica la ISO", en: "⬇ Download the ISO" },
-  'dl.size': { it: "amd64 · ~{size} GB · btrfs + KDE Plasma", en: "amd64 · ~{size} GB · btrfs + KDE Plasma" },
-  'dl.ver': { it: "Versione <strong>26.06 «Aetherium»</strong> · release per <strong>AMD BC-250</strong> · parte in inglese, lingua selezionabile in installazione", en: "Version <strong>26.06 “Aetherium”</strong> · <strong>AMD BC-250</strong> release · boots in English, language selectable at install" },
+  'dl.ed.bc250': { it: "⬇ BC-250", en: "⬇ BC-250" },
+  'dl.ed.generic': { it: "⬇ Generic (PC/VM)", en: "⬇ Generic (PC/VM)" },
+  'dl.ed.slim': { it: "⬇ Slim (BC-250)", en: "⬇ Slim (BC-250)" },
+  'dl.ed.all': { it: "Tutti i file su SourceForge ↗", en: "All files on SourceForge ↗" },
+  'dl.size': { it: "amd64 · ~{size} GB · btrfs + KDE Plasma · 3 edizioni su SourceForge", en: "amd64 · ~{size} GB · btrfs + KDE Plasma · 3 editions on SourceForge" },
+  'dl.ver': { it: "Versione <strong>26.06 «Aetherium»</strong> · <strong>3 edizioni</strong> (BC-250 · Generic · Slim) · parte in inglese, lingua selezionabile in installazione", en: "Version <strong>26.06 “Aetherium”</strong> · <strong>3 editions</strong> (BC-250 · Generic · Slim) · boots in English, language selectable at install" },
   'dl.bugs.h': { it: "Hai trovato un problema?", en: "Found a problem?" },
   'dl.bugs.d': { it: "SkillFishOS è in continuo miglioramento. Per segnalare bug o problemi apri una <em>issue</em> su GitHub. (Presto aggiungeremo anche un indirizzo email.)", en: "SkillFishOS is continuously improving. To report bugs or problems, open an <em>issue</em> on GitHub. (We'll add an email address soon.)" },
   'dl.bugs.btn': { it: "🐛 Segnala su GitHub", en: "🐛 Report on GitHub" },
