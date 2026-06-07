@@ -58,6 +58,7 @@ chmod 0755 "$OUT/$P/DEBIAN/postinst"
 ############ skillfish-ai-panel ############
 P=skillfish-ai-panel; stage $P
 cp_into $P /usr/local/bin/skillfish-ai-panel usr/local/bin/skillfish-ai-panel 0755
+cp_into $P /usr/local/bin/skillfish-gtt usr/local/bin/skillfish-gtt 0755
 cp_into $P /usr/share/applications/os.skillfish.ai.desktop usr/share/applications/os.skillfish.ai.desktop
 [ -f /usr/share/icons/hicolor/256x256/apps/skillfish-ai.png ] && cp_into $P /usr/share/icons/hicolor/256x256/apps/skillfish-ai.png usr/share/icons/hicolor/256x256/apps/skillfish-ai.png || true
 cat > "$OUT/$P/DEBIAN/control" <<EOF
@@ -65,7 +66,7 @@ Package: skillfish-ai-panel
 Version: $VER
 Architecture: all
 Maintainer: SkillFishOS <info@skillfishos.com>
-Depends: python3, python3-pyqt6
+Depends: python3, python3-pyqt6, polkitd | policykit-1
 Recommends: docker.io | docker-ce, ollama
 Section: utils
 Priority: optional
