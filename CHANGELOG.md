@@ -4,6 +4,9 @@ All notable changes to SkillFishOS. Dates are ISO-8601.
 
 ## [Unreleased]
 
+### Added
+- **SkillFishOS Hub** reborn as a Discover-style software centre: sidebar layout (Explore / Categories / Installed / Updates / Sources) with search, category browsing with AppStream icons and descriptions, app pages with screenshots, and install/remove/update across **APT + Flatpak + Snap**. Software sources can be added/removed/enabled (APT deb822 repos with optional signing key; Flatpak remotes), and a single "Update all" applies updates from every backend. Privileged APT/repository actions run via `skillfish-hub-helper` (pkexec).
+
 ### Changed
 - **Kernel Switch → Kernel Manager** (`skillfish-kernel-manager`, replaces `skillfish-kernel-switch`): besides choosing the boot kernel (default / boot-once), it now lists every installed kernel with flavour, size and running/default badges, and can **completely uninstall** a kernel (`apt purge` image + headers + modules) so kernels don't pile up. Guardrails: never removes the running kernel or the last remaining one, and moves the GRUB default off a kernel before removing it; a confirmation dialog shows the packages removed and the space freed.
 
