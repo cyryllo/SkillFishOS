@@ -5,12 +5,18 @@ All notable changes to SkillFishOS. Dates are ISO-8601.
 ## [Unreleased]
 
 ### Added
-- **SkillFishOS Hub** reborn as a Discover-style software centre: sidebar layout (Explore / Categories / Installed / Updates / Sources) with search, category browsing with AppStream icons and descriptions, app pages with screenshots, and install/remove/update across **APT + Flatpak + Snap**. Software sources can be added/removed/enabled (APT deb822 repos with optional signing key; Flatpak remotes), and a single "Update all" applies updates from every backend. Privileged APT/repository actions run via `skillfish-hub-helper` (pkexec).
+- **SkillFishOS Hub** (`skillfish-hub` 26.06.7) reborn as a Discover-style software centre: sidebar layout (Explore / Categories / Installed / Updates / Sources) with search, category browsing with AppStream icons and descriptions, and install/remove/update across **APT + Flatpak + Snap**. Software sources can be added/removed/enabled (APT deb822 repos with optional signing key; Flatpak remotes), and a single "Update all" applies updates from every backend. Privileged APT/repository actions run via `skillfish-hub-helper` (pkexec).
+  - **Discover-style app pages**: a hero (96 px icon, title, developer, summary, star rating, Install / Remove / Open) over a metadata strip (source · version · size · licence · sandbox + website link), a full-width **screenshot carousel** with arrows and dots, then description, "What's new", permissions and ODRS reviews.
+  - **Sidebar sub-categories** that expand/collapse under each top category (with a disclosure caret and an "All" entry), matching Discover; clicking the open category collapses it again.
+- **In-distro app catalogue (MetaInfo)**: each SkillFishOS app now ships its own `/usr/share/metainfo/*.metainfo.xml` plus local screenshots, so the Hub (and any AppStream client) shows full app pages for **Tuner, AI, Monitor, Kernel Manager and Hub** themselves — bundled into `skillfish-tuner` 26.06.4, `skillfish-ai-panel` 26.06.4, `skillfish-monitor` 26.06.4, `skillfish-kernel-manager` 26.06.1 and `skillfish-hub` 26.06.7.
 
 ### Changed
 - **Kernel Switch → Kernel Manager** (`skillfish-kernel-manager`, replaces `skillfish-kernel-switch`): besides choosing the boot kernel (default / boot-once), it now lists every installed kernel with flavour, size and running/default badges, and can **completely uninstall** a kernel (`apt purge` image + headers + modules) so kernels don't pile up. Guardrails: never removes the running kernel or the last remaining one, and moves the GRUB default off a kernel before removing it; a confirmation dialog shows the packages removed and the space freed.
 
 ### Fixed
+- Hub: clicking a category no longer freezes the window — the sidebar rebuild is deferred so it never deletes the button mid-click.
+- Hub: three async view-clobber races fixed with a per-view token — a slow **search**, **updates check** or **snap-category** fetch can no longer overwrite the view after the user has navigated elsewhere (e.g. searching right after opening a category now shows the search results, not the category).
+- Hub: starting a search now clears any selected category/sub-category highlight (Discover behaviour), and duplicate Flatpak remotes (system + user) are de-duplicated in Sources.
 - Cleared all CodeQL code-scanning alerts (file-not-closed, empty-except, unused-import, a duplicate `closeEvent`, and two overly-permissive `chmod`s) across the native apps.
 
 ## [26.06 "Aetherium"] — 2026-06-07
