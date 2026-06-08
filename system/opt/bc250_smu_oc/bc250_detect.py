@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import struct
 import time
 import configparser
 import argparse

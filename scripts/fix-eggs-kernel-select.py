@@ -5,8 +5,12 @@
 # early returns and pass this.kernel through.
 import os, glob, shutil
 
+def _read(path, **kw):
+    with open(path, **kw) as f:
+        return f.read()
+
 def patch(path, reps, anchor=None):
-    s = open(path, encoding="utf-8").read()
+    s = _read(path, encoding="utf-8")
     if not os.path.exists(path + ".skfbak"):
         shutil.copy(path, path + ".skfbak")
     for a, b in reps:
@@ -16,11 +20,12 @@ def patch(path, reps, anchor=None):
             s = s.replace(a, b, 1); print("  OK  :", path, "<-", a[:40])
         else:
             print("  MISS:", path, "<-", a[:40])
-    open(path, "w", encoding="utf-8").write(s)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(s)
 
 # locate files
 kjs = [p for p in glob.glob('/usr/lib/penguins-eggs/dist/**/kernel.js', recursive=True)
-       if 'vmlinuzFromUname' in open(p, encoding='utf-8', errors='ignore').read()]
+       if 'vmlinuzFromUname' in _read(p, encoding='utf-8', errors='ignore')]
 prods = [p for p in glob.glob('/usr/lib/penguins-eggs/dist/classes/ovary.d/produce.js')]
 print("kernel.js:", kjs)
 print("produce.js:", prods)

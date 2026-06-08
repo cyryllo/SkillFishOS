@@ -46,16 +46,17 @@ def catalog():
     for f in files:
         name = ver = None; desc = ""
         try:
-            for line in open(f, errors="replace"):
-                if line.startswith("Package: "): name = line[9:].strip()
-                elif line.startswith("Version: "): ver = line[9:].strip()
-                elif line.startswith("Description: ") and name:
-                    desc = line[13:].strip()
-                    if name not in pkgs or ver > pkgs[name]["avail"]:
-                        pkgs[name] = {"avail": ver, "desc": desc}
-                    name = ver = None; desc = ""
+            with open(f, errors="replace") as fh:
+                for line in fh:
+                    if line.startswith("Package: "): name = line[9:].strip()
+                    elif line.startswith("Version: "): ver = line[9:].strip()
+                    elif line.startswith("Description: ") and name:
+                        desc = line[13:].strip()
+                        if name not in pkgs or ver > pkgs[name]["avail"]:
+                            pkgs[name] = {"avail": ver, "desc": desc}
+                        name = ver = None; desc = ""
         except Exception:
-            pass
+            pass  # best-effort: skip an unreadable/garbled Packages file
     for n in pkgs:
         pkgs[n]["installed"] = installed_version(n)
     return dict(sorted(pkgs.items()))

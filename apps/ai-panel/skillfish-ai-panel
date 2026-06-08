@@ -14,7 +14,7 @@ from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QGroupBox, QCheckBox, QPushButton, QComboBox, QSlider,
                              QProgressBar, QWizard, QWizardPage, QTextEdit, QMessageBox,
-                             QGridLayout, QLineEdit, QFrame)
+                             QGridLayout, QLineEdit)
 
 STACK_DIR  = "/opt/stacks/skillfish-ai"
 COMPOSE_NAMES = ("compose.yaml", "compose.yml", "docker-compose.yml", "docker-compose.yaml")
@@ -99,16 +99,17 @@ def save_cfg(d):
     try:
         with open(CFG_FILE, "w") as f: json.dump(d, f, indent=2)
     except Exception:
-        pass
+        pass  # best-effort: config save is non-critical
 
 # ---------- hardware ----------
 def cpu_model():
     try:
-        for line in open("/proc/cpuinfo"):
-            if line.startswith("model name"):
-                return line.split(":", 1)[1].strip()
+        with open("/proc/cpuinfo") as f:
+            for line in f:
+                if line.startswith("model name"):
+                    return line.split(":", 1)[1].strip()
     except Exception:
-        pass
+        pass  # best-effort: /proc/cpuinfo unreadable
     return "?"
 
 def gpu_model():
@@ -122,7 +123,8 @@ def gpu_model():
 
 def _read_int(path):
     try:
-        return int(open(path).read().strip())
+        with open(path) as f:
+            return int(f.read().strip())
     except Exception:
         return None
 
@@ -150,21 +152,23 @@ def gtt_info():
     # current boot value of amdgpu.gttsize (MB)
     cur_mb = None
     try:
-        for tok in open("/proc/cmdline").read().split():
-            if tok.startswith("amdgpu.gttsize="):
-                cur_mb = int(tok.split("=", 1)[1])
+        with open("/proc/cmdline") as f:
+            for tok in f.read().split():
+                if tok.startswith("amdgpu.gttsize="):
+                    cur_mb = int(tok.split("=", 1)[1])
     except Exception:
-        pass
+        pass  # best-effort: cmdline unreadable
     return tot, used, cur_mb
 
 def ram_info():
     tot = avail = None
     try:
-        for line in open("/proc/meminfo"):
-            if line.startswith("MemTotal"):     tot = int(line.split()[1]) * 1024
-            elif line.startswith("MemAvailable"): avail = int(line.split()[1]) * 1024
+        with open("/proc/meminfo") as f:
+            for line in f:
+                if line.startswith("MemTotal"):     tot = int(line.split()[1]) * 1024
+                elif line.startswith("MemAvailable"): avail = int(line.split()[1]) * 1024
     except Exception:
-        pass
+        pass  # best-effort: meminfo unreadable
     return tot, avail
 
 def gb(n): return "?" if n is None else f"{n/1e9:.1f} GB"

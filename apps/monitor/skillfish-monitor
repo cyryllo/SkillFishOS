@@ -174,7 +174,7 @@ class Monitor(QMainWindow):
             self.sampler.stop()
             self.sampler.wait(1500)
         except Exception:
-            pass
+            pass  # best-effort: sampler may already be stopped
         super().closeEvent(e)
 
 

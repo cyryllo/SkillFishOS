@@ -3,7 +3,8 @@
 # instead of the build date, and fix the bootloader entry casing.
 import shutil, os
 f = "/usr/lib/penguins-eggs/dist/classes/incubation/branding.js"
-s = open(f, encoding="utf-8").read()
+with open(f, encoding="utf-8") as _f:
+    s = _f.read()
 if not os.path.exists(f + ".skfbak"):
     shutil.copy(f, f + ".skfbak")
 reps = [
@@ -24,5 +25,6 @@ for a, b in reps:
         s = s.replace(a, b); print("OK  :", a[:55])
     else:
         print("MISS:", a[:55]); ok = False
-open(f, "w", encoding="utf-8").write(s)
+with open(f, "w", encoding="utf-8") as _f:
+    _f.write(s)
 print("written:", f, "all-matched=", ok)

@@ -3,7 +3,7 @@
 # The GUI talks to the root daemon skillfish-tuner-helper (pkexec, one auth at start).
 # Bilingual UI (IT/EN), auto-detected from the LANG/LC_* environment.
 import sys, os, json, subprocess, re, collections
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QPointF
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPen, QBrush, QLinearGradient, QPainterPath, QFont
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QGroupBox, QSlider, QPushButton, QToolButton, QCheckBox,
@@ -85,7 +85,7 @@ class Daemon:
             if self.proc and self.proc.poll() is None:
                 self.proc.stdin.write('{"cmd":"quit"}\n'); self.proc.stdin.flush()
         except Exception:
-            pass
+            pass  # best-effort: daemon may already be gone
 
 
 class CmdThread(QThread):
@@ -251,7 +251,9 @@ class TunerWindow(QMainWindow):
         self.setWindowIcon(QIcon(ICON))
         self._geomfile = os.path.expanduser("~/.config/skillfishos/tuner-geom.json")
         try:
-            gj = json.load(open(self._geomfile)); self.resize(int(gj["w"]), int(gj["h"]))
+            with open(self._geomfile) as _gf:
+                gj = json.load(_gf)
+            self.resize(int(gj["w"]), int(gj["h"]))
         except Exception:
             self.resize(982, 1000)
         self.cfg = (self.d.cmd(cmd="get").get("data")) or {}
@@ -282,13 +284,20 @@ class TunerWindow(QMainWindow):
         self._mon.start(); self._mon.show(); self._mon.raise_(); self._mon.activateWindow()
 
     def closeEvent(self, e):
+        # merged: persist geometry, close the monitor window, stop the daemon, accept.
         try:
             os.makedirs(os.path.dirname(self._geomfile), exist_ok=True)
-            json.dump({"w": self.width(), "h": self.height()}, open(self._geomfile, "w"))
+            with open(self._geomfile, "w") as _gf:
+                json.dump({"w": self.width(), "h": self.height()}, _gf)
         except Exception:
-            pass
+            pass  # best-effort: persisting window geometry is non-critical
         if getattr(self, "_mon", None) is not None:
             self._mon.close()
+        try:
+            self.d.stop()
+        except Exception:
+            pass  # best-effort: daemon may already be stopped
+        e.accept()
         super().closeEvent(e)
 
     def _help_btn(self, key):
@@ -333,7 +342,8 @@ class TunerWindow(QMainWindow):
     def _presets(self):
         g, v = self._section(L("Preset", "Presets"))
         try:
-            data = json.load(open(PRESETS))["presets"]
+            with open(PRESETS) as _pf:
+                data = json.load(_pf)["presets"]
         except Exception:
             data = []
         for p in data:
@@ -574,9 +584,6 @@ class TunerWindow(QMainWindow):
                                   "Writes to the BIOS CMOS. A reboot is needed to apply.")) != QMessageBox.StandardButton.Yes:
             return
         self.d.cmd(cmd="set-vram", mb=mb); self.toast(L(f"VRAM {mb} MB — riavvia", f"VRAM {mb} MB — reboot"))
-
-    def closeEvent(self, e):
-        self.d.stop(); e.accept()
 
 
 def main():
