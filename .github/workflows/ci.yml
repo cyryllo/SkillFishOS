@@ -1,0 +1,61 @@
+name: CI — apps build & verify
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/**'
+      - 'system/usr/**'
+      - 'system/etc/**'
+      - 'tests/**'
+      - 'scripts/build-debs-ci.sh'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Syntax check every app script
+        run: |
+          set -e
+          for f in apps/tuner/skillfish-tuner apps/tuner/skillfish-tuner-helper \
+                   apps/hub/skillfish-hub apps/hub/skillfish-hub-helper \
+                   apps/monitor/skillfish-monitor \
+                   apps/kernel-manager/skillfish-kernel-manager \
+                   apps/ai-panel/skillfish-ai-panel; do
+            case "$(head -1 "$f")" in
+              *python*) python -m py_compile "$f" && echo "compile OK: $f";;
+              *) bash -n "$f" && echo "bash -n OK: $f";;
+            esac
+          done
+
+      - name: Unit tests (governor config logic)
+        run: |
+          pip install -q pytest
+          python -m pytest tests/ -v
+
+      - name: Build all .debs from git sources
+        run: |
+          chmod +x scripts/build-debs-ci.sh
+          ./scripts/build-debs-ci.sh "0.0~ci${{ github.run_number }}"
+
+      - name: Lintian (informational)
+        run: |
+          sudo apt-get -qq install -y lintian >/dev/null
+          lintian --no-tag-display-limit /tmp/sfx-debs/out/*.deb || true
+
+      - name: Upload .deb artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: skillfish-debs
+          path: /tmp/sfx-debs/out/*.deb
+          retention-days: 14
