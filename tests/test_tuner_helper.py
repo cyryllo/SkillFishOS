@@ -53,6 +53,17 @@ def test_curve_is_ascending(helper):
     assert pts == sorted(pts)
 
 
+def test_curve_clamps_undervolted_2230(helper):
+    # 2230 @ <=1000 mV is the reproduced hard-freeze combo: must clamp to 2200
+    pts = helper._gpu_curve(350, 700, 2230, 1000)
+    assert max(f for f, _ in pts) == 2200
+
+
+def test_curve_allows_2230_with_proper_voltage(helper):
+    pts = helper._gpu_curve(350, 700, 2230, 1060)
+    assert (2230, 1060) in pts
+
+
 # ---------- apply_gpu: writes the curve, replaces old safe-points ----------
 
 def test_apply_gpu_writes_multipoint_curve(helper):

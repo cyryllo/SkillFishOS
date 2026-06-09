@@ -367,7 +367,21 @@ class TunerWindow(QMainWindow):
         return p.get("desc_" + LANG) or p.get("desc", "")
 
     def _apply_preset(self, p):
-        c = p["cpu"]; self.d.cmd(cmd="apply-cpu", mhz=c["frequency"], scale=c["scale"], temp=c["max_temperature"])
+        c = p["cpu"]
+        if c["frequency"] >= 4000:
+            # the Crazy-class presets are benchmark-only: 4000 @ heavy undervolt was
+            # traced to repeated whole-machine hard-freezes when left applied 24/7
+            if QMessageBox.warning(self, L("Preset estremo", "Extreme preset"),
+                L("«%s» è pensato SOLO per sessioni di benchmark con ottimo raffreddamento.\n\n"
+                  "Resta attivo anche dopo il riavvio e su alcune schede causa blocchi totali "
+                  "improvvisi (anche a riposo). Dopo i benchmark torna a Turbo o Performance.\n\nApplicare comunque?" % self._pname(p),
+                  "“%s” is meant ONLY for benchmark sessions with very good cooling.\n\n"
+                  "It stays applied across reboots and on some boards causes sudden total "
+                  "freezes (even at idle). Switch back to Turbo or Performance after benchmarking.\n\nApply anyway?" % self._pname(p)),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+                return
+        self.d.cmd(cmd="apply-cpu", mhz=c["frequency"], scale=c["scale"], temp=c["max_temperature"])
         gg = p["gpu"]; self.d.cmd(cmd="apply-gpu", minmhz=gg["min_mhz"], minmv=gg["min_mv"], maxmhz=gg["max_mhz"], maxmv=gg["max_mv"])
         f = p["fan"]; self.d.cmd(cmd="apply-fan", mode=f["mode"], pct=f.get("pct", 50))
         if p.get("thermal_guard"):

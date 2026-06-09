@@ -276,10 +276,34 @@ class Catalog:
         return out
 
     def load_ratings(self):
+        # ODRS aggregate ratings, with a 24h on-disk cache: skips a multi-MB
+        # download on every launch and keeps stars working offline.
+        cache = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
+                             "skillfish-hub", "odrs-ratings.json")
+        data = None
         try:
-            with urllib.request.urlopen(ODRS + "/ratings", timeout=15) as r:
-                data = json.loads(r.read().decode())
-            for k, v in data.items():
+            import time as _t
+            if os.path.exists(cache) and (_t.time() - os.path.getmtime(cache)) < 86400:
+                with open(cache, encoding="utf-8") as fh:
+                    data = json.load(fh)
+        except Exception:
+            data = None  # unreadable cache: refetch below
+        if data is None:
+            try:
+                with urllib.request.urlopen(ODRS + "/ratings", timeout=15) as r:
+                    data = json.loads(r.read().decode())
+                os.makedirs(os.path.dirname(cache), exist_ok=True)
+                with open(cache, "w", encoding="utf-8") as fh:
+                    json.dump(data, fh)
+            except Exception:
+                # offline / ODRS down: fall back to a stale cache if we have one
+                try:
+                    with open(cache, encoding="utf-8") as fh:
+                        data = json.load(fh)
+                except Exception:
+                    data = None
+        try:
+            for k, v in (data or {}).items():
                 tot = v.get("total", 0)
                 if tot:
                     avg = sum(int(k2[-1]) * v.get(k2, 0) for k2 in ("star1", "star2", "star3", "star4", "star5")) / tot
@@ -1196,6 +1220,12 @@ class Hub(QMainWindow):
         self._ub.done.connect(lambda u: self.nav["updates"].setText("  ⟳   " + L("Aggiornamenti", "Updates") + ((" (%d)" % len(u)) if u else ""))); self._ub.start()
 
     def manual_refresh(self):
+        # a manual refresh should bypass the 24h ODRS ratings cache too
+        try:
+            os.remove(os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
+                                   "skillfish-hub", "odrs-ratings.json"))
+        except OSError:
+            pass  # no cache yet
         cmds = [["pkexec", HELPER, "apt-update"]]
         if self.backend_on("flatpak"): cmds.append(["flatpak", "update", "--appstream"])
         self._run_chain(cmds, L("Aggiorno gli elenchi dei pacchetti…", "Refreshing the package lists…"))

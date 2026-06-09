@@ -110,6 +110,12 @@ def _gpu_curve(minmhz,minmv,maxmhz,maxmv):
     # Build a SMOOTH multi-point voltage curve (gentle clock/voltage transitions).
     # The BC-250 SMU can hard-hang on abrupt jumps, so insert validated mid-points
     # (1500/900, 2000/1000) between idle and the requested max instead of a 2-point line.
+    # Safety clamp: >2200 MHz at <=1000 mV is UNDERVOLTED and hard-freezes the
+    # machine (reproduced + community data: 2230 needs 1000-1060 mV). Allow >2200
+    # only when the caller raises the voltage accordingly.
+    maxmhz, maxmv = int(maxmhz), int(maxmv)
+    if maxmhz > 2200 and maxmv <= 1000:
+        maxmhz = 2200
     pts=[(int(minmhz),int(minmv))]
     for f,v in ((1500,900),(2000,1000)):
         if minmhz < f < maxmhz: pts.append((f,v))

@@ -52,9 +52,9 @@
       "name": "Turbo",
       "name_it": "Turbo",
       "name_en": "Turbo",
-      "desc": "Spinta alta. CPU 3900 MHz ~1199 mV (undervolt), GPU 2230 MHz.",
-      "desc_it": "Spinta alta. CPU 3900 MHz ~1199 mV (undervolt), GPU 2230 MHz.",
-      "desc_en": "High boost. CPU 3900 MHz ~1199 mV (undervolt), GPU 2230 MHz.",
+      "desc": "Spinta alta. CPU 3900 MHz ~1199 mV (undervolt), GPU 2200 MHz.",
+      "desc_it": "Spinta alta. CPU 3900 MHz ~1199 mV (undervolt), GPU 2200 MHz.",
+      "desc_en": "High boost. CPU 3900 MHz ~1199 mV (undervolt), GPU 2200 MHz.",
       "cpu": {
         "frequency": 3900,
         "scale": -24,
@@ -63,7 +63,7 @@
       "gpu": {
         "min_mhz": 350,
         "min_mv": 700,
-        "max_mhz": 2230,
+        "max_mhz": 2200,
         "max_mv": 1000
       },
       "fan": {
@@ -76,9 +76,9 @@
       "name": "Crazy",
       "name_it": "Crazy",
       "name_en": "Crazy",
-      "desc": "Massimo validato. CPU 4.0 GHz ~1224 mV (undervolt), GPU 2230 MHz.",
-      "desc_it": "Massimo validato. CPU 4.0 GHz ~1224 mV (undervolt), GPU 2230 MHz.",
-      "desc_en": "Validated maximum. CPU 4.0 GHz ~1224 mV (undervolt), GPU 2230 MHz.",
+      "desc": "Massimo validato. CPU 4.0 GHz ~1224 mV (undervolt), GPU 2200 MHz.",
+      "desc_it": "Massimo validato. CPU 4.0 GHz ~1224 mV (undervolt), GPU 2200 MHz.",
+      "desc_en": "Validated maximum. CPU 4.0 GHz ~1224 mV (undervolt), GPU 2200 MHz.",
       "cpu": {
         "frequency": 4000,
         "scale": -36,
@@ -87,7 +87,7 @@
       "gpu": {
         "min_mhz": 350,
         "min_mv": 700,
-        "max_mhz": 2230,
+        "max_mhz": 2200,
         "max_mv": 1000
       },
       "fan": {
