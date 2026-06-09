@@ -434,10 +434,69 @@ class TunerWindow(QMainWindow):
         v.addWidget(self._row(L("Modalità governor", "Governor mode"), _gmw, "gov_mode"))
         vals = lambda: (self.gf.value(), self.gv.value())
         v.addWidget(self._btns(
+            (L("🎰 Trova il massimo", "🎰 Find my max"), self._gpu_wizard, False),
             (L("Test (benchmark)", "Test (benchmark)"), lambda: self._test_gpu(*vals()), False),
             (L("Applica", "Apply"), lambda: (self.d.cmd(cmd="apply-gpu", minmhz=350, minmv=700, maxmhz=vals()[0], maxmv=vals()[1]), self.toast(L("GPU applicata", "GPU applied"))), True),
         ))
         return g
+
+    # ---------- find-my-max wizard (silicon lottery) ----------
+    WIZ_STEPS = [2000, 2050, 2100, 2150, 2200]  # MHz, all at the validated 1000 mV ceiling
+
+    def _gpu_wizard(self):
+        if QMessageBox.question(self, L("Trova il massimo", "Find my max"),
+            L("Il wizard prova la GPU a scalini crescenti (2000 → 2200 MHz a 1000 mV), "
+              "validando ogni passo con un benchmark e tornando indietro se instabile.\n\n"
+              "Durata ~2 minuti per passo, GPU sotto pieno carico: metti la ventola alta.\n"
+              "Al termine imposta il massimo stabile trovato per la TUA scheda.\n\nProcedere?",
+              "The wizard steps the GPU up (2000 → 2200 MHz at 1000 mV), validating each "
+              "step with a benchmark and rolling back if unstable.\n\n"
+              "~2 minutes per step under full GPU load: set the fan high first.\n"
+              "When done it applies the highest stable point for YOUR board.\n\nProceed?")
+            ) != QMessageBox.StandardButton.Yes:
+            return
+        self._wiz_queue = list(self.WIZ_STEPS)
+        self._wiz_good = None
+        self._wiz_bench = None
+        self._wiz_next()
+
+    def _wiz_next(self):
+        if not self._wiz_queue:
+            self._wiz_done(); return
+        f = self._wiz_queue.pop(0)
+        self._run_async(lambda f=f: self.d.cmd(cmd="test-gpu", minmhz=350, minmv=700, maxmhz=f, maxmv=1000),
+                        lambda r, f=f: self._wiz_step(f, r),
+                        L("Wizard: provo %d MHz…" % f, "Wizard: testing %d MHz…" % f))
+
+    def _wiz_step(self, f, r):
+        if r.get("ok"):
+            self._wiz_good = f; self._wiz_bench = r.get("bench")
+            self.toast(L("✓ %d MHz stabile" % f, "✓ %d MHz stable" % f), 4)
+            self._wiz_next()
+        else:
+            self._wiz_done(failed_at=f)
+
+    def _wiz_done(self, failed_at=None):
+        if not self._wiz_good:
+            self.toast(L("✗ Nemmeno 2000 MHz è stabile su questa scheda: resta il profilo attuale.",
+                         "✗ Not even 2000 MHz is stable on this board: keeping the current profile."), 8)
+            return
+        self.gf.s.setValue(self._wiz_good); self.gv.s.setValue(1000)
+        b = self._wiz_bench or {}
+        extra = (" — %s %s, %s°C" % (b.get("score"), b.get("unit"), b.get("temp"))) if b.get("score") else ""
+        msg = (L("Massimo stabile trovato: %d MHz @ 1000 mV%s (già applicato).",
+                 "Highest stable point: %d MHz @ 1000 mV%s (already applied).") % (self._wiz_good, extra))
+        if failed_at:
+            msg += "\n" + L("(%d MHz non ha superato il test ed è stato annullato.)" % failed_at,
+                            "(%d MHz failed the test and was rolled back.)" % failed_at)
+        msg += "\n\n" + L("Vuoi condividere il risultato (anonimo) nel database della lotteria del silicio su GitHub?",
+                          "Share the result (anonymous) in the silicon-lottery database on GitHub?")
+        if QMessageBox.question(self, L("Risultato wizard", "Wizard result"), msg) == QMessageBox.StandardButton.Yes:
+            import webbrowser, urllib.parse
+            q = urllib.parse.urlencode({"template": "silicon-report.yml",
+                                        "gpu-max": "%d @ 1000" % self._wiz_good,
+                                        "validation": "Tuner find-my-max wizard (vkpeak per step)"})
+            webbrowser.open("https://github.com/MTSistemi/SkillFishOS/issues/new?" + q)
 
     def _test_gpu(self, maxf, maxv):
         self._run_async(lambda: self.d.cmd(cmd="test-gpu", minmhz=350, minmv=700, maxmhz=maxf, maxmv=maxv),
