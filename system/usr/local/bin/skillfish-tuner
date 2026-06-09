@@ -46,8 +46,8 @@ HELP = {
    L("Voltaggio associato alla frequenza massima GPU (mV).\n\nPiù alto = più stabile ad alte frequenze ma più caldo. Range 700-1129 mV.",
      "Voltage tied to the max GPU frequency (mV).\n\nHigher = more stable at high frequency but hotter. Range 700-1129 mV.")),
  "gov_mode": (L("Modalità governor GPU", "GPU governor mode"),
-   L("Come il governor sceglie il clock GPU sotto carico:\n\n• Bilanciato: alza il clock solo quanto serve — più fresco e silenzioso (default).\n• Performance: tiene la GPU al clock massimo sotto qualsiasi carico di gioco (massimi FPS nei giochi GPU-bound, più calore e consumo). A riposo torna comunque a 350 MHz.\n\nNel benchmark di Black Myth: Wukong, Performance dà circa +12% di FPS medi e +13% sui frame più lenti, senza scendere a compromessi sulla stabilità (usa la via SMU sicura del governor).",
-     "How the governor picks the GPU clock under load:\n\n• Balanced: raises the clock only as much as needed — cooler and quieter (default).\n• Performance: holds the GPU at max clock under any gaming load (best FPS in GPU-bound games, more heat and power). It still returns to 350 MHz at idle.\n\nIn the Black Myth: Wukong benchmark, Performance gives about +12% average FPS and +13% on the slowest frames, with no stability trade-off (it uses the governor's safe SMU path).")),
+   L("Come il governor sceglie il clock GPU sotto carico:\n\n• Bilanciato: alza il clock solo quanto serve — più fresco e silenzioso (default).\n• Performance: tiene la GPU al clock massimo sotto qualsiasi carico di gioco (massimi FPS nei giochi GPU-bound, più calore e consumo). A riposo torna comunque a 350 MHz.\n\nEntrambe le modalità usano la via SMU sicura del governor.",
+     "How the governor picks the GPU clock under load:\n\n• Balanced: raises the clock only as much as needed — cooler and quieter (default).\n• Performance: holds the GPU at max clock under any gaming load (best FPS in GPU-bound games, more heat and power). It still returns to 350 MHz at idle.\n\nBoth modes use the governor's safe SMU path.")),
  "fan": (L("Ventola", "Fan"),
    L("Controllo manuale: imposti tu la velocità in %.\nAutomatico: la curva del chip gestisce la velocità in base alla temperatura.\n\nUsa «Test» per sentire la ventola alla velocità scelta per qualche secondo.",
      "Manual control: you set the speed in %.\nAutomatic: the chip's curve manages the speed based on temperature.\n\nUse «Test» to hear the fan at the chosen speed for a few seconds.")),
@@ -399,6 +399,7 @@ class TunerWindow(QMainWindow):
         v.addWidget(self._row(L("Limite temperatura", "Temperature limit"), self.ct, "cpu_temp"))
         vals = lambda: (self.cf.value(), self.cs.value(), self.ct.value())
         v.addWidget(self._btns(
+            (L("🎰 Trova il massimo", "🎰 Find my max"), self._cpu_wizard, False),
             (L("Suggerisci UV", "Suggest UV"), lambda: self._suggest_uv(self.cf.value()), False),
             (L("Test (benchmark)", "Test (benchmark)"), lambda: self._test_cpu(*vals()), False),
             (L("Applica", "Apply"), lambda: (self.d.cmd(cmd="apply-cpu", mhz=vals()[0], scale=vals()[1], temp=vals()[2]), self.toast(L("CPU applicata", "CPU applied"))), True),
@@ -506,11 +507,81 @@ class TunerWindow(QMainWindow):
         msg += "\n\n" + L("Vuoi condividere il risultato (anonimo) nel database della lotteria del silicio su GitHub?",
                           "Share the result (anonymous) in the silicon-lottery database on GitHub?")
         if QMessageBox.question(self, L("Risultato wizard", "Wizard result"), msg) == QMessageBox.StandardButton.Yes:
-            import webbrowser, urllib.parse
-            q = urllib.parse.urlencode({"template": "silicon-report.yml",
-                                        "gpu-max": "%d @ 1000" % self._wiz_good,
-                                        "validation": "Tuner find-my-max wizard (vkpeak per step)"})
-            webbrowser.open("https://github.com/MTSistemi/SkillFishOS/issues/new?" + q)
+            self._share_silicon(gpu="%d @ 1000" % self._wiz_good,
+                                validation="Tuner GPU find-my-max wizard (vkpeak per step)")
+
+    def _share_silicon(self, cpu=None, gpu=None, validation=""):
+        """Open the GitHub silicon-lottery report prefilled with the validated values.
+        Anonymous in content: only clocks/voltages, no identifiers (the user reviews
+        the form in the browser before submitting)."""
+        import webbrowser, urllib.parse
+        fields = {"template": "silicon-report.yml",
+                  "cpu-max": cpu or ("%d @ %d" % (self.cf.value(), self.cs.value())),
+                  "gpu-max": gpu or ("%d @ %d" % (self.gf.value(), self.gv.value())),
+                  "validation": validation or "SkillFishOS Tuner"}
+        webbrowser.open("https://github.com/MTSistemi/SkillFishOS/issues/new?" + urllib.parse.urlencode(fields))
+
+    # ---------- find-my-max wizard (CPU) ----------
+    # frequency/undervolt ladder: each step is benchmarked and rolled back if it
+    # throttles or fails; on disk the conf always holds the last-known-good value,
+    # so even a hard freeze mid-test reboots into a stable config (watchdog-safe).
+    CPU_WIZ_STEPS = [(3600, -8), (3700, -16), (3800, -20), (3900, -24), (4000, -36)]
+
+    def _cpu_wizard(self):
+        if QMessageBox.question(self, L("Trova il massimo (CPU)", "Find my max (CPU)"),
+            L("Il wizard prova la CPU a scalini crescenti (3600 → 4000 MHz con undervolt "
+              "progressivo), validando ogni passo con un benchmark e fermandosi al primo "
+              "instabile.\n\n⚠ L'ultimo scalino può bloccare alcune schede: in tal caso il "
+              "watchdog riavvia da solo e al boot torna l'ultimo valore stabile.\n\n"
+              "Nota: il test valida la stabilità SOTTO CARICO; la stabilità a riposo "
+              "(giorni di uso) la confermi usando il sistema.\n\nProcedere?",
+              "The wizard steps the CPU up (3600 → 4000 MHz with progressive undervolt), "
+              "validating each step with a benchmark and stopping at the first unstable "
+              "one.\n\n⚠ The last step can freeze some boards: the watchdog then reboots "
+              "automatically and the last stable value is restored at boot.\n\n"
+              "Note: the test validates UNDER-LOAD stability; idle stability over days is "
+              "confirmed by regular use.\n\nProceed?")
+            ) != QMessageBox.StandardButton.Yes:
+            return
+        self._cwiz_queue = list(self.CPU_WIZ_STEPS)
+        self._cwiz_good = None
+        self._cwiz_next()
+
+    def _cwiz_next(self):
+        if not self._cwiz_queue:
+            self._cwiz_done(); return
+        f, s = self._cwiz_queue.pop(0)
+        self._run_async(lambda f=f, s=s: self.d.cmd(cmd="test-cpu", mhz=f, scale=s, temp=85),
+                        lambda r, f=f, s=s: self._cwiz_step(f, s, r),
+                        L("Wizard CPU: provo %d MHz @ %d…" % (f, s), "CPU wizard: testing %d MHz @ %d…" % (f, s)))
+
+    def _cwiz_step(self, f, s, r):
+        if r.get("ok"):
+            self._cwiz_good = (f, s)
+            self.toast(L("✓ %d MHz @ %d stabile" % (f, s), "✓ %d MHz @ %d stable" % (f, s)), 4)
+            self._cwiz_next()
+        else:
+            self._cwiz_done(failed_at=(f, s))
+
+    def _cwiz_done(self, failed_at=None):
+        if not self._cwiz_good:
+            self.toast(L("✗ Nemmeno 3600 MHz è stabile: resta il profilo attuale.",
+                         "✗ Not even 3600 MHz is stable: keeping the current profile."), 8)
+            return
+        f, s = self._cwiz_good
+        self.cf.s.setValue(f); self.cs.s.setValue(s)
+        msg = L("Massimo CPU stabile sotto carico: %d MHz @ undervolt %d (già applicato e salvato al boot)." % (f, s),
+                "Highest load-stable CPU point: %d MHz @ undervolt %d (already applied and saved at boot)." % (f, s))
+        if failed_at:
+            msg += "\n" + L("(%d MHz @ %d non ha superato il test ed è stato annullato.)" % failed_at,
+                            "(%d MHz @ %d failed the test and was rolled back.)" % failed_at)
+        msg += "\n\n" + L("Consiglio: usa il sistema qualche giorno; se compare un blocco, scendi di uno scalino.\n\n"
+                          "Vuoi condividere il risultato (anonimo) nel database della lotteria del silicio?",
+                          "Tip: run the system for a few days; if a freeze appears, step down one notch.\n\n"
+                          "Share the result (anonymous) in the silicon-lottery database?")
+        if QMessageBox.question(self, L("Risultato wizard CPU", "CPU wizard result"), msg) == QMessageBox.StandardButton.Yes:
+            self._share_silicon(cpu="%d @ %d" % (f, s),
+                                validation="Tuner CPU find-my-max wizard (bench per step)")
 
     def _test_gpu(self, maxf, maxv):
         self._run_async(lambda: self.d.cmd(cmd="test-gpu", minmhz=350, minmv=700, maxmhz=maxf, maxmv=maxv),

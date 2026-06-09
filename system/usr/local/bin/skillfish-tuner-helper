@@ -308,10 +308,18 @@ def bench_gpu():
     g=float(m.group(1)) if m else 0
     return {"score":round(g,0),"unit":"GFLOPS","temp":temp("amdgpu"),"ok":r.returncode==0 and g>0}
 
+def _write_cpu_conf(mhz,scale,tmp):
+    _wr(OC_CONF,"[overclock]\nfrequency = %d\nscale = %d\nmax_temperature = %d\n"%(mhz,scale,tmp))
+
 def test_cpu(mhz,scale,tmp):
     prev=get()["cpu"]
     if not apply_cpu(mhz,scale,tmp):
+        _write_cpu_conf(prev["frequency"],prev["scale"],prev["max_temperature"])
         return {"ok":False,"phase":"apply","err":"applicazione fallita"}
+    # CRASH SAFETY: while the candidate is being benched, keep the LAST-KNOWN-GOOD
+    # values on disk. A hard freeze mid-bench must not leave the unstable candidate
+    # in the conf that bc250-smu-oc.service re-applies at boot (freeze loop).
+    _write_cpu_conf(prev["frequency"],prev["scale"],prev["max_temperature"])
     b=bench_cpu()
     # stability: under load the min core freq should stay within 150MHz of target
     stable = b["ok"] and b["min_mhz"] >= (mhz-200)
@@ -319,6 +327,7 @@ def test_cpu(mhz,scale,tmp):
         apply_cpu(prev["frequency"],prev["scale"],prev["max_temperature"])  # rollback
         return {"ok":False,"applied":False,"bench":b,
                 "err":"Instabile/throttle: %d MHz sotto carico (target %d). Ripristinato."%(b["min_mhz"],mhz)}
+    _write_cpu_conf(mhz,scale,tmp)  # passed: persist the candidate
     return {"ok":True,"applied":True,"bench":b}
 
 def suggest_uv(mhz):
@@ -330,6 +339,8 @@ def suggest_uv(mhz):
     s=0
     while s>-20:  # limite di sicurezza
         if not apply_cpu(mhz, s, prev["max_temperature"]): break
+        # crash safety: keep last-known-good on disk during the stress (see test_cpu)
+        _write_cpu_conf(prev["frequency"],prev["scale"],prev["max_temperature"])
         b=bench_cpu(12)  # breve verifica
         if b["ok"] and b["min_mhz"] >= (mhz-200):
             best=s; s-=2

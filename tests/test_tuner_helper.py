@@ -120,6 +120,38 @@ def test_mode_roundtrip_preserves_safepoints(helper):
     assert txt.count("[[safe-points]]") == 4
 
 
+# ---------- test_cpu: crash-safe persistence ----------
+
+def _cpu_fixture(helper, tmp_path, monkeypatch):
+    conf = tmp_path / "bc250-smu-oc.conf"
+    conf.write_text("[overclock]\nfrequency = 3700\nscale = -16\nmax_temperature = 85\n")
+    monkeypatch.setattr(helper, "OC_CONF", str(conf))
+    monkeypatch.setattr(helper, "get", lambda: {"cpu": {"frequency": 3700, "scale": -16, "max_temperature": 85}})
+    return conf
+
+
+def test_cpu_bench_runs_with_last_known_good_on_disk(helper, tmp_path, monkeypatch):
+    """A hard freeze mid-bench must reboot into the OLD config, not the candidate."""
+    conf = _cpu_fixture(helper, tmp_path, monkeypatch)
+    seen = {}
+    def fake_bench(*a, **k):
+        seen["conf_during_bench"] = conf.read_text()
+        return {"ok": True, "min_mhz": 3900, "score": 1, "unit": "x", "temp": 60}
+    monkeypatch.setattr(helper, "bench_cpu", fake_bench)
+    r = helper.test_cpu(3900, -24, 85)
+    assert r["ok"]
+    assert "frequency = 3700" in seen["conf_during_bench"], "candidate must NOT be persisted during the bench"
+    assert "frequency = 3900" in conf.read_text(), "candidate persisted only after passing"
+
+
+def test_cpu_failed_bench_keeps_old_config(helper, tmp_path, monkeypatch):
+    conf = _cpu_fixture(helper, tmp_path, monkeypatch)
+    monkeypatch.setattr(helper, "bench_cpu", lambda *a, **k: {"ok": True, "min_mhz": 3000})
+    r = helper.test_cpu(4000, -36, 85)
+    assert not r["ok"]
+    assert "frequency = 3700" in conf.read_text()
+
+
 def test_safepoints_fallback_is_the_safe_curve(helper):
     helper._test_conf.write_text("")  # unreadable / empty config
     pts = helper._gov_safepoints()
