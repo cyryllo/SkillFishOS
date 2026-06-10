@@ -150,6 +150,8 @@ export const strings: Record<string, Entry> = {
   'gal.ai.d': { it: "Accendi e spegni lo stack AI locale (Vulkan) con un clic.", en: "Turn the local AI stack (Vulkan) on and off with one click." },
   'gal.tuner.t': { it: "Tuner — Compute Unit a caldo", en: "Tuner — live Compute Units" },
   'gal.tuner.d': { it: "Griglia delle CU (verde = attiva, rosso = spenta), preset 24/32/40 e test, senza riavvio.", en: "CU grid (green = active, red = off), 24/32/40 presets and test, no reboot." },
+  'gal.tunerctl.t': { it: "Tuner — preset, governor e wizard", en: "Tuner — presets, governor and wizards" },
+  'gal.tunerctl.d': { it: "Preset Stock/Performance/Turbo/Crazy, pannello «Il mio silicio», modalità governor Bilanciata/Performance e i wizard «Trova il massimo» per CPU e GPU.", en: "Stock/Performance/Turbo/Crazy presets, the “My silicon” panel, Balanced/Performance governor mode and the “Find my max” wizards for CPU and GPU." },
   'gal.monitor.t': { it: "Monitor live durante i test", en: "Live monitor during tests" },
   'gal.monitor.d': { it: "Grafici in tempo reale di temperatura, frequenza, voltaggio e ventola.", en: "Real-time temperature, frequency, voltage and fan charts." },
   'gal.cutest.t': { it: "Test CU — lotteria del silicio", en: "CU test — silicon lottery" },
