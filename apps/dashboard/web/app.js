@@ -2,6 +2,20 @@
 // SkillFish Remote - dynamic, module-composed dashboard frontend.
 const $ = (s, r = document) => r.querySelector(s);
 const api = (p, opt) => fetch(p, Object.assign({ credentials: "same-origin" }, opt));
+const post = (p, body) => api(p, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+function toast(msg, ok = true) {
+  let t = $("#toast");
+  if (!t) { t = document.createElement("div"); t.id = "toast"; document.body.appendChild(t); }
+  t.textContent = msg; t.style.cssText =
+    "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99;padding:10px 18px;border-radius:10px;" +
+    "font-weight:600;font-size:.9rem;color:#1a130a;background:" + (ok ? "#d8a849" : "#e07b5a") +
+    ";box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:1;transition:opacity .4s";
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.style.opacity = "0"; }, 2200);
+}
+async function action(p, body, okmsg) {
+  try { const j = await (await post(p, body)).json(); toast(j.ok === false ? (j.error || "errore") : (okmsg || "fatto"), j.ok !== false); return j; }
+  catch (e) { toast("errore di rete", false); }
+}
 
 // ---- canvas sparkline chart (multi-series, rolling) ----
 class Mini {
@@ -90,6 +104,73 @@ const RENDER = {
       } catch (e) {}
     };
     fill(); card._iv = setInterval(fill, 5000);
+  },
+  async tuner(card) {
+    card.innerHTML = '<h3>🎛️ Controlli</h3><div id="tk">…</div>';
+    let d; try { d = await (await api("/api/tuner")).json(); } catch (e) { return; }
+    const presets = (d.presets || []).map(p =>
+      `<button class="dbtn" data-preset="${p.name}" title="${(p.desc || '').replace(/"/g, '')}">${p.name}</button>`).join("");
+    $("#tk", card).innerHTML =
+      `<div class="grp"><div class="gl">Preset</div><div class="brow">${presets}</div></div>` +
+      `<div class="grp"><div class="gl">Governor GPU</div><div class="brow">` +
+      `<button class="dbtn" data-gov="balanced">Bilanciato</button><button class="dbtn" data-gov="performance">Performance</button></div></div>` +
+      `<div class="grp"><div class="gl">Ventola</div><div class="brow">` +
+      `<button class="dbtn" data-fan="auto">Auto</button>` +
+      `<input id="fanp" type="range" min="20" max="100" value="60" style="flex:1">` +
+      `<button class="dbtn" data-fanmanual="1">Manuale</button></div></div>`;
+    card.querySelectorAll("[data-preset]").forEach(b => b.onclick = () =>
+      action("/api/tuner/preset", { name: b.dataset.preset }, "Preset " + b.dataset.preset + " applicato"));
+    card.querySelectorAll("[data-gov]").forEach(b => b.onclick = () =>
+      action("/api/tuner/govmode", { mode: b.dataset.gov }, "Governor: " + b.dataset.gov));
+    card.querySelector("[data-fan]").onclick = () => action("/api/tuner/fan", { mode: "auto" }, "Ventola: auto");
+    card.querySelector("[data-fanmanual]").onclick = () =>
+      action("/api/tuner/fan", { mode: "manual", pct: +$("#fanp", card).value }, "Ventola: " + $("#fanp", card).value + "%");
+  },
+  power(card) {
+    card.innerHTML = '<h3>🔌 Alimentazione</h3><div class="brow">' +
+      '<button class="dbtn danger" id="reboot">↻ Riavvia</button>' +
+      '<button class="dbtn danger" id="poweroff">⏻ Spegni</button></div>' +
+      '<div class="stub" style="margin-top:8px">Richiede conferma.</div>';
+    $("#reboot", card).onclick = () => { if (confirm("Riavviare la BC-250?")) action("/api/power", { action: "reboot" }, "Riavvio…"); };
+    $("#poweroff", card).onclick = () => { if (confirm("Spegnere la BC-250?")) action("/api/power", { action: "poweroff" }, "Spegnimento…"); };
+  },
+  logs(card) {
+    card.classList.add("span2");
+    card.innerHTML = '<h3>📜 Log <select id="lw" class="dsel">' +
+      '<option value="journal">journal</option><option value="kernel">kernel</option><option value="freeze">freeze</option>' +
+      '</select> <button class="dbtn" id="lref">⟳</button></h3><pre class="logbox" id="lb">…</pre>';
+    const load = async () => {
+      try { const j = await (await api("/api/logs?n=200&which=" + $("#lw", card).value)).json();
+        const lb = $("#lb", card); lb.textContent = (j.lines || []).join("\n") || "(vuoto)"; lb.scrollTop = lb.scrollHeight; } catch (e) {}
+    };
+    $("#lw", card).onchange = load; $("#lref", card).onclick = load; load();
+  },
+  launcher(card) {
+    card.innerHTML = '<h3>🚀 Avvio app</h3><div class="brow">' +
+      [["console", "🎮 Console"], ["monitor", "📊 Monitor"], ["tuner", "🎛️ Tuner"], ["hub", "📦 Hub"], ["ai", "🧠 AI"]]
+        .map(([k, l]) => `<button class="dbtn" data-app="${k}">${l}</button>`).join("") + "</div>" +
+      '<div class="stub" style="margin-top:8px">Si apre sullo schermo della scheda.</div>';
+    card.querySelectorAll("[data-app]").forEach(b => b.onclick = () =>
+      action("/api/launch", { what: b.dataset.app }, "Avviato: " + b.dataset.app));
+  },
+  recording(card) {
+    card.innerHTML = '<h3>⏺️ Registrazioni</h3><div class="brow"><button class="dbtn" id="rec">● REC</button></div><div id="rl" class="rows"></div>';
+    const refresh = async () => {
+      try {
+        const j = await (await api("/api/rec/list")).json();
+        const b = $("#rec", card);
+        b.textContent = j.recording ? "■ STOP" : "● REC";
+        b.classList.toggle("danger", !!j.recording); b.dataset.on = j.recording ? "1" : "";
+        $("#rl", card).innerHTML = (j.recordings || []).slice(0, 8).map(r =>
+          `<div class="r"><a href="/api/rec/get?f=${encodeURIComponent(r.name)}">${r.name}</a><span>${(r.size / 1024).toFixed(0)} KB</span></div>`).join("") || '<div class="stub">Nessuna registrazione.</div>';
+      } catch (e) {}
+    };
+    $("#rec", card).onclick = async () => {
+      const on = $("#rec", card).dataset.on;
+      await action(on ? "/api/rec/stop" : "/api/rec/start", {}, on ? "Registrazione salvata" : "Registrazione avviata");
+      refresh();
+    };
+    refresh(); card._iv = setInterval(refresh, 4000);
   },
   _stub(card, mod) {
     card.innerHTML = `<h3>${mod.icon} ${mod.name}</h3><div class="stub">Modulo attivo — interfaccia in arrivo.</div>`;

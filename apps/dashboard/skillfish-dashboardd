@@ -169,13 +169,12 @@ def read_all():
     return out
 
 
-_cpu_prev = [None]
-def cpu_load():
+def cpu_load(state):
     try:
         with open("/proc/stat") as fh:
             v = [int(x) for x in fh.readline().split()[1:]]
         idle = v[3] + (v[4] if len(v) > 4 else 0); total = sum(v)
-        prev = _cpu_prev[0]; _cpu_prev[0] = (total, idle)
+        prev = state[0]; state[0] = (total, idle)
         if prev is None:
             return None
         dt = total - prev[0]; di = idle - prev[1]
@@ -219,6 +218,163 @@ def sysinfo():
     return info
 
 
+# ---------------- module backends ----------------
+TUNER_HELPER = "/usr/local/bin/skillfish-tuner-helper"
+PRESETS_F = "/usr/share/skillfish/tuner-presets.json"
+REC_DIR_USER = None  # resolved at first use to the desktop user's home
+
+
+def tuner_cmd(reqs):
+    """Pipe one or more JSON command lines to the tuner helper; return last reply."""
+    try:
+        inp = "".join(json.dumps(r) + "\n" for r in reqs)
+        p = subprocess.run([TUNER_HELPER], input=inp, capture_output=True, text=True, timeout=40)
+        last = {"ok": False}
+        for line in p.stdout.splitlines():
+            try:
+                last = json.loads(line)
+            except Exception:
+                pass
+        return last
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def list_presets():
+    try:
+        with open(PRESETS_F) as f:
+            return json.load(f).get("presets", [])
+    except Exception:
+        return []
+
+
+def apply_preset(name):
+    pr = next((p for p in list_presets() if p.get("name", "").lower() == (name or "").lower()), None)
+    if not pr:
+        return {"ok": False, "error": "preset sconosciuto"}
+    c, g, fan = pr.get("cpu", {}), pr.get("gpu", {}), pr.get("fan", {})
+    cmds = [
+        {"cmd": "apply-cpu", "mhz": c.get("frequency"), "scale": c.get("scale"), "temp": c.get("max_temperature", 85)},
+        {"cmd": "apply-gpu", "minmhz": g.get("min_mhz"), "minmv": g.get("min_mv"),
+         "maxmhz": g.get("max_mhz"), "maxmv": g.get("max_mv")},
+        {"cmd": "apply-fan", "mode": fan.get("mode", "auto"), "pct": fan.get("pct", 45)},
+        {"cmd": "thermal-guard", "limit": pr.get("thermal_guard", 85)},
+    ]
+    tuner_cmd(cmds)
+    return {"ok": True, "preset": pr.get("name")}
+
+
+def user_home():
+    global REC_DIR_USER
+    if REC_DIR_USER:
+        return REC_DIR_USER
+    u = CONFIG.get("user", "skillfish")
+    try:
+        import pwd
+        REC_DIR_USER = pwd.getpwnam(u).pw_dir
+    except Exception:
+        REC_DIR_USER = "/home/" + u
+    return REC_DIR_USER
+
+
+def user_env():
+    """Env to launch GUI apps on the desktop user's session."""
+    return {"DISPLAY": ":0", "XDG_RUNTIME_DIR": "/run/user/1000",
+            "DBUS_SESSION_BUS_ADDRESS": "unix:path=/run/user/1000/bus",
+            "PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": user_home()}
+
+
+def launch_app(cmd):
+    u = CONFIG.get("user", "skillfish")
+    try:
+        subprocess.Popen(["sudo", "-u", u, "env"] + ["%s=%s" % (k, v) for k, v in user_env().items()]
+                         + ["setsid", "nohup"] + cmd,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def read_log(which, n=200):
+    n = max(1, min(2000, int(n)))
+    if which == "freeze":
+        try:
+            with open("/var/log/skillfish-freeze.log") as f:
+                return f.read().splitlines()[-n:]
+        except Exception:
+            return []
+    cmd = ["journalctl", "-n", str(n), "--no-pager", "-o", "short-iso"]
+    if which == "kernel":
+        cmd.append("-k")
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=5).stdout.splitlines()
+    except Exception:
+        return []
+
+
+# benchmark recorder (server-side .sfmon, shared)
+_REC = {"thread": None, "stop": False, "path": None, "rows": 0, "t0": 0}
+_REC_LOCK = threading.Lock()
+REC_KEYS = ["cpu_temp", "gpu_temp", "cpu_load", "gpu_util", "cpu_mhz", "gpu_freq",
+            "gpu_power", "gpu_mv", "cpu_mv", "fan", "vram"]
+
+
+def _rec_loop(path):
+    st = [None]
+    try:
+        d = os.path.dirname(path); os.makedirs(d, exist_ok=True)
+        with open(path, "w", newline="") as fh:
+            fh.write("# SkillFishOS Monitor recording v1\n")
+            fh.write("# started=%s interval_ms=500 source=dashboard\n" % time.strftime("%Y-%m-%dT%H:%M:%S"))
+            fh.write("t_sec," + ",".join(REC_KEYS) + "\n")
+            t0 = time.time(); _REC["t0"] = t0
+            while not _REC["stop"]:
+                vals = read_all(); vals["cpu_load"] = cpu_load(st)
+                fh.write("%.2f," % (time.time() - t0) +
+                         ",".join("" if vals.get(k) is None else str(vals.get(k)) for k in REC_KEYS) + "\n")
+                fh.flush(); _REC["rows"] += 1
+                time.sleep(0.5)
+    except Exception:
+        pass
+
+
+def rec_start():
+    with _REC_LOCK:
+        if _REC["thread"] and _REC["thread"].is_alive():
+            return {"ok": False, "error": "già in registrazione"}
+        path = os.path.join(user_home(), "SkillFishOS-benchmarks",
+                            time.strftime("rec-%Y%m%d-%H%M%S") + ".sfmon")
+        _REC.update(stop=False, path=path, rows=0)
+        t = threading.Thread(target=_rec_loop, args=(path,), daemon=True)
+        _REC["thread"] = t; t.start()
+        return {"ok": True, "path": path}
+
+
+def rec_stop():
+    with _REC_LOCK:
+        if not (_REC["thread"] and _REC["thread"].is_alive()):
+            return {"ok": False, "error": "nessuna registrazione attiva"}
+        _REC["stop"] = True
+        try:
+            os.chown(_REC["path"], __import__("pwd").getpwnam(CONFIG.get("user", "skillfish")).pw_uid, -1)
+        except Exception:
+            pass
+        return {"ok": True, "path": _REC["path"], "rows": _REC["rows"]}
+
+
+def rec_list():
+    d = os.path.join(user_home(), "SkillFishOS-benchmarks")
+    out = []
+    try:
+        for fn in sorted(os.listdir(d), reverse=True):
+            if fn.endswith(".sfmon") or fn.endswith(".csv"):
+                p = os.path.join(d, fn)
+                out.append({"name": fn, "size": os.path.getsize(p), "mtime": int(os.path.getmtime(p))})
+    except Exception:
+        pass
+    return out
+
+
 # ---------------- HTTP ----------------
 CONFIG = load_conf()
 _login_fails = {}  # ip -> (count, first_ts)
@@ -257,6 +413,17 @@ class Handler(BaseHTTPRequestHandler):
         n = int(self.headers.get("Content-Length", 0) or 0)
         return self.rfile.read(n) if n else b""
 
+    def _mod(self, name):
+        return bool(CONFIG.get("modules", {}).get(name))
+
+    def _guard(self, mod):
+        """Return True if request is allowed (authed + module on), else send error."""
+        if not self._user():
+            self._json(401, {"error": "auth"}); return False
+        if mod and not self._mod(mod):
+            self._json(403, {"error": "modulo disattivato"}); return False
+        return True
+
     def _client_ip(self):
         return self.client_address[0]
 
@@ -282,9 +449,35 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(401, {"error": "auth"})
             return self._json(200, sysinfo())
         if path == "/api/telemetry":
-            if not self._user():
-                return self._json(401, {"error": "auth"})
+            if not self._guard("telemetry"):
+                return
             return self._sse_telemetry()
+        if path == "/api/tuner":
+            if not self._guard("tuner"):
+                return
+            ps = [{"name": p.get("name"), "desc": p.get("desc_it") or p.get("desc", "")} for p in list_presets()]
+            return self._json(200, {"presets": ps, "state": tuner_cmd([{"cmd": "get"}])})
+        if path == "/api/logs":
+            if not self._guard("logs"):
+                return
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            return self._json(200, {"lines": read_log(q.get("which", ["journal"])[0], q.get("n", ["200"])[0])})
+        if path == "/api/rec/list":
+            if not self._guard("recording"):
+                return
+            return self._json(200, {"recordings": rec_list(),
+                                    "recording": bool(_REC["thread"] and _REC["thread"].is_alive())})
+        if path == "/api/rec/get":
+            if not self._guard("recording"):
+                return
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            fn = os.path.basename(q.get("f", [""])[0])
+            full = os.path.join(user_home(), "SkillFishOS-benchmarks", fn)
+            if fn and os.path.isfile(full):
+                with open(full, "rb") as f:
+                    return self._send(200, f.read(), "text/csv",
+                                      [("Content-Disposition", 'attachment; filename="%s"' % fn)])
+            return self._json(404, {"error": "not found"})
         return self._json(404, {"error": "not found"})
 
     def do_POST(self):
@@ -296,7 +489,50 @@ class Handler(BaseHTTPRequestHandler):
                               extra=[("Set-Cookie", "sfdash=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict")])
         if not self._user():
             return self._json(401, {"error": "auth"})
-        # module actions land here later (control/power/recording/...)
+        try:
+            data = json.loads(self._body() or b"{}")
+        except Exception:
+            data = {}
+        if path == "/api/tuner/preset":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, apply_preset(data.get("name")))
+        if path == "/api/tuner/govmode":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "gov-mode", "mode": data.get("mode", "balanced")}]))
+        if path == "/api/tuner/fan":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "apply-fan", "mode": data.get("mode", "auto"),
+                                               "pct": int(data.get("pct", 45))}]))
+        if path == "/api/power":
+            if not self._guard("power"):
+                return
+            a = data.get("action")
+            if a == "reboot":
+                subprocess.Popen(["systemctl", "reboot"]); return self._json(200, {"ok": True})
+            if a in ("poweroff", "shutdown"):
+                subprocess.Popen(["systemctl", "poweroff"]); return self._json(200, {"ok": True})
+            return self._json(400, {"error": "azione sconosciuta"})
+        if path == "/api/launch":
+            if not self._guard("launcher"):
+                return
+            apps = {"console": ["/usr/local/bin/skillfish-gaming-mode"],
+                    "monitor": ["/usr/local/bin/skillfish-monitor"],
+                    "tuner": ["/usr/local/bin/skillfish-tuner"],
+                    "hub": ["/usr/local/bin/skillfish-hub"],
+                    "ai": ["/usr/local/bin/skillfish-ai-panel"]}
+            cmd = apps.get(data.get("what"))
+            return self._json(200, launch_app(cmd) if cmd else {"ok": False, "error": "app sconosciuta"})
+        if path == "/api/rec/start":
+            if not self._guard("recording"):
+                return
+            return self._json(200, rec_start())
+        if path == "/api/rec/stop":
+            if not self._guard("recording"):
+                return
+            return self._json(200, rec_stop())
         return self._json(404, {"error": "not found"})
 
     def _login(self):
@@ -341,10 +577,11 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache")
         self.send_header("Connection", "keep-alive")
         self.end_headers()
+        st = [None]
         try:
             while True:
                 vals = read_all()
-                vals["cpu_load"] = cpu_load()
+                vals["cpu_load"] = cpu_load(st)
                 vals["_t"] = round(time.time(), 1)
                 self.wfile.write(("data: %s\n\n" % json.dumps(vals)).encode())
                 self.wfile.flush()
