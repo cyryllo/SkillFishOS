@@ -36,6 +36,7 @@ MODULE_META = {
     "aiops":      {"icon": "🩺", "name": "AI-Ops",          "name_en": "AI-Ops"},
     "rules":      {"icon": "⚙️", "name": "Regole auto",     "name_en": "Auto rules"},
     "wol":        {"icon": "🔋", "name": "Power schedule",  "name_en": "Power schedule"},
+    "zerotier":   {"icon": "🌐", "name": "ZeroTier",        "name_en": "ZeroTier"},
 }
 
 
@@ -635,6 +636,41 @@ def aiops_diagnose(question):
         return {"ok": False, "error": "Ollama: %s" % e}
 
 
+# ---------------- ZeroTier (remote access from anywhere) ----------------
+def _zt(args):
+    try:
+        return subprocess.run(["zerotier-cli"] + args, capture_output=True, text=True, timeout=8).stdout.strip()
+    except Exception:
+        return ""
+
+
+def zt_status():
+    info = _zt(["info"])
+    parts = info.split()
+    address = parts[2] if len(parts) > 2 else ""
+    nets = []
+    for ln in _zt(["listnetworks"]).splitlines():
+        p = ln.split()
+        # 200 listnetworks <nwid> <name> <mac> <status> <type> <dev> <ips>
+        if len(p) >= 8 and p[1] == "listnetworks" and p[2] != "<nwid>":
+            ip = p[8] if len(p) > 8 else "-"
+            nets.append({"nwid": p[2], "name": p[3], "status": p[5], "ip": ip})
+    return {"ok": True, "address": address, "online": "ONLINE" in info, "networks": nets}
+
+
+def zt_join(nwid):
+    if not re.match(r"^[0-9a-fA-F]{16}$", (nwid or "").strip()):
+        return {"ok": False, "error": "Network ID non valido (16 cifre esadecimali)"}
+    _zt(["join", nwid.strip()])
+    return {"ok": True, "nwid": nwid.strip()}
+
+
+def zt_leave(nwid):
+    if re.match(r"^[0-9a-fA-F]{16}$", (nwid or "").strip()):
+        _zt(["leave", nwid.strip()])
+    return {"ok": True}
+
+
 # ---------------- HTTP ----------------
 CONFIG = load_conf()
 _login_fails = {}  # ip -> (count, first_ts)
@@ -841,6 +877,10 @@ class Handler(BaseHTTPRequestHandler):
                 with open(LASTFRAME, "rb") as f:
                     return self._send(200, f.read(), "image/jpeg")
             return self._json(404, {"error": "no frame"})
+        if path == "/api/zerotier":
+            if not self._guard("zerotier"):
+                return
+            return self._json(200, zt_status())
         return self._json(404, {"error": "not found"})
 
     def do_POST(self):
@@ -947,6 +987,14 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("aiops"):
                 return
             return self._json(200, aiops_diagnose(data.get("question")))
+        if path == "/api/zerotier/join":
+            if not self._guard("zerotier"):
+                return
+            return self._json(200, zt_join(data.get("nwid")))
+        if path == "/api/zerotier/leave":
+            if not self._guard("zerotier"):
+                return
+            return self._json(200, zt_leave(data.get("nwid")))
         return self._json(404, {"error": "not found"})
 
     def _login(self):

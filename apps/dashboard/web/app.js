@@ -253,6 +253,26 @@ const RENDER = {
     $("#adg", card).onclick = async () => { const out = $("#aout", card); out.style.display = "block"; out.textContent = T("ao_running");
       const j = await (await post("/api/aiops/diagnose", { question: $("#aq", card).value })).json().catch(() => ({})); out.textContent = j.ok ? (j.answer || T("ao_none")) : (T("err") + (j.error || "")); };
   },
+  zerotier(card) {
+    const it = LANG === "it";
+    card.innerHTML = "<h3>🌐 ZeroTier</h3><div id=\"zt\">…</div>";
+    const refresh = async () => {
+      let s; try { s = await (await api("/api/zerotier")).json(); } catch (e) { return; }
+      const nets = (s.networks || []).map(n => {
+        const ip = (n.ip && n.ip !== "-") ? copyable(n.ip.split(",")[0]) : "—";
+        const ok = n.status === "OK";
+        return `<div class="r"><span>${n.nwid} ${ok ? "●" : "○"} ${n.status}</span><span>${ip} <button class="dbtn" data-leave="${n.nwid}" style="padding:1px 8px">×</button></span></div>`;
+      }).join("") || `<div class="stub">${it ? "Nessuna rete." : "No networks."}</div>`;
+      $("#zt", card).innerHTML =
+        '<div class="rows"><div class="r"><span>' + (it ? "Nodo" : "Node") + "</span><span>" + copyable(s.address) + '</span></div><div class="r"><span>' + (it ? "Stato" : "Status") + "</span><span>" + (s.online ? "● ONLINE" : "○ offline") + "</span></div></div>" +
+        '<div class="gl" style="margin-top:10px">' + (it ? "Reti" : "Networks") + '</div><div class="rows">' + nets + "</div>" +
+        '<div class="brow" style="margin-top:8px"><input id="ztnw" class="dsel" placeholder="Network ID (16 hex)" style="flex:1"><button class="dbtn" id="ztj">' + (it ? "Entra" : "Join") + "</button></div>" +
+        '<div class="stub" style="margin-top:8px">' + (it ? "Dopo «Entra», autorizza il nodo su my.zerotier.com. Poi raggiungi la dashboard da ovunque: https://&lt;IP ZeroTier&gt;:8443" : "After Join, authorize the node on my.zerotier.com. Then reach the dashboard from anywhere: https://&lt;ZeroTier IP&gt;:8443") + "</div>";
+      card.querySelectorAll("[data-leave]").forEach(b => b.onclick = async () => { await action("/api/zerotier/leave", { nwid: b.dataset.leave }, it ? "Uscito dalla rete" : "Left network"); setTimeout(refresh, 800); });
+      $("#ztj", card).onclick = async () => { await action("/api/zerotier/join", { nwid: $("#ztnw", card).value.trim() }, it ? "Richiesta inviata — autorizza su my.zerotier.com" : "Request sent — authorize on my.zerotier.com"); setTimeout(refresh, 1500); };
+    };
+    refresh(); card._iv = setInterval(refresh, 8000);
+  },
   _stub(card, mod) { card.innerHTML = `<h3>${mod.icon} ${LANG === "it" ? mod.name : (mod.name_en || mod.name)}</h3><div class="stub">${LANG === "it" ? "Modulo attivo — interfaccia in arrivo." : "Module on — UI coming soon."}</div>`; },
 };
 
@@ -270,6 +290,9 @@ async function buildDashboard() {
     present.forEach(id => { const mod = enabled[id]; const card = document.createElement("div"); card.className = "mod";
       (RENDER[id] || ((c) => RENDER._stub(c, mod)))(card, mod); grid.appendChild(card); });
   });
+  // session watcher: if the login session expires, drop back to the login screen
+  clearInterval(window._sw);
+  window._sw = setInterval(async () => { try { const r = await api("/api/me"); if (!r.ok) location.reload(); } catch (e) {} }, 60000);
 }
 function showLogin() {
   $("#app").style.display = "none"; $("#login").style.display = "grid";

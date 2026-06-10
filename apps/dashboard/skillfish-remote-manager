@@ -33,6 +33,7 @@ MODULES = [
     ("aiops", "🩺", "AI-Ops", True),
     ("rules", "⚙️", L("Regole auto", "Auto rules"), True),
     ("wol", "🔋", L("Power schedule", "Power schedule"), True),
+    ("zerotier", "🌐", "ZeroTier", True),
 ]
 
 CSS = """
