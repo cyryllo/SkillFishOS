@@ -920,8 +920,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, tuner_cmd([{"cmd": "apply-fan", "mode": data.get("mode", "auto"),
                                                "pct": int(data.get("pct", 45))}]))
         if path == "/api/power":
-            if not self._guard("power"):
-                return
+            if not self._user():
+                return self._json(401, {"error": "auth"})
             a = data.get("action")
             if a == "reboot":
                 subprocess.Popen(["systemctl", "reboot"]); return self._json(200, {"ok": True})

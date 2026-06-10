@@ -386,6 +386,8 @@ $("#logout").addEventListener("click", async () => { await api("/api/logout", { 
 $("#settings-btn").addEventListener("click", openSettings);
 $("#save-btn").addEventListener("click", saveLayout);
 $("#reset-btn").addEventListener("click", () => { if (confirm(LANG === "it" ? "Ripristinare la disposizione predefinita?" : "Reset to the default layout?")) resetLayout(); });
+$("#reboot-top").addEventListener("click", () => { if (confirm(T("p_qreb"))) action("/api/power", { action: "reboot" }, T("p_rebing")); });
+$("#off-top").addEventListener("click", () => { if (confirm(T("p_qoff"))) action("/api/power", { action: "poweroff" }, T("p_offing")); });
 document.querySelectorAll(".lang-btn").forEach(b => b.addEventListener("click", () => setLang(b.dataset.l)));
 
 (async () => {

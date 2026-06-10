@@ -37,6 +37,8 @@
   .ghost{background:rgba(216,168,73,.08);border:1px solid var(--line);color:var(--gold-lt);
          border-radius:9px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:.85rem}
   .ghost:hover{background:rgba(216,168,73,.18)}
+  .ghost.pwr{color:#f0b8a0;border-color:rgba(224,123,90,.5)}
+  .ghost.pwr:hover{background:rgba(224,90,60,.22);border-color:#e0553c}
   /* module grid */
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;margin-top:16px}
   .mod{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--line);
@@ -141,6 +143,8 @@
     <span class="brand">SkillFish<span class="g">OS</span> Remote Manager</span>
     <span class="host" id="host"></span>
     <span class="sp"></span>
+    <button class="ghost pwr" id="reboot-top" title="Riavvia">🔄</button>
+    <button class="ghost pwr" id="off-top" title="Spegni">⏻</button>
     <span id="hidden-wrap"></span>
     <button class="ghost" id="save-btn" title="Salva disposizione">💾</button>
     <button class="ghost" id="reset-btn" title="Ripristina disposizione">↺</button>
