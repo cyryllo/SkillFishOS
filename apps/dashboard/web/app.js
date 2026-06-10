@@ -244,6 +244,36 @@ const RENDER = {
     };
     refresh();
   },
+  rules(card) {
+    card.classList.add("span2");
+    card.innerHTML = '<h3>⚙️ Regole auto</h3><div id="ru">…</div>';
+    const refresh = async () => {
+      let s; try { s = await (await api("/api/rules")).json(); } catch (e) { return; }
+      $("#ru", card).innerHTML =
+        '<div class="rows"><div class="r"><span>Auto-throttle a Stock se troppo caldo</span><span>' + (s.enabled ? "● attivo" : "○ spento") + '</span></div>' +
+        '<div class="r"><span>Soglia</span><span>' + s.temp_limit + ' °C</span></div>' +
+        (s.last_action ? '<div class="r"><span>Ultima azione</span><span>' + s.last_action + '</span></div>' : "") + '</div>' +
+        '<div class="brow" style="margin-top:10px"><button class="dbtn" id="rtog">' + (s.enabled ? "Disattiva" : "Attiva") + '</button>' +
+        '<input id="rlim" class="dsel" type="number" min="70" max="100" value="' + s.temp_limit + '" style="width:64px"> °C <button class="dbtn" id="rset">Imposta</button></div>' +
+        '<div class="gl" style="margin-top:12px">Ultimo fotogramma dello schermo' + (s.snap_age != null ? " (" + s.snap_age + "s fa)" : "") + '</div>' +
+        (s.has_frame ? '<img src="/api/rules/frame?t=' + Date.now() + '" style="width:100%;border-radius:10px;border:1px solid var(--line);margin-top:6px">' : '<div class="stub">Nessun fotogramma ancora (attiva il modulo e attendi ~20s).</div>');
+      $("#rtog", card).onclick = async () => { await action("/api/rules", { enabled: !s.enabled }, "Regola aggiornata"); setTimeout(refresh, 500); };
+      $("#rset", card).onclick = async () => { await action("/api/rules", { temp_limit: +$("#rlim", card).value }, "Soglia impostata"); setTimeout(refresh, 500); };
+    };
+    refresh(); card._iv = setInterval(refresh, 15000);
+  },
+  aiops(card) {
+    card.classList.add("span2");
+    card.innerHTML = '<h3>🩺 AI-Ops</h3><div class="brow"><input id="aq" class="dsel" placeholder="Domanda (opzionale): perché si è bloccata?" style="flex:1"><button class="dbtn" id="adg">Diagnostica</button></div>' +
+      '<div class="logbox" id="aout" style="margin-top:8px;display:none"></div>' +
+      '<div class="stub" style="margin-top:8px">Il modello locale (Ollama) legge log e telemetria e spiega cosa succede. Richiede il motore AI acceso.</div>';
+    $("#adg", card).onclick = async () => {
+      const out = $("#aout", card); out.style.display = "block";
+      out.textContent = "Analisi in corso col modello locale… (può richiedere un minuto)";
+      const j = await (await post("/api/aiops/diagnose", { question: $("#aq", card).value })).json().catch(() => ({}));
+      out.textContent = j.ok ? (j.answer || "(nessuna risposta)") : ("Errore: " + (j.error || ""));
+    };
+  },
   _stub(card, mod) {
     card.innerHTML = `<h3>${mod.icon} ${mod.name}</h3><div class="stub">Modulo attivo — interfaccia in arrivo.</div>`;
   },

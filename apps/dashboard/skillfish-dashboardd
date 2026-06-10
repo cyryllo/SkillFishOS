@@ -530,6 +530,111 @@ def power_schedule(action, minutes):
     return {"ok": False, "error": "azione sconosciuta"}
 
 
+# ---------------- auto rules + screen snapshot ----------------
+import urllib.request
+RULES_DEFAULT = {"enabled": True, "temp_limit": 92, "samples": 6}
+LASTFRAME = "/tmp/skillfish-lastframe.jpg"  # captured as the desktop user, so must be user-writable
+_RULES = {"hot": 0, "last_action": "", "snap_ts": 0}
+
+
+def save_conf():
+    try:
+        with open(CONF, "w") as f:
+            json.dump(CONFIG, f, indent=2)
+    except Exception:
+        pass
+
+
+def rules_cfg():
+    return {**RULES_DEFAULT, **(CONFIG.get("rules_cfg") or {})}
+
+
+def rules_loop():
+    while True:
+        try:
+            c = rules_cfg()
+            if CONFIG.get("modules", {}).get("rules") and c["enabled"]:
+                v = read_all()
+                temps = [x for x in (v.get("gpu_temp"), v.get("cpu_temp")) if isinstance(x, (int, float))]
+                t = max(temps) if temps else 0
+                if t >= c["temp_limit"]:
+                    _RULES["hot"] += 1
+                    if _RULES["hot"] >= c["samples"]:
+                        apply_preset("Stock")
+                        _RULES["hot"] = 0
+                        _RULES["last_action"] = "%s — %d°C ≥ %d°C → preset Stock applicato" % (
+                            time.strftime("%H:%M:%S"), round(t), c["temp_limit"])
+                else:
+                    _RULES["hot"] = 0
+        except Exception:
+            pass
+        time.sleep(2)
+
+
+def snapshot_loop():
+    u = CONFIG.get("user", "skillfish")
+    # keep the screen awake so the "last frame" is the real desktop, not a blanked one
+    for args in (["xset", "s", "off"], ["xset", "-dpms"]):
+        try:
+            subprocess.run(["sudo", "-u", u, "env", "DISPLAY=:0"] + args,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        except Exception:
+            pass
+    while True:
+        try:
+            if CONFIG.get("modules", {}).get("rules"):
+                subprocess.run(["sudo", "-u", u, "env", "DISPLAY=:0",
+                                "import", "-window", "root", "-resize", "960x", LASTFRAME],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=12)
+                try:
+                    os.chmod(LASTFRAME, 0o644)
+                except Exception:
+                    pass
+                _RULES["snap_ts"] = int(time.time())
+        except Exception:
+            pass
+        time.sleep(20)
+
+
+# ---------------- AI-Ops (local LLM log diagnosis) ----------------
+def _ollama_models():
+    try:
+        r = subprocess.run(["docker", "exec", AI_CONTAINER, "ollama", "list"],
+                           capture_output=True, text=True, timeout=8).stdout
+        return [ln.split()[0] for ln in r.splitlines()[1:] if ln.strip()]
+    except Exception:
+        return []
+
+
+def aiops_diagnose(question):
+    if not _port_open(11434):
+        return {"ok": False, "error": "Motore AI spento: accendilo dal modulo AI."}
+    models = _ollama_models()
+    model = models[0] if models else "qwen3:14b"
+    jrn = subprocess.run(["journalctl", "-p", "warning", "-n", "60", "--no-pager", "-o", "short"],
+                         capture_output=True, text=True, timeout=8).stdout
+    try:
+        frz = open("/var/log/skillfish-freeze.log").read()[-1500:]
+    except Exception:
+        frz = "(nessun freeze registrato)"
+    v = read_all()
+    tele = "GPU %s°C / CPU %s°C, GPU %s MHz, %s W, ventola %s RPM" % (
+        v.get("gpu_temp"), v.get("cpu_temp"), v.get("gpu_freq"), v.get("gpu_power"), v.get("fan"))
+    q = question or "Analizza i log e lo stato: ci sono problemi? Causa probabile e come risolvere?"
+    prompt = ("Sei l'assistente di sistema di SkillFishOS su una scheda AMD BC-250. "
+              "Rispondi in italiano, conciso e pratico.\n\n=== Telemetria ===\n%s\n\n"
+              "=== Log freeze ===\n%s\n\n=== journalctl (warning+) ===\n%s\n\n=== Domanda ===\n%s\n" %
+              (tele, frz, jrn[-3000:], q))
+    try:
+        req = urllib.request.Request("http://127.0.0.1:11434/api/generate",
+                                     data=json.dumps({"model": model, "prompt": prompt, "stream": False}).encode(),
+                                     headers={"Content-Type": "application/json"})
+        out = json.loads(urllib.request.urlopen(req, timeout=120).read().decode())
+        return {"ok": True, "model": model, "answer": out.get("response", "").strip()}
+    except Exception as e:
+        return {"ok": False, "error": "Ollama: %s" % e}
+
+
 # ---------------- HTTP ----------------
 CONFIG = load_conf()
 _login_fails = {}  # ip -> (count, first_ts)
@@ -721,6 +826,21 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("wol"):
                 return
             return self._json(200, wol_info())
+        if path == "/api/rules":
+            if not self._guard("rules"):
+                return
+            c = rules_cfg()
+            c["last_action"] = _RULES["last_action"]
+            c["snap_age"] = int(time.time()) - _RULES["snap_ts"] if _RULES["snap_ts"] else None
+            c["has_frame"] = os.path.isfile(LASTFRAME)
+            return self._json(200, c)
+        if path == "/api/rules/frame":
+            if not self._guard("rules"):
+                return
+            if os.path.isfile(LASTFRAME):
+                with open(LASTFRAME, "rb") as f:
+                    return self._send(200, f.read(), "image/jpeg")
+            return self._json(404, {"error": "no frame"})
         return self._json(404, {"error": "not found"})
 
     def do_POST(self):
@@ -812,6 +932,21 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("wol"):
                 return
             return self._json(200, power_schedule(data.get("action"), data.get("minutes", 1)))
+        if path == "/api/rules":
+            if not self._guard("rules"):
+                return
+            cfg = rules_cfg()
+            if "enabled" in data:
+                cfg["enabled"] = bool(data["enabled"])
+            if "temp_limit" in data:
+                cfg["temp_limit"] = max(70, min(100, int(data["temp_limit"])))
+            CONFIG["rules_cfg"] = cfg
+            save_conf()
+            return self._json(200, {"ok": True, **cfg})
+        if path == "/api/aiops/diagnose":
+            if not self._guard("aiops"):
+                return
+            return self._json(200, aiops_diagnose(data.get("question")))
         return self._json(404, {"error": "not found"})
 
     def _login(self):
@@ -895,6 +1030,8 @@ def main():
     httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
     sys.stderr.write("SkillFish Remote on https://%s:%d (PAM=%s)\n" % (bind, port, _PAM_OK))
     sys.stderr.flush()
+    threading.Thread(target=rules_loop, daemon=True).start()
+    threading.Thread(target=snapshot_loop, daemon=True).start()
     httpd.serve_forever()
 
 

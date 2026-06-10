@@ -30,8 +30,8 @@ MODULES = [
     ("terminal", "⌨️", L("Terminale", "Terminal"), True),
     ("ai", "🧠", "AI / OpenWebUI", True),
     ("gamestream", "🎮", "Game streaming", False),
-    ("aiops", "🩺", "AI-Ops", False),
-    ("rules", "⚙️", L("Regole auto", "Auto rules"), False),
+    ("aiops", "🩺", "AI-Ops", True),
+    ("rules", "⚙️", L("Regole auto", "Auto rules"), True),
     ("wol", "🔋", L("Power schedule", "Power schedule"), True),
 ]
 
