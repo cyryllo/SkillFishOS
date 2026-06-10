@@ -235,9 +235,9 @@ class Monitor(QMainWindow):
 
     # ---------------- live mode ----------------
     def _build_live(self, grid):
-        self.setWindowTitle(L("SkillFishOS — Monitor", "SkillFishOS — Monitor"))
+        self.setWindowTitle(L("SkillFishOS — Telemetry", "SkillFishOS — Telemetry"))
         top = QHBoxLayout()
-        hdr = QLabel(L("◉  MONITOR LIVE", "◉  LIVE MONITOR"))
+        hdr = QLabel(L("◉  TELEMETRY LIVE", "◉  TELEMETRY LIVE"))
         hdr.setStyleSheet("color:#d8a849;font-weight:bold;font-size:14px;letter-spacing:3px;")
         top.addWidget(hdr); top.addStretch(1)
         self._rec = None
@@ -429,7 +429,7 @@ class Monitor(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    app.setApplicationName("SkillFishOS Monitor")
+    app.setApplicationName("SkillFishOS Telemetry")
     app.setDesktopFileName("os.skillfish.monitor")
     app.setWindowIcon(QIcon(ICON))
     rec = None

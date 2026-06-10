@@ -59,11 +59,11 @@ Tutto è **crash-safe**: il valore di lavoro su disco resta sempre l'ultimo stab
 
 Il pannello **«Il mio silicio»** riassume il profilo della tua scheda — CPU e GPU massimi trovati, CU sane, contatore dei freeze rilevati — e ti permette di **condividere il risultato in forma anonima** nel database della lotteria del silicio (apre una *issue* GitHub precompilata). Più dati raccogliamo, migliori diventano i profili consigliati per tutti.
 
-## SkillFishOS Monitor
+## SkillFishOS Telemetry
 
-Il **Monitor** mostra in tempo reale temperatura, frequenza, voltaggio GPU, assorbimento e ventola. Si apre automaticamente durante i test del Tuner, ma è anche un'app a sé. Il pulsante **REC** registra una sessione di benchmark in un **CSV** (in `~/SkillFishOS-benchmarks/`) con riepilogo **min / media / max**: utile per confrontare due configurazioni o documentare un risultato.
+**Telemetry** mostra in tempo reale temperatura, frequenza, carico CPU/GPU, voltaggi, assorbimento e ventola. Si apre automaticamente durante i test del Tuner, ma è anche un'app a sé. Il pulsante **REC** registra una sessione di benchmark in un file **`.sfmon`** (in `~/SkillFishOS-benchmarks/`): riaprendolo, Telemetry diventa un **analizzatore** con scrubber temporale per rivedere la run secondo per secondo.
 
-![Monitor di SkillFishOS — grafici live di temperatura, frequenza, voltaggio GPU e ventola, con registrazione REC](/img/monitor.jpg)
+![SkillFishOS Telemetry — grafici live di temperatura, frequenza, voltaggio GPU e ventola, con registrazione REC](/img/monitor.jpg)
 
 ## SkillFishOS AI
 

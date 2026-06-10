@@ -59,11 +59,11 @@ Everything is **crash-safe**: the working value on disk is always the last stabl
 
 The **"My silicon"** panel sums up your board's profile — best CPU and GPU found, healthy CUs, detected-freeze counter — and lets you **share the result anonymously** to the silicon-lottery database (it opens a pre-filled GitHub issue). The more data we gather, the better the recommended profiles get for everyone.
 
-## SkillFishOS Monitor
+## SkillFishOS Telemetry
 
-The **Monitor** shows temperature, frequency, GPU voltage, power draw and fan in real time. It opens automatically during Tuner tests, but it's also a standalone app. The **REC** button records a benchmark session to a **CSV** (in `~/SkillFishOS-benchmarks/`) with a **min / avg / max** summary: handy to compare two configurations or document a result.
+**Telemetry** shows temperature, frequency, CPU/GPU load, voltages, power draw and fan in real time. It opens automatically during Tuner tests, but it's also a standalone app. The **REC** button records a benchmark session to a **`.sfmon`** file (in `~/SkillFishOS-benchmarks/`): re-open it and Telemetry becomes an **analyzer** with a time scrubber to review the run second by second.
 
-![SkillFishOS Monitor — live charts of temperature, frequency, GPU voltage and fan, with REC recording](/img/monitor.jpg)
+![SkillFishOS Telemetry — live charts of temperature, frequency, GPU voltage and fan, with REC recording](/img/monitor.jpg)
 
 ## SkillFishOS AI
 

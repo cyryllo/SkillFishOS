@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=SkillFishOS Monitor
-GenericName=System Monitor
+Name=SkillFishOS Telemetry
+GenericName=System telemetry
 Comment=Live sensor charts + benchmark recorder/analyzer (.sfmon)
 Comment[it]=Grafici live dei sensori + registratore/analizzatore di benchmark (.sfmon)
 Exec=/usr/local/bin/skillfish-monitor %f

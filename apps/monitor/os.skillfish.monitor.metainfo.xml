@@ -3,10 +3,10 @@
   <id>os.skillfish.monitor</id>
   <metadata_license>FSFAP</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
-  <name>SkillFishOS Monitor</name>
-  <name xml:lang="it">SkillFishOS Monitor</name>
-  <summary>Live temperature, frequency, voltage and fan charts</summary>
-  <summary xml:lang="it">Grafici live di temperatura, frequenza, voltaggio e ventola</summary>
+  <name>SkillFishOS Telemetry</name>
+  <name xml:lang="it">SkillFishOS Telemetry</name>
+  <summary>Live sensor charts + benchmark recorder/analyzer</summary>
+  <summary xml:lang="it">Grafici live dei sensori + registratore/analizzatore di benchmark</summary>
   <description>
     <p>A standalone live dashboard for the AMD BC-250: real-time line charts of CPU and GPU temperature, clock frequency, GPU voltage and fan speed, read straight from the hardware sensors.</p>
     <p>Sensor sampling runs on a background thread so the interface stays smooth, and the refresh interval is adjustable. Part of the native SkillFishOS app suite.</p>

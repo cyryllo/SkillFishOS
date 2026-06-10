@@ -147,7 +147,7 @@ const RENDER = {
   },
   launcher(card) {
     card.innerHTML = '<h3>🚀 Avvio app</h3><div class="brow">' +
-      [["console", "🎮 Console"], ["monitor", "📊 Monitor"], ["tuner", "🎛️ Tuner"], ["hub", "📦 Hub"], ["ai", "🧠 AI"]]
+      [["console", "🎮 Console"], ["monitor", "📊 Telemetry"], ["tuner", "🎛️ Tuner"], ["hub", "📦 Hub"], ["ai", "🧠 AI"]]
         .map(([k, l]) => `<button class="dbtn" data-app="${k}">${l}</button>`).join("") + "</div>" +
       '<div class="stub" style="margin-top:8px">Si apre sullo schermo della scheda.</div>';
     card.querySelectorAll("[data-app]").forEach(b => b.onclick = () =>
