@@ -152,8 +152,8 @@ const TELEM = [
 ];
 
 // ---------------- layout (order, hidden, collapsed) ----------------
-const DEFAULT_ORDER = ["telemetry", "status", "zerotier", "rules", "logs", "tuner", "power",
-                       "recording", "launcher", "kvm", "terminal", "ai", "aiops", "wol", "gamestream"];
+const DEFAULT_ORDER = ["telemetry", "status", "zerotier", "rules", "logs", "tuner",
+                       "launcher", "kvm", "terminal", "ai", "aiops", "wol", "gamestream"];
 let layout = (() => { try { return JSON.parse(localStorage.getItem("sflayout")) || {}; } catch (e) { return {}; } })();
 layout.order = layout.order || []; layout.hidden = layout.hidden || []; layout.collapsed = layout.collapsed || [];
 function _toggleArr(a, id, on) { const i = a.indexOf(id); if (on && i < 0) a.push(id); if (!on && i >= 0) a.splice(i, 1); }
@@ -201,11 +201,6 @@ const RENDER = {
     card.querySelector("[data-fan]").onclick = () => action("/api/tuner/fan", { mode: "auto" }, T("c_fan") + ": " + T("c_auto"));
     card.querySelector("[data-fanmanual]").onclick = () => action("/api/tuner/fan", { mode: "manual", pct: +$("#fanp", card).value }, T("c_fan") + ": " + $("#fanp", card).value + "%");
   },
-  power(card) {
-    card.innerHTML = "<h3>🔌 " + (LANG === "it" ? "Alimentazione" : "Power") + '</h3><div class="brow"><button class="dbtn danger" id="reboot">↻ ' + T("p_reboot") + '</button><button class="dbtn danger" id="poweroff">⏻ ' + T("p_off") + '</button></div><div class="stub" style="margin-top:8px">' + T("p_conf") + '</div>';
-    $("#reboot", card).onclick = () => { if (confirm(T("p_qreb"))) action("/api/power", { action: "reboot" }, T("p_rebing")); };
-    $("#poweroff", card).onclick = () => { if (confirm(T("p_qoff"))) action("/api/power", { action: "poweroff" }, T("p_offing")); };
-  },
   logs(card) {
     card.classList.add("span2");
     card.innerHTML = '<h3>📜 Log <select id="lw" class="dsel"><option value="journal">journal</option><option value="kernel">kernel</option><option value="freeze">freeze</option></select> <button class="dbtn" id="lref">⟳</button></h3><pre class="logbox" id="lb">…</pre>';
@@ -217,15 +212,6 @@ const RENDER = {
       [["console", "🎮 Console"], ["monitor", "📊 Telemetry"], ["tuner", "🎛️ Tuner"], ["hub", "📦 Hub"], ["ai", "🧠 AI"]].map(([k, l]) => `<button class="dbtn" data-app="${k}">${l}</button>`).join("") + "</div>" +
       '<div class="stub" style="margin-top:8px">' + T("la_hint") + "</div>";
     card.querySelectorAll("[data-app]").forEach(b => b.onclick = () => action("/api/launch", { what: b.dataset.app }, T("la_started", { x: b.dataset.app })));
-  },
-  recording(card) {
-    card.innerHTML = "<h3>⏺️ " + (LANG === "it" ? "Registrazioni" : "Recordings") + '</h3><div class="brow"><button class="dbtn" id="rec">● REC</button></div><div id="rl" class="rows"></div>';
-    const refresh = async () => { try { const j = await (await api("/api/rec/list")).json(); const b = $("#rec", card);
-      b.textContent = j.recording ? "■ STOP" : "● REC"; b.classList.toggle("danger", !!j.recording); b.dataset.on = j.recording ? "1" : "";
-      $("#rl", card).innerHTML = (j.recordings || []).slice(0, 8).map(r => `<div class="r"><a href="/api/rec/get?f=${encodeURIComponent(r.name)}">${r.name}</a><span>${(r.size / 1024).toFixed(0)} KB</span></div>`).join("") || '<div class="stub">' + T("r_none") + "</div>";
-    } catch (e) {} };
-    $("#rec", card).onclick = async () => { const on = $("#rec", card).dataset.on; await action(on ? "/api/rec/stop" : "/api/rec/start", {}, on ? T("r_saved") : T("r_started")); refresh(); };
-    refresh(); card._iv = setInterval(refresh, 4000);
   },
   kvm(card) {
     card.innerHTML = '<h3>🖥️ Desktop (KVM)</h3><div class="brow"><button class="dbtn" id="kvmgo">' + T("k_open") + '</button></div><div class="stub" id="kvmi" style="margin-top:8px">' + T("k_hint") + "</div>";

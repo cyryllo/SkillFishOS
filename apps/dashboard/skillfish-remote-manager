@@ -22,8 +22,6 @@ MODULES = [
     ("telemetry", "📊", L("Telemetria", "Telemetry"), True),
     ("status", "🧊", L("Stato sistema", "System status"), True),
     ("tuner", "🎛️", L("Controlli", "Controls"), True),
-    ("power", "🔌", L("Alimentazione", "Power"), True),
-    ("recording", "⏺️", L("Registrazioni", "Recordings"), True),
     ("logs", "📜", "Log", True),
     ("launcher", "🚀", L("Avvio app", "Launcher"), True),
     ("kvm", "🖥️", L("Desktop (KVM)", "Desktop (KVM)"), True),

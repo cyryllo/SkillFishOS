@@ -25,8 +25,6 @@ MODULE_META = {
     "telemetry":  {"icon": "📊", "name": "Telemetria",     "name_en": "Telemetry"},
     "status":     {"icon": "🧊", "name": "Stato sistema",   "name_en": "System status"},
     "tuner":      {"icon": "🎛️", "name": "Controlli",       "name_en": "Controls"},
-    "power":      {"icon": "🔌", "name": "Alimentazione",   "name_en": "Power"},
-    "recording":  {"icon": "⏺️", "name": "Registrazioni",   "name_en": "Recordings"},
     "logs":       {"icon": "📜", "name": "Log",             "name_en": "Logs"},
     "launcher":   {"icon": "🚀", "name": "Avvio app",       "name_en": "Launcher"},
     "kvm":        {"icon": "🖥️", "name": "Desktop (KVM)",   "name_en": "Desktop (KVM)"},
