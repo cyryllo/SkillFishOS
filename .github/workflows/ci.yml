@@ -38,6 +38,22 @@ jobs:
             esac
           done
 
+      - name: Lint (ruff — pyflakes blocking, bugbear informational)
+        run: |
+          pip install -q ruff
+          PYAPPS="apps/tuner/skillfish-tuner apps/tuner/skillfish-tuner-helper \
+                  apps/hub/skillfish-hub apps/monitor/skillfish-monitor \
+                  apps/kernel-manager/skillfish-kernel-manager apps/ai-panel/skillfish-ai-panel"
+          ruff check --select F,E9 --no-cache $PYAPPS
+          ruff check --select B,PLE --no-cache $PYAPPS || true
+
+      - name: ShellCheck (informational)
+        run: |
+          sudo apt-get -qq install -y shellcheck >/dev/null
+          shellcheck -S warning apps/hub/skillfish-hub-helper apps/kernel-manager/skillfish-kernel-helper \
+            apps/ai-panel/skillfish-gtt system/usr/local/bin/skillfish-freeze-check.sh \
+            system/usr/local/bin/skillfish-freeze-notify.sh scripts/build-debs-ci.sh || true
+
       - name: apps/ vs system/ mirror drift check
         run: |
           set -e
