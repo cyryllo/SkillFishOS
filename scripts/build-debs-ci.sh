@@ -78,7 +78,7 @@ done
 ls -l "$OUT/out"
 
 echo "== content verification (the bogus-deb guard) =="
-check() { dpkg-deb --fsys-tarfile "$OUT/out/$1" | tar -xO "$2" | grep -q "$3" \
+check() { dpkg-deb --fsys-tarfile "$OUT/out/$1" | tar -xO "$2" | grep "$3" >/dev/null \
   && echo "OK  $1: $2 contains '$3'" || { echo "FAIL $1: $2 missing '$3'" >&2; exit 1; }; }
 check skillfish-tuner_${VER}_all.deb         ./usr/local/bin/skillfish-tuner-helper  gov-mode
 check skillfish-tuner_${VER}_all.deb         ./usr/local/bin/skillfish-tuner         gov_perf
