@@ -173,30 +173,21 @@ const RENDER = {
     refresh(); card._iv = setInterval(refresh, 4000);
   },
   kvm(card) {
-    card.innerHTML = '<h3>🖥️ Desktop (KVM)</h3><div class="brow"><button class="dbtn" id="kvmgo">▶ Avvia desktop remoto</button></div>' +
-      '<div class="stub" id="kvmi" style="margin-top:8px">Schermo, tastiera e mouse della scheda nel browser.</div>';
+    card.innerHTML = '<h3>🖥️ Desktop (KVM)</h3><div class="brow"><button class="dbtn" id="kvmgo">▶ Apri desktop remoto</button></div>' +
+      '<div class="stub" style="margin-top:8px">Schermo, tastiera e mouse della scheda — stessa sessione, nessuna password in più.</div>';
     $("#kvmgo", card).onclick = async () => {
       const j = await action("/api/kvm/start", {}, "Desktop pronto");
-      if (j && j.port) {
-        const url = `https://${location.hostname}:${j.port}/vnc.html?autoconnect=1&resize=scale&password=${encodeURIComponent(j.password)}`;
+      if (j && j.password != null) {
+        const url = "/kvm/vnc.html?autoconnect=1&resize=scale&reconnect=1&path=" +
+          encodeURIComponent("kvm/websockify") + "&password=" + encodeURIComponent(j.password);
         window.open(url, "_blank");
-        $("#kvmi", card).innerHTML = 'Aperto in nuova scheda. Se appare un avviso certificato, accettalo (porta ' + j.port + ').';
       }
     };
   },
   terminal(card) {
     card.innerHTML = '<h3>⌨️ Terminale</h3><div class="brow"><button class="dbtn" id="tgo">▶ Apri terminale</button></div>' +
-      '<div class="stub" id="ti" style="margin-top:8px">Shell della scheda nel browser.</div>';
-    $("#tgo", card).onclick = async () => {
-      const j = await action("/api/terminal/start", {}, "Terminale pronto");
-      if (j && j.port) {
-        const url = `https://${location.hostname}:${j.port}`;
-        window.open(url, "_blank");
-        $("#ti", card).innerHTML = 'Aperto su <b>' + location.hostname + ':' + j.port + '</b>.<br>' +
-          'Accetta l\'eventuale avviso certificato, poi nel login inserisci:<br>' +
-          'utente <b>' + j.user + '</b> · password <b style="user-select:all">' + j.token + '</b>';
-      }
-    };
+      '<div class="stub" style="margin-top:8px">Shell della scheda — stessa sessione, nessuna password in più.</div>';
+    $("#tgo", card).onclick = () => { window.open("/terminal/", "_blank"); };
   },
   _stub(card, mod) {
     card.innerHTML = `<h3>${mod.icon} ${mod.name}</h3><div class="stub">Modulo attivo — interfaccia in arrivo.</div>`;

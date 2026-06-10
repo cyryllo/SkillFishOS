@@ -4,7 +4,7 @@
 # itself from the modules enabled in /etc/skillfish/dashboard.json. Runs as a
 # systemd service (root) so it can authenticate via PAM and drive system actions.
 # LAN-only by design; never expose to the internet without a real reverse proxy.
-import os, sys, json, ssl, hmac, hashlib, base64, time, subprocess, threading, urllib.parse, re
+import os, sys, json, ssl, hmac, hashlib, base64, time, subprocess, threading, urllib.parse, re, socket, select
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 CONF = "/etc/skillfish/dashboard.json"
@@ -405,20 +405,18 @@ def _spawn(name, argv, as_user=False, kill_pat=None):
 
 
 def kvm_start():
-    # our own x11vnc on a dedicated port (5901), bound to localhost + password, so it never
-    # clashes with a user-run skillfish-x11vnc and is never exposed unencrypted on the LAN;
-    # websockify bridges it to noVNC over TLS on KVM_PORT.
+    # x11vnc on a dedicated port (5901), localhost + password; websockify bridges it to
+    # noVNC on localhost:KVM_PORT (plain) — the dashboard reverse-proxies it under /kvm
+    # over its own TLS + session, so there's no second cert/login and no LAN exposure.
     _spawn("x11vnc", ["x11vnc", "-display", ":0", "-rfbport", "5901", "-localhost",
                       "-passwd", VNC_PASS, "-forever", "-shared", "-noxdamage", "-repeat", "-quiet"],
            as_user=True, kill_pat="x11vnc -display :0 -rfbport 5901")
     time.sleep(1.0)
-    _spawn("websockify", ["websockify", "--cert", CERT_F, "--key", KEY_F,
-                          "--web", "/usr/share/novnc", str(KVM_PORT), "localhost:5901"],
-           kill_pat="websockify --cert")
+    _spawn("websockify", ["websockify", "--web", "/usr/share/novnc",
+                          "127.0.0.1:%d" % KVM_PORT, "localhost:5901"],
+           kill_pat="websockify --web")
     time.sleep(0.8)
-    # the frontend builds the URL from the host the browser is already using, so we
-    # never advertise a wrong/secondary IP — just hand back the port + password.
-    return {"ok": True, "port": KVM_PORT, "password": VNC_PASS}
+    return {"ok": True, "password": VNC_PASS}
 
 
 def kvm_stop():
@@ -431,14 +429,14 @@ def kvm_stop():
 
 def terminal_start():
     u = CONFIG.get("user", "skillfish")
-    # ttyd runs as root (to read the TLS key) and drops to the user's login shell via `su -`.
-    # ttyd's getopt permutes, so it would eat shell flags (e.g. -i) from the command — pass
-    # the command after `--`. ttyd binds all interfaces by default.
-    _spawn("ttyd", ["ttyd", "--ssl", "--ssl-cert", CERT_F, "--ssl-key", KEY_F, "-p", str(TTYD_PORT),
-                    "-c", "skillfish:" + TTYD_TOKEN, "-W", "-t", "fontSize=14", "--", "su", "-", u],
-           kill_pat="ttyd --ssl")
+    # ttyd on loopback only, base-path /terminal, NO auth/TLS of its own — the dashboard
+    # reverse-proxies it under /terminal (its TLS + login session = single sign-on).
+    # Command after `--` so ttyd's getopt can't eat the shell's flags.
+    _spawn("ttyd", ["ttyd", "-i", "lo", "-p", str(TTYD_PORT), "-b", "/terminal",
+                    "-W", "-t", "fontSize=14", "--", "su", "-", u],
+           kill_pat="ttyd -i lo")
     time.sleep(0.8)
-    return {"ok": True, "port": TTYD_PORT, "user": "skillfish", "token": TTYD_TOKEN}
+    return {"ok": True}
 
 
 def terminal_stop():
@@ -497,12 +495,89 @@ class Handler(BaseHTTPRequestHandler):
             self._json(403, {"error": "modulo disattivato"}); return False
         return True
 
+    def _proxy(self, port, strip_prefix=None):
+        """Reverse-proxy this request to a localhost backend (ttyd/websockify), tunnelling
+        WebSocket upgrades as raw TCP. Auth is already enforced by the caller (single sign-on:
+        the dashboard session gates these, so the backends need no auth of their own)."""
+        path = self.path
+        if strip_prefix and path.startswith(strip_prefix):
+            path = path[len(strip_prefix):] or "/"
+            if not path.startswith("/"):
+                path = "/" + path
+        is_ws = self.headers.get("Upgrade", "").lower() == "websocket"
+        try:
+            b = socket.create_connection(("127.0.0.1", port), timeout=10)
+        except Exception:
+            return self._json(502, {"error": "servizio non avviato"})
+        out = ["%s %s HTTP/1.1" % (self.command, path)]
+        for k, v in self.headers.items():
+            if k.lower() in ("host", "connection"):
+                continue
+            out.append("%s: %s" % (k, v))
+        out.append("Host: 127.0.0.1:%d" % port)
+        out.append("Connection: " + ("Upgrade" if is_ws else "close"))
+        body = b""
+        clen = int(self.headers.get("Content-Length", 0) or 0)
+        if clen:
+            body = self.rfile.read(clen)
+        b.sendall(("\r\n".join(out) + "\r\n\r\n").encode() + body)
+        self.close_connection = True
+        cli = self.connection
+        if is_ws:
+            b.setblocking(False); cli.setblocking(False)
+            try:
+                while True:
+                    r, _, x = select.select([cli, b], [], [cli, b], 300)
+                    if x or not r:
+                        break
+                    stop = False
+                    for s in r:
+                        try:
+                            data = s.recv(65536)
+                        except Exception:
+                            data = b""
+                        if not data:
+                            stop = True; break
+                        (b if s is cli else cli).sendall(data)
+                    if stop:
+                        break
+            except Exception:
+                pass
+            finally:
+                try: b.close()
+                except Exception: pass
+        else:
+            try:
+                while True:
+                    chunk = b.recv(65536)
+                    if not chunk:
+                        break
+                    cli.sendall(chunk)
+            except Exception:
+                pass
+            finally:
+                try: b.close()
+                except Exception: pass
+
     def _client_ip(self):
         return self.client_address[0]
 
     # --- routing ---
     def do_GET(self):
         path = urllib.parse.urlparse(self.path).path
+        # reverse-proxied interactive services (single sign-on via the dashboard session)
+        if path == "/terminal" or path.startswith("/terminal/"):
+            if not self._guard("terminal"):
+                return
+            if not _alive("ttyd"):
+                terminal_start()
+            return self._proxy(TTYD_PORT)
+        if path == "/kvm" or path.startswith("/kvm/"):
+            if not self._guard("kvm"):
+                return
+            if not _alive("websockify"):
+                kvm_start()
+            return self._proxy(KVM_PORT, "/kvm")
         if path in ("/", "/index.html"):
             return self._serve_file("index.html", "text/html; charset=utf-8")
         if path.startswith("/static/"):
