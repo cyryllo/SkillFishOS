@@ -1,0 +1,134 @@
+"use strict";
+// SkillFish Remote - dynamic, module-composed dashboard frontend.
+const $ = (s, r = document) => r.querySelector(s);
+const api = (p, opt) => fetch(p, Object.assign({ credentials: "same-origin" }, opt));
+
+// ---- canvas sparkline chart (multi-series, rolling) ----
+class Mini {
+  constructor(canvas, series, unit) {
+    this.c = canvas; this.series = series; this.unit = unit;
+    this.data = series.map(() => []); this.max = 90;
+  }
+  push(vals) {
+    vals.forEach((v, i) => {
+      const d = this.data[i];
+      d.push(v == null ? (d.length ? d[d.length - 1] : 0) : v);
+      if (d.length > this.max) d.shift();
+    });
+    this.draw();
+  }
+  draw() {
+    const cv = this.c, dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== w * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+    const x = cv.getContext("2d"); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, w, h);
+    let all = []; this.data.forEach(d => all = all.concat(d));
+    if (!all.length) return;
+    let lo = Math.min(...all), hi = Math.max(...all);
+    if (hi - lo < 1e-6) hi = lo + 1; const m = (hi - lo) * 0.15; lo -= m; hi += m;
+    this.data.forEach((d, i) => {
+      if (d.length < 2) return;
+      const col = this.series[i].c;
+      x.beginPath();
+      d.forEach((v, j) => {
+        const px = w * j / (d.length - 1), py = h - h * (v - lo) / (hi - lo);
+        j ? x.lineTo(px, py) : x.moveTo(px, py);
+      });
+      x.strokeStyle = col; x.lineWidth = 1.6; x.lineJoin = "round"; x.stroke();
+    });
+  }
+  cur(i) { const d = this.data[i]; return d.length ? d[d.length - 1] : null; }
+}
+
+const TELEM = [
+  { t: "Temperatura", u: "°C", s: [{ k: "cpu_temp", l: "CPU", c: "#e8c878" }, { k: "gpu_temp", l: "GPU", c: "#e07b39" }] },
+  { t: "Carico", u: "%", s: [{ k: "cpu_load", l: "CPU", c: "#5fd24f" }, { k: "gpu_util", l: "GPU", c: "#49b6e0" }] },
+  { t: "Frequenza", u: "MHz", s: [{ k: "cpu_mhz", l: "CPU", c: "#9bd24f" }, { k: "gpu_freq", l: "GPU", c: "#49b6e0" }] },
+  { t: "Potenza", u: "W", s: [{ k: "gpu_power", l: "GPU", c: "#e0d24f" }] },
+  { t: "Voltaggio", u: "mV", s: [{ k: "gpu_mv", l: "GPU", c: "#c98be0" }, { k: "cpu_mv", l: "CPU", c: "#e8a878" }] },
+  { t: "Ventola", u: "RPM", s: [{ k: "fan", l: "FAN", c: "#d8a849" }] },
+];
+
+const RENDER = {
+  telemetry(card) {
+    card.classList.add("span2");
+    card.innerHTML = '<h3>📊 Telemetria <span class="pill" id="tlive">live</span></h3><div class="charts"></div>';
+    const box = $(".charts", card); const charts = [];
+    TELEM.forEach(spec => {
+      const el = document.createElement("div"); el.className = "chart";
+      const labs = spec.s.map(s => `<span style="color:${s.c}">${s.l} <b class="val" data-k="${s.k}">–</b></span>`).join(" ");
+      el.innerHTML = `<div class="lab"><span>${spec.t} (${spec.u})</span><span>${labs}</span></div><canvas></canvas>`;
+      box.appendChild(el);
+      charts.push({ spec, m: new Mini($("canvas", el), spec.s, spec.u), el });
+    });
+    const es = new EventSource("/api/telemetry");
+    es.onmessage = ev => {
+      let v; try { v = JSON.parse(ev.data); } catch (e) { return; }
+      charts.forEach(c => {
+        c.m.push(c.spec.s.map(s => v[s.k]));
+        c.spec.s.forEach(s => {
+          const b = c.el.querySelector(`[data-k="${s.k}"]`);
+          if (b && v[s.k] != null) b.textContent = Math.abs(v[s.k]) >= 10 ? Math.round(v[s.k]) : v[s.k].toFixed(2);
+        });
+      });
+    };
+    es.onerror = () => { const p = $("#tlive"); if (p) { p.textContent = "riconnetto…"; p.style.color = "#e07b5a"; } };
+    card._es = es;
+  },
+  status(card) {
+    card.innerHTML = '<h3>🧊 Stato sistema</h3><div class="rows" id="srows">…</div>';
+    const fill = async () => {
+      try {
+        const s = await (await api("/api/status")).json();
+        const row = (a, b) => `<div class="r"><span>${a}</span><span>${b || "–"}</span></div>`;
+        $("#srows", card).innerHTML =
+          row("Host", s.host) + row("IP", s.ip) + row("Kernel", s.kernel) +
+          row("Uptime", s.uptime) + row("CU attive", s.cu) +
+          row("RAM", s.ram_used_mb ? `${s.ram_used_mb} / ${s.ram_total_mb} MB` : "") +
+          row("Disco /", s.disk_used ? `${s.disk_used} / ${s.disk_total} (${s.disk_pct})` : "") +
+          row("Freeze rilevati", s.freezes);
+      } catch (e) {}
+    };
+    fill(); card._iv = setInterval(fill, 5000);
+  },
+  _stub(card, mod) {
+    card.innerHTML = `<h3>${mod.icon} ${mod.name}</h3><div class="stub">Modulo attivo — interfaccia in arrivo.</div>`;
+  },
+};
+
+async function buildDashboard() {
+  $("#login").style.display = "none"; $("#app").style.display = "block";
+  let data; try { data = await (await api("/api/modules")).json(); } catch (e) { return showLogin(); }
+  $("#host").textContent = data.host || "";
+  const grid = $("#grid"); grid.innerHTML = "";
+  (data.modules || []).forEach(mod => {
+    const card = document.createElement("div"); card.className = "mod";
+    (RENDER[mod.id] || ((c) => RENDER._stub(c, mod)))(card, mod);
+    grid.appendChild(card);
+  });
+}
+
+function showLogin() {
+  $("#app").style.display = "none"; $("#login").style.display = "grid"; $("#u").focus();
+}
+
+$("#lform").addEventListener("submit", async ev => {
+  ev.preventDefault(); $("#lerr").textContent = "";
+  const r = await api("/api/login", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user: $("#u").value, pass: $("#p").value }),
+  });
+  if (r.ok) { $("#p").value = ""; buildDashboard(); }
+  else { const j = await r.json().catch(() => ({})); $("#lerr").textContent = j.error || "accesso negato"; }
+});
+
+$("#logout").addEventListener("click", async () => {
+  await api("/api/logout", { method: "POST" }); location.reload();
+});
+
+(async () => {
+  try {
+    const r = await api("/api/me");
+    if (r.ok) buildDashboard(); else showLogin();
+  } catch (e) { showLogin(); }
+})();
