@@ -47,7 +47,7 @@ export const strings: Record<string, Entry> = {
   'nav.docs': { it: "Documentazione", en: "Docs" },
   'nav.gallery': { it: "Galleria", en: "Gallery" },
   'nav.contact': { it: "Contatti", en: "Contact" },
-  'nav.donate': { it: "Sostieni", en: "Donate" },
+  'nav.donate': { it: "Sostienici", en: "Support us" },
 
   'hero.soon': { it: "Release 26.06 «Aetherium»", en: "Release 26.06 “Aetherium”" },
   'hero.tag': { it: "Il sistema operativo gaming forgiato per l'<b>AMD BC-250</b>.", en: "The gaming operating system forged for the <b>AMD BC-250</b>." },

@@ -20,9 +20,9 @@ const comm = [
     <div class="hero-btns">
       {hasIso ? (
         <>
-          <a class="btn btn-primary" href={SITE.isoUrl} target="_blank" rel="noopener" set:html={t('dl.ed.bc250', lang)} />
-          <a class="btn" href={SITE.isoUrlGeneric} target="_blank" rel="noopener" set:html={t('dl.ed.generic', lang)} />
-          <a class="btn" href={SITE.isoUrlSlim} target="_blank" rel="noopener" set:html={t('dl.ed.slim', lang)} />
+          <a class="btn btn-primary dl-go" href={SITE.isoUrl} target="_blank" rel="noopener" set:html={t('dl.ed.bc250', lang)} />
+          <a class="btn dl-go" href={SITE.isoUrlGeneric} target="_blank" rel="noopener" set:html={t('dl.ed.generic', lang)} />
+          <a class="btn dl-go" href={SITE.isoUrlSlim} target="_blank" rel="noopener" set:html={t('dl.ed.slim', lang)} />
         </>
       ) : (
         <span class="btn btn-primary" style="cursor:default;opacity:.85" set:html={t('dl.btnsoon', lang)} />
@@ -88,12 +88,21 @@ const comm = [
         <p class="muted" style="font-size:.86rem;margin-top:14px" set:html={t('don.give.note', lang)} />
       </div>
       <a class="dl-qr" href={donatePage} aria-label={t('nav.donate', lang)}>
-        <img src={SITE.donateQr} alt={`PayPal — ${SITE.donateName}`} width="180" height="200" loading="lazy" />
+        <img src={SITE.donateQr} alt="QR PayPal" width="180" height="200" loading="lazy" />
         <span>{t('don.give.scan', lang)} →</span>
       </a>
     </div>
   </div>
 </section>
+
+<script define:vars={{ donatePage }}>
+  // After starting an ISO download (it opens in a new tab), bring this tab to the Support page.
+  document.querySelectorAll('.dl-go').forEach((a) => {
+    a.addEventListener('click', () => {
+      setTimeout(() => { window.location.href = donatePage; }, 600);
+    });
+  });
+</script>
 
 <!-- Free ways to help -->
 <section class="showcase" style="padding:50px 0 70px">

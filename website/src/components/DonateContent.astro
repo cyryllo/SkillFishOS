@@ -62,9 +62,9 @@ const comm = [
       <div class="donate-qr">
         <span class="qr-or">{t('don.give.or', lang)}</span>
         <a href={SITE.donateUrl} target="_blank" rel="noopener" aria-label={t('don.give.scan', lang)}>
-          <img src={SITE.donateQr} alt={`PayPal — ${SITE.donateName}`} width="280" height="310" loading="lazy" />
+          <img src={SITE.donateQr} alt="QR PayPal" width="280" height="310" loading="lazy" />
         </a>
-        <span class="qr-cap">{t('don.give.scan', lang)} · <strong>{SITE.donateName}</strong></span>
+        <span class="qr-cap">{t('don.give.scan', lang)}</span>
       </div>
     </div>
     <p class="thanks" set:html={t('don.thanks', lang)} />
