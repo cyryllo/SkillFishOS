@@ -151,14 +151,15 @@ const TELEM = [
   { t: "t_fan", u: "RPM", s: [{ k: "fan", l: "FAN", c: "#d8a849" }] },
 ];
 
-// ---------------- module groups ----------------
-const GROUPS = [
-  { t: "g_monitor", mods: ["telemetry", "status", "rules", "logs"] },
-  { t: "g_control", mods: ["tuner", "power", "recording", "launcher"] },
-  { t: "g_remote", mods: ["kvm", "terminal", "wol", "zerotier"] },
-  { t: "g_ai", mods: ["ai", "aiops"] },
-  { t: "g_other", mods: ["gamestream"] },
-];
+// ---------------- layout (order, hidden, collapsed) ----------------
+const DEFAULT_ORDER = ["telemetry", "status", "zerotier", "rules", "logs", "tuner", "power",
+                       "recording", "launcher", "kvm", "terminal", "ai", "aiops", "wol", "gamestream"];
+let layout = (() => { try { return JSON.parse(localStorage.getItem("sflayout")) || {}; } catch (e) { return {}; } })();
+layout.order = layout.order || []; layout.hidden = layout.hidden || []; layout.collapsed = layout.collapsed || [];
+function _toggleArr(a, id, on) { const i = a.indexOf(id); if (on && i < 0) a.push(id); if (!on && i >= 0) a.splice(i, 1); }
+function captureOrder() { const g = $("#grid"); if (g && g.children.length) layout.order = [...g.querySelectorAll(".mod")].map(c => c.dataset.mid); }
+function saveLayout() { captureOrder(); localStorage.setItem("sflayout", JSON.stringify(layout)); toast(LANG === "it" ? "Disposizione salvata" : "Layout saved"); }
+function resetLayout() { localStorage.removeItem("sflayout"); layout = { order: [], hidden: [], collapsed: [] }; buildDashboard(); }
 
 const RENDER = {
   telemetry(card) {
@@ -309,21 +310,63 @@ const RENDER = {
   _stub(card, mod) { card.innerHTML = `<h3>${mod.icon} ${LANG === "it" ? mod.name : (mod.name_en || mod.name)}</h3><div class="stub">${LANG === "it" ? "Modulo attivo — interfaccia in arrivo." : "Module on — UI coming soon."}</div>`; },
 };
 
+let MODS = {};
+function addCardTools(card, id) {
+  const t = document.createElement("div"); t.className = "mod-tools";
+  const collapsed = card.classList.contains("collapsed");
+  t.innerHTML = '<button class="mt drag-h" draggable="true" title="' + (LANG === "it" ? "Sposta" : "Move") + '">⠿</button>' +
+    '<button class="mt" data-a="c" title="' + (LANG === "it" ? "Comprimi" : "Collapse") + '">' + (collapsed ? "▸" : "▾") + '</button>' +
+    '<button class="mt" data-a="x" title="' + (LANG === "it" ? "Chiudi" : "Close") + '">✕</button>';
+  card.appendChild(t);
+  t.querySelector('[data-a="c"]').onclick = e => { e.stopPropagation(); const on = !card.classList.contains("collapsed"); card.classList.toggle("collapsed", on); _toggleArr(layout.collapsed, id, on); e.target.textContent = on ? "▸" : "▾"; };
+  t.querySelector('[data-a="x"]').onclick = e => { e.stopPropagation(); captureOrder(); _toggleArr(layout.hidden, id, true); buildDashboard(); };
+}
+function setupDrag(grid) {
+  let drag = null;
+  grid.addEventListener("dragstart", e => { const c = e.target.closest(".mod"); if (!c) return; drag = c; c.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; });
+  grid.addEventListener("dragend", () => { if (drag) { drag.classList.remove("dragging"); drag = null; } });
+  grid.addEventListener("dragover", e => {
+    e.preventDefault(); if (!drag) return; const c = e.target.closest(".mod"); if (!c || c === drag) return;
+    const b = c.getBoundingClientRect();
+    const before = (e.clientY < b.top + b.height / 2) || (e.clientX < b.left + b.width / 2 && e.clientY < b.bottom);
+    grid.insertBefore(drag, before ? c : c.nextSibling);
+  });
+}
+function renderHidden() {
+  const wrap = $("#hidden-wrap"); if (!wrap) return;
+  const hid = layout.hidden.filter(id => MODS[id]);
+  if (!hid.length) { wrap.innerHTML = ""; return; }
+  wrap.innerHTML = '<button class="ghost" id="hbtn">➕ ' + hid.length + "</button>";
+  $("#hbtn").onclick = () => {
+    const it = LANG === "it";
+    let m = $("#hidden-menu"); if (!m) { m = document.createElement("div"); m.id = "hidden-menu"; m.className = "overlay"; document.body.appendChild(m); m.addEventListener("click", e => { if (e.target === m) m.style.display = "none"; }); }
+    m.innerHTML = '<div class="setbox"><div class="fr-bar"><span class="fr-title">' + (it ? "Schede chiuse" : "Closed cards") + '</span><span class="fr-sp"></span><button class="fr-btn" id="hm-x">✕</button></div><div class="setgrid">' +
+      hid.map(id => `<button class="dbtn" data-r="${id}" style="text-align:left">${MODS[id].icon} ${it ? MODS[id].name : (MODS[id].name_en || MODS[id].name)}</button>`).join("") + "</div></div>";
+    m.style.display = "flex"; $("#hm-x").onclick = () => m.style.display = "none";
+    m.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { captureOrder(); _toggleArr(layout.hidden, b.dataset.r, false); m.style.display = "none"; buildDashboard(); });
+  };
+}
+
 async function buildDashboard() {
   $("#login").style.display = "none"; $("#app").style.display = "block";
   $("#logout").textContent = T("logout");
   let data; try { data = await (await api("/api/modules")).json(); } catch (e) { return showLogin(); }
   $("#host").textContent = data.host || "";
-  const enabled = {}; (data.modules || []).forEach(m => enabled[m.id] = m);
+  MODS = {}; (data.modules || []).forEach(m => MODS[m.id] = m);
+  let order = (layout.order.length ? layout.order : DEFAULT_ORDER).filter(id => MODS[id]);
+  DEFAULT_ORDER.forEach(id => { if (MODS[id] && !order.includes(id)) order.push(id); });
+  (data.modules || []).forEach(m => { if (!order.includes(m.id)) order.push(m.id); });
   const grid = $("#grid"); grid.innerHTML = "";
-  GROUPS.forEach(g => {
-    const present = g.mods.filter(id => enabled[id]);
-    if (!present.length) return;
-    const h = document.createElement("div"); h.className = "grouphdr"; h.textContent = T(g.t); grid.appendChild(h);
-    present.forEach(id => { const mod = enabled[id]; const card = document.createElement("div"); card.className = "mod";
-      (RENDER[id] || ((c) => RENDER._stub(c, mod)))(card, mod); grid.appendChild(card); });
+  order.forEach(id => {
+    if (layout.hidden.includes(id)) return;
+    const mod = MODS[id]; if (!mod) return;
+    const card = document.createElement("div"); card.className = "mod"; card.dataset.mid = id;
+    if (layout.collapsed.includes(id)) card.classList.add("collapsed");
+    (RENDER[id] || ((c) => RENDER._stub(c, mod)))(card, mod);
+    addCardTools(card, id);
+    grid.appendChild(card);
   });
-  // session watcher: if the login session expires, drop back to the login screen
+  setupDrag(grid); renderHidden();
   clearInterval(window._sw);
   window._sw = setInterval(async () => { try { const r = await api("/api/me"); if (!r.ok) location.reload(); } catch (e) {} }, 60000);
 }
@@ -341,6 +384,8 @@ $("#lform").addEventListener("submit", async ev => {
 });
 $("#logout").addEventListener("click", async () => { await api("/api/logout", { method: "POST" }); location.reload(); });
 $("#settings-btn").addEventListener("click", openSettings);
+$("#save-btn").addEventListener("click", saveLayout);
+$("#reset-btn").addEventListener("click", () => { if (confirm(LANG === "it" ? "Ripristinare la disposizione predefinita?" : "Reset to the default layout?")) resetLayout(); });
 document.querySelectorAll(".lang-btn").forEach(b => b.addEventListener("click", () => setLang(b.dataset.l)));
 
 (async () => {

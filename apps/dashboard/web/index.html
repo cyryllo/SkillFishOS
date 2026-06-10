@@ -81,6 +81,18 @@
   .lang-btn{background:none;border:none;color:var(--muted);padding:6px 11px;font-size:.8rem;font-weight:700;cursor:pointer}
   .lang-btn.active{background:rgba(216,168,73,.16);color:var(--gold-lt)}
   #login .lang{margin:16px auto 0;width:max-content}
+  /* card tools: move handle, collapse, close */
+  .mod{position:relative}
+  .mod h3{padding-right:78px}
+  .mod-tools{position:absolute;top:12px;right:12px;display:flex;gap:4px;opacity:.5;transition:opacity .15s;z-index:2}
+  .mod:hover .mod-tools{opacity:1}
+  .mt{background:rgba(216,168,73,.1);border:1px solid var(--line);color:var(--gold-lt);border-radius:6px;
+      cursor:pointer;width:24px;height:24px;font-size:.78rem;line-height:1;padding:0;display:grid;place-items:center}
+  .mt:hover{background:rgba(216,168,73,.28)}
+  .mt.drag-h{cursor:grab}
+  .mod.collapsed{grid-column:span 1!important;padding-bottom:16px}
+  .mod.collapsed>*:not(h3):not(.mod-tools){display:none}
+  .mod.dragging{opacity:.35;outline:2px dashed var(--gold);outline-offset:-2px}
   /* centered app frame + settings modal */
   #frame,.overlay{position:fixed;inset:0;z-index:1000;background:rgba(8,6,4,.85);backdrop-filter:blur(4px);
                   display:none;align-items:center;justify-content:center;padding:clamp(6px,3vw,40px)}
@@ -129,6 +141,9 @@
     <span class="brand">SkillFish<span class="g">OS</span> Remote Manager</span>
     <span class="host" id="host"></span>
     <span class="sp"></span>
+    <span id="hidden-wrap"></span>
+    <button class="ghost" id="save-btn" title="Salva disposizione">💾</button>
+    <button class="ghost" id="reset-btn" title="Ripristina disposizione">↺</button>
     <div class="lang"><button class="lang-btn" data-l="it">IT</button><button class="lang-btn" data-l="en">EN</button></div>
     <button class="ghost" id="settings-btn" title="Moduli">⚙️</button>
     <button class="ghost" id="logout">Esci</button>
