@@ -48,6 +48,12 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="26.06.7" date="2026-06-10">
+      <description><p>Find-my-max wizards for CPU and GPU with per-step benchmark-and-rollback; crash-safe testing; Turbo/Crazy presets capped at the validated 2200 MHz; extreme-preset warning; anonymous silicon-lottery sharing.</p></description>
+    </release>
+    <release version="26.06.6" date="2026-06-10">
+      <description><p>GPU governor Balanced/Performance mode toggle (+11% FPS in GPU-bound loads) and the safe multi-point voltage curve.</p></description>
+    </release>
     <release version="26.06.3" date="2026-06-08"/>
   </releases>
 </component>

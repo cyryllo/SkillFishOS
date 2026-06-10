@@ -41,6 +41,9 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="26.06.5" date="2026-06-10">
+      <description><p>REC button: record telemetry to CSV with a min/avg/max summary at the end of the session.</p></description>
+    </release>
     <release version="26.06.3" date="2026-06-08"/>
   </releases>
 </component>
