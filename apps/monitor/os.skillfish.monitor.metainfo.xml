@@ -41,6 +41,11 @@
     </screenshot>
   </screenshots>
   <releases>
+    <release version="26.06.6" date="2026-06-10">
+      <description>
+        <p>Monitor v2: added power (W) and CPU/GPU load charts (six panels total); refresh now selectable down to 0.5 s. Recordings are saved as .sfmon files (CSV-backed) and can be re-opened in the Monitor as a benchmark analyzer with a time scrubber to inspect the whole run second by second.</p>
+      </description>
+    </release>
     <release version="26.06.5" date="2026-06-10">
       <description><p>REC button: record telemetry to CSV with a min/avg/max summary at the end of the session.</p></description>
     </release>

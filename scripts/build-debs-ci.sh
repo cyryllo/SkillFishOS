@@ -53,8 +53,12 @@ ctrl $P "python3, python3-pyqt6, python3-apt, gir1.2-appstream-1.0, appstream, c
 P=skillfish-monitor
 put $P 0755 apps/monitor/skillfish-monitor usr/local/bin/skillfish-monitor
 put $P 0644 system/usr/share/applications/os.skillfish.monitor.desktop usr/share/applications/os.skillfish.monitor.desktop
+put $P 0644 system/usr/share/mime/packages/os.skillfish.monitor.xml usr/share/mime/packages/os.skillfish.monitor.xml
 shot $P apps/monitor/os.skillfish.monitor.metainfo.xml
-ctrl $P "python3, python3-pyqt6" "SkillFishOS Monitor - live sensor charts"
+ctrl $P "python3, python3-pyqt6" "SkillFishOS Monitor - live sensor charts + .sfmon benchmark analyzer"
+# monitor ships a MIME type (.sfmon recordings) → also refresh the shared-mime db
+printf '#!/bin/sh\nset -e\nupdate-mime-database /usr/share/mime >/dev/null 2>&1 || true\nupdate-desktop-database -q 2>/dev/null || true\nappstreamcli refresh-cache --force >/dev/null 2>&1 || true\nexit 0\n' > "$OUT/$P/DEBIAN/postinst"
+chmod 0755 "$OUT/$P/DEBIAN/postinst"
 
 P=skillfish-kernel-manager
 put $P 0755 apps/kernel-manager/skillfish-kernel-manager usr/local/bin/skillfish-kernel-manager
@@ -104,4 +108,5 @@ check skillfish-kernel-manager_${VER}_all.deb ./usr/local/bin/skillfish-kernel-m
 check skillfish-ai-panel_${VER}_all.deb      ./usr/local/bin/skillfish-ai-panel       skillfish
 check skillfish-base_${VER}_all.deb          ./usr/local/bin/skillfish-freeze-check.sh unclean-shutdown
 check skillfish-tuner_${VER}_all.deb         ./usr/local/bin/skillfish-tuner          _silicon
+check skillfish-monitor_${VER}_all.deb       ./usr/local/bin/skillfish-monitor        SFMON_EXT
 echo "ALL DEBS VERIFIED"
