@@ -269,6 +269,7 @@ class TunerWindow(QMainWindow):
         self.statusBar()
 
         self.box.addWidget(self._presets())
+        self.box.addWidget(self._silicon())
         self.box.addWidget(self._cpu())
         self.box.addWidget(self._gpu())
         self.box.addWidget(self._vram())
@@ -387,6 +388,32 @@ class TunerWindow(QMainWindow):
         if p.get("thermal_guard"):
             self.d.cmd(cmd="thermal-guard", limit=p["thermal_guard"])
         self.toast(L(f"Preset «{self._pname(p)}» applicato", f"Preset «{self._pname(p)}» applied"))
+
+    # ---------- silicon status ----------
+    def _silicon(self):
+        g, v = self._section(L("🎰 Il mio silicio", "🎰 My silicon"))
+        cpu = self.cfg.get("cpu", {}); gp = self.cfg.get("gpu", {}); cu = self.cfg.get("cu", {})
+        freezes = []
+        try:
+            with open("/var/log/skillfish-freeze.log") as fh:
+                freezes = [ln.strip() for ln in fh if ln.strip()]
+        except OSError:
+            pass  # no freezes recorded (or log unreadable): show 0
+        lab = QLabel(L("CPU %d MHz @ %d  ·  GPU %d MHz @ %d mV  ·  CU attive: %d  ·  Blocchi rilevati: %d",
+                       "CPU %d MHz @ %d  ·  GPU %d MHz @ %d mV  ·  Active CUs: %d  ·  Detected freezes: %d")
+                     % (cpu.get("frequency", 0), cpu.get("scale", 0), gp.get("max_mhz", 0),
+                        gp.get("max_mv", 0), cu.get("active", 0), len(freezes)))
+        lab.setWordWrap(True); v.addWidget(lab)
+        if freezes:
+            warn = QLabel(L("⚠ Ultimo blocco: %s — se ricapita, scendi di uno scalino con i wizard 🎰.",
+                            "⚠ Last freeze: %s — if it happens again, step down one notch with the 🎰 wizards.")
+                          % freezes[-1].split(" ")[0])
+            warn.setStyleSheet("color:#e0a050;font-size:11px;"); warn.setWordWrap(True); v.addWidget(warn)
+        v.addWidget(self._btns(
+            (L("Condividi nel DB del silicio", "Share to the silicon DB"),
+             lambda: self._share_silicon(validation="SkillFishOS Tuner - silicon status panel"), False),
+        ))
+        return g
 
     # ---------- CPU ----------
     def _cpu(self):
