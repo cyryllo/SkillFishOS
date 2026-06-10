@@ -460,10 +460,21 @@ def _port_open(port):
         return False
 
 
+def _ai_models():
+    try:
+        r = subprocess.run(["docker", "exec", AI_CONTAINER, "ollama", "list"],
+                           capture_output=True, text=True, timeout=8).stdout
+        return [ln.split()[0] for ln in r.splitlines()[1:] if ln.strip()]
+    except Exception:
+        return []
+
+
 def ai_status():
     r = subprocess.run(["docker", "inspect", "-f", "{{.State.Running}}", AI_CONTAINER],
                        capture_output=True, text=True)
-    return {"ok": True, "running": r.stdout.strip() == "true", "webui": _port_open(WEBUI_PORT)}
+    running = r.stdout.strip() == "true"
+    return {"ok": True, "running": running, "webui": _port_open(WEBUI_PORT),
+            "models": _ai_models() if running else []}
 
 
 def ai_start():
@@ -476,6 +487,31 @@ def ai_stop():
     subprocess.Popen(["docker", "compose", "-f", AI_COMPOSE, "down"],
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return {"ok": True}
+
+
+def ai_pull(model):
+    if not re.match(r"^[A-Za-z0-9._:/-]{1,80}$", (model or "").strip()):
+        return {"ok": False, "error": "nome modello non valido"}
+    subprocess.Popen(["docker", "exec", AI_CONTAINER, "ollama", "pull", model.strip()],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return {"ok": True, "model": model.strip()}
+
+
+def ai_chat(model, messages):
+    if not _port_open(11434):
+        return {"ok": False, "error": "Motore AI spento — accendilo dal modulo AI."}
+    if not model:
+        ms = _ai_models(); model = ms[0] if ms else "qwen3:14b"
+    if not isinstance(messages, list):
+        return {"ok": False, "error": "messaggi non validi"}
+    try:
+        req = urllib.request.Request("http://127.0.0.1:11434/api/chat",
+                                     data=json.dumps({"model": model, "messages": messages, "stream": False}).encode(),
+                                     headers={"Content-Type": "application/json"})
+        out = json.loads(urllib.request.urlopen(req, timeout=300).read().decode())
+        return {"ok": True, "model": model, "message": out.get("message", {}).get("content", "")}
+    except Exception as e:
+        return {"ok": False, "error": "Ollama: %s" % e}
 
 
 # ---------------- Wake-on-LAN / power schedule ----------------
@@ -803,6 +839,10 @@ class Handler(BaseHTTPRequestHandler):
             if not _alive("websockify"):
                 kvm_start()
             return self._proxy(KVM_PORT, "/kvm")
+        if path == "/webui" or path.startswith("/webui/"):
+            if not self._guard("ai"):
+                return
+            return self._proxy(WEBUI_PORT, "/webui")
         if path in ("/", "/index.html"):
             return self._serve_file("index.html", "text/html; charset=utf-8")
         if path.startswith("/static/"):
@@ -881,6 +921,11 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("zerotier"):
                 return
             return self._json(200, zt_status())
+        if path == "/api/config":
+            if not self._user():
+                return self._json(401, {"error": "auth"})
+            cat = [dict(id=k, **v) for k, v in MODULE_META.items()]
+            return self._json(200, {"modules": CONFIG.get("modules", {}), "catalogue": cat})
         return self._json(404, {"error": "not found"})
 
     def do_POST(self):
@@ -995,6 +1040,23 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("zerotier"):
                 return
             return self._json(200, zt_leave(data.get("nwid")))
+        if path == "/api/config":
+            if not self._user():
+                return self._json(401, {"error": "auth"})
+            mod = data.get("module")
+            if mod in MODULE_META:
+                CONFIG.setdefault("modules", {})[mod] = bool(data.get("on"))
+                save_conf()
+                return self._json(200, {"ok": True, "modules": CONFIG["modules"]})
+            return self._json(400, {"error": "modulo sconosciuto"})
+        if path == "/api/ai/pull":
+            if not self._guard("ai"):
+                return
+            return self._json(200, ai_pull(data.get("model")))
+        if path == "/api/ai/chat":
+            if not self._guard("ai"):
+                return
+            return self._json(200, ai_chat(data.get("model"), data.get("messages")))
         return self._json(404, {"error": "not found"})
 
     def _login(self):

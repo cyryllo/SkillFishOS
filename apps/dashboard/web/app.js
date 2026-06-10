@@ -90,6 +90,34 @@ async function action(p, body, okmsg) {
   try { const j = await (await post(p, body)).json(); toast(j.ok === false ? (j.error || T("err").trim()) : (okmsg || T("done")), j.ok !== false); return j; }
   catch (e) { toast(T("neterr"), false); }
 }
+// centered modal with an embedded web app (same-origin via the dashboard proxy)
+function openFrame(title, url) {
+  let m = $("#frame");
+  if (!m) {
+    m = document.createElement("div"); m.id = "frame";
+    m.innerHTML = '<div class="fr-box"><div class="fr-bar"><span class="fr-title"></span><span class="fr-sp"></span><button class="fr-btn" id="fr-pop" title="Nuova scheda">⤢</button><button class="fr-btn" id="fr-x">✕</button></div><iframe class="fr-if" allow="clipboard-read; clipboard-write"></iframe></div>';
+    document.body.appendChild(m);
+    const close = () => { m.style.display = "none"; $(".fr-if", m).src = "about:blank"; };
+    $("#fr-x", m).onclick = close;
+    $("#fr-pop", m).onclick = () => window.open($(".fr-if", m).dataset.url, "_blank");
+    m.addEventListener("click", e => { if (e.target === m) close(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && m.style.display === "flex") close(); });
+  }
+  $(".fr-title", m).textContent = title;
+  const f = $(".fr-if", m); f.dataset.url = url; f.src = url; m.style.display = "flex";
+}
+// settings modal: pick which modules the web dashboard exposes
+async function openSettings() {
+  const it = LANG === "it";
+  let d; try { d = await (await api("/api/config")).json(); } catch (e) { return; }
+  let m = $("#settings");
+  if (!m) { m = document.createElement("div"); m.id = "settings"; m.className = "overlay"; document.body.appendChild(m); m.addEventListener("click", e => { if (e.target === m) m.style.display = "none"; }); }
+  const rows = (d.catalogue || []).map(c => `<label class="setrow"><input type="checkbox" data-m="${c.id}" ${d.modules[c.id] ? "checked" : ""}> ${c.icon} ${it ? c.name : (c.name_en || c.name)}</label>`).join("");
+  m.innerHTML = '<div class="setbox"><div class="fr-bar"><span class="fr-title">' + (it ? "Moduli esposti" : "Exposed modules") + '</span><span class="fr-sp"></span><button class="fr-btn" id="set-x">✕</button></div><div class="setgrid">' + rows + "</div></div>";
+  m.style.display = "flex";
+  $("#set-x", m).onclick = () => m.style.display = "none";
+  m.querySelectorAll("[data-m]").forEach(cb => cb.onchange = async () => { await action("/api/config", { module: cb.dataset.m, on: cb.checked }, it ? "Aggiornato" : "Updated"); buildDashboard(); });
+}
 function copyable(value) {
   return '<span class="cpw"><b style="user-select:all">' + value + '</b> <button class="cpy" type="button" data-cp="' +
     String(value).replace(/"/g, "&quot;") + '" title="' + T("copied") + '">📋</button></span>';
@@ -201,21 +229,29 @@ const RENDER = {
   kvm(card) {
     card.innerHTML = '<h3>🖥️ Desktop (KVM)</h3><div class="brow"><button class="dbtn" id="kvmgo">' + T("k_open") + '</button></div><div class="stub" id="kvmi" style="margin-top:8px">' + T("k_hint") + "</div>";
     $("#kvmgo", card).onclick = async () => { const j = await action("/api/kvm/start", {}, T("k_ready"));
-      if (j && j.password != null) { window.open("/kvm/vnc.html?autoconnect=1&resize=scale&reconnect=1&path=" + encodeURIComponent("kvm/websockify") + "&password=" + encodeURIComponent(j.password), "_blank"); $("#kvmi", card).innerHTML = T("k_vncpw") + copyable(j.password); } };
+      if (j && j.password != null) { openFrame("Desktop (KVM)", "/kvm/vnc.html?autoconnect=1&resize=scale&reconnect=1&path=" + encodeURIComponent("kvm/websockify") + "&password=" + encodeURIComponent(j.password)); $("#kvmi", card).innerHTML = T("k_vncpw") + copyable(j.password); } };
   },
   terminal(card) {
     card.innerHTML = "<h3>⌨️ " + (LANG === "it" ? "Terminale" : "Terminal") + '</h3><div class="brow"><button class="dbtn" id="tgo">' + T("term_open") + '</button></div><div class="stub" style="margin-top:8px">' + T("term_hint") + "</div>";
-    $("#tgo", card).onclick = () => { window.open("/terminal/", "_blank"); };
+    $("#tgo", card).onclick = () => openFrame(LANG === "it" ? "Terminale" : "Terminal", "/terminal/");
   },
   ai(card) {
+    const it = LANG === "it";
     card.innerHTML = "<h3>🧠 AI / OpenWebUI</h3><div id=\"ai\">…</div>";
     const refresh = async () => { let s; try { s = await (await api("/api/ai")).json(); } catch (e) { return; }
+      const models = (s.models || []).map(mn => `<span class="pill" style="display:inline-block;margin:2px">${mn}</span>`).join(" ") || `<span class="stub">${it ? "nessun modello installato" : "no models installed"}</span>`;
       $("#ai", card).innerHTML = '<div class="rows"><div class="r"><span>' + T("ai_engine") + "</span><span>" + (s.running ? T("ai_on") : T("ai_off")) + '</span></div><div class="r"><span>OpenWebUI</span><span>' + (s.webui ? T("ai_ready") : T("ai_off")) + "</span></div></div>" +
-        '<div class="brow" style="margin-top:10px">' + (s.running ? '<button class="dbtn danger" id="aistop">' + T("ai_stop") + "</button>" : '<button class="dbtn" id="aistart">' + T("ai_start") + "</button>") + '<button class="dbtn" id="aiweb"' + (s.webui ? "" : " disabled") + ">" + T("ai_open") + "</button></div>" +
+        '<div class="brow" style="margin-top:10px">' + (s.running ? '<button class="dbtn danger" id="aistop">' + T("ai_stop") + "</button>" : '<button class="dbtn" id="aistart">' + T("ai_start") + "</button>") +
+        '<button class="dbtn" id="aichat"' + (s.running ? "" : " disabled") + ">💬 " + (it ? "Chat" : "Chat") + "</button>" +
+        '<button class="dbtn" id="aiweb"' + (s.webui ? "" : " disabled") + ">" + T("ai_open") + "</button></div>" +
+        '<div class="gl" style="margin-top:12px">' + (it ? "Modelli installati" : "Installed models") + '</div><div style="margin-top:4px">' + models + "</div>" +
+        '<div class="brow" style="margin-top:10px"><input id="aipm" class="dsel" placeholder="' + (it ? "scarica modello (es. qwen3:14b)" : "pull model (e.g. qwen3:14b)") + '" style="flex:1"><button class="dbtn" id="aipull"' + (s.running ? "" : " disabled") + ">" + (it ? "Scarica" : "Pull") + "</button></div>" +
         '<div class="stub" style="margin-top:8px">' + T("ai_hint") + "</div>";
       if ($("#aistart", card)) $("#aistart", card).onclick = async () => { await action("/api/ai/start", {}, T("ai_starting")); setTimeout(refresh, 4000); };
       if ($("#aistop", card)) $("#aistop", card).onclick = async () => { await action("/api/ai/stop", {}, T("ai_stopping")); setTimeout(refresh, 2000); };
+      if ($("#aichat", card)) $("#aichat", card).onclick = () => openFrame("SkillFishOS AI", "/static/aichat.html");
       if ($("#aiweb", card)) $("#aiweb", card).onclick = () => window.open("http://" + location.hostname + ":" + s.webui_port, "_blank");
+      if ($("#aipull", card)) $("#aipull", card).onclick = async () => { if ($("#aipm", card).value.trim()) { await action("/api/ai/pull", { model: $("#aipm", card).value }, it ? "Download avviato…" : "Download started…"); $("#aipm", card).value = ""; } };
     };
     refresh(); card._iv = setInterval(refresh, 5000);
   },
@@ -307,6 +343,7 @@ $("#lform").addEventListener("submit", async ev => {
   if (r.ok) { $("#p").value = ""; buildDashboard(); } else { const j = await r.json().catch(() => ({})); $("#lerr").textContent = j.error || T("denied"); }
 });
 $("#logout").addEventListener("click", async () => { await api("/api/logout", { method: "POST" }); location.reload(); });
+$("#settings-btn").addEventListener("click", openSettings);
 document.querySelectorAll(".lang-btn").forEach(b => b.addEventListener("click", () => setLang(b.dataset.l)));
 
 (async () => {

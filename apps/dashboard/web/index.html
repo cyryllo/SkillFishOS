@@ -81,6 +81,20 @@
   .lang-btn{background:none;border:none;color:var(--muted);padding:6px 11px;font-size:.8rem;font-weight:700;cursor:pointer}
   .lang-btn.active{background:rgba(216,168,73,.16);color:var(--gold-lt)}
   #login .lang{margin:16px auto 0;width:max-content}
+  /* centered app frame + settings modal */
+  #frame,.overlay{position:fixed;inset:0;z-index:1000;background:rgba(8,6,4,.85);backdrop-filter:blur(4px);
+                  display:none;align-items:center;justify-content:center;padding:clamp(6px,3vw,40px)}
+  .fr-box{width:min(1200px,97vw);height:min(820px,93vh);background:var(--panel);border:1px solid var(--gold);
+          border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.6)}
+  .fr-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#1a140b;border-bottom:1px solid var(--line)}
+  .fr-title{color:var(--gold-lt);font-weight:700} .fr-sp{flex:1}
+  .fr-btn{background:rgba(216,168,73,.1);border:1px solid var(--line);color:var(--gold-lt);border-radius:8px;cursor:pointer;padding:4px 11px;font-size:.95rem}
+  .fr-btn:hover{background:rgba(216,168,73,.25)}
+  .fr-if{flex:1;border:0;background:#0d0b06;width:100%}
+  .setbox{width:min(540px,95vw);max-height:88vh;overflow:auto;background:var(--panel);border:1px solid var(--gold);border-radius:14px}
+  .setgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:16px}
+  .setrow{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:9px;background:#1a140b;border:1px solid var(--line);cursor:pointer;font-size:.9rem;color:var(--cream)}
+  .setrow input{accent-color:var(--gold);width:16px;height:16px}
   @media(max-width:560px){
     .wrap{padding:0 12px}
     .grid{grid-template-columns:1fr;gap:12px}
@@ -90,6 +104,7 @@
     .nav .host{display:none}
     .charts{grid-template-columns:1fr}
     .brow{gap:6px}
+    .setgrid{grid-template-columns:1fr}
   }
 </style>
 </head>
@@ -115,6 +130,7 @@
     <span class="host" id="host"></span>
     <span class="sp"></span>
     <div class="lang"><button class="lang-btn" data-l="it">IT</button><button class="lang-btn" data-l="en">EN</button></div>
+    <button class="ghost" id="settings-btn" title="Moduli">⚙️</button>
     <button class="ghost" id="logout">Esci</button>
   </div></header>
   <div class="wrap"><div class="grid" id="grid"></div></div>
