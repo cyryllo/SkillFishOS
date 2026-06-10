@@ -40,6 +40,15 @@ DisplayPort audio works, but:
 - Remember the cooling is marginal: after prolonged load the **thermal-guard** (85 °C) kicks in. For valid benchmarks, let the board cool between runs (see [GPU](/en/docs/gpu-overclock)).
 - For **CPU-bound** games, lowering the resolution won't raise the FPS.
 
+## The board froze (hard freeze)
+
+The BC-250 can hit a **hard freeze** (total lock-up), often tied to **too-aggressive undervolt**: the instability mostly shows up at **low load**, so a freeze can even strike at idle. SkillFishOS tackles it on two fronts:
+
+- **Hardware watchdog** — the chipset's **SP5100 TCO** timer is active (`RuntimeWatchdogSec=2min`): if the system locks up completely, the board **reboots itself** within two minutes, no need to pull the power.
+- **Freeze detector** — at boot a service notices whether the previous shutdown was abnormal (no clean-shutdown marker) and **logs it** to `/var/log/skillfish-freeze.log`, with a desktop notification. The counter also shows up in the Tuner's **"My silicon"** panel.
+
+If freezes recur, **drop one preset** (e.g. from Crazy/Turbo to Performance) in the Tuner: the less aggressive value is almost always the fix. All presets are **crash-safe** — a freeze mid-test never leaves the board on an unstable profile at reboot. If they persist even in Stock, suspect the **power supply**.
+
 ## An update broke something
 
 Reboot and from the **GRUB → "SkillFishOS snapshots"** menu pick a working previous snapshot. See [Storage and snapshots](/en/docs/storage-snapshot). Pre/post-update snapshots are automatic.

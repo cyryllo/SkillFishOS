@@ -37,6 +37,34 @@ Il flusso **"Test"** (CPU, GPU, CU, ventola): applica una modifica → esegue un
 
 Architettura: una GUI utente più un piccolo **daemon di root** che esegue le operazioni privilegiate. Su un PC personale è configurato per non richiedere password a ogni operazione. L'HUD del desktop mostra anche le **CU attive** in tempo reale.
 
+### Modalità del governor: Bilanciata e Performance
+
+La GPU della BC-250 è pilotata da un **governor SMU** che alza e abbassa il clock in base al carico. Il Tuner espone due modalità con un interruttore:
+
+- **Bilanciata** *(default)* — il clock scende a riposo (fino a 350 MHz) e sale sotto carico: consumi e temperature più bassi nell'uso normale.
+- **Performance** — la GPU **resta agganciata al clock massimo** appena c'è carico, eliminando le micro-oscillazioni di frequenza. Nel nostro benchmark su *Black Myth: Wukong* questo vale **+11% di FPS** (da ~100 a ~111 di media) e un **1% low** più alto (92 → 102), a parità di tutto il resto.
+
+Entrambe restano sotto il **cap termico di 85 °C**: la modalità Performance spinge di più, non disattiva le protezioni.
+
+### Trova il massimo (wizard CPU e GPU)
+
+Ogni BC-250 è diversa ([lotteria del silicio](/docs/gpu-overclock)). Il Tuner include due procedure guidate **«Trova il massimo»** che caratterizzano **la tua** scheda:
+
+- **GPU** — sale a passi (2000 → 2200 MHz, step 50) applicando e **testando** ogni gradino, e si ferma all'ultimo stabile.
+- **CPU** — percorre i gradini frequenza/undervolt (da 3600 MHz fino a 4000 MHz @ scale −36) con lo stesso schema **test-and-rollback**: se un passo non regge, torna all'ultimo valore buono.
+
+Tutto è **crash-safe**: il valore di lavoro su disco resta sempre l'ultimo stabile, così un eventuale blocco a metà test non lascia la scheda su un profilo instabile al riavvio.
+
+### Il mio silicio
+
+Il pannello **«Il mio silicio»** riassume il profilo della tua scheda — CPU e GPU massimi trovati, CU sane, contatore dei freeze rilevati — e ti permette di **condividere il risultato in forma anonima** nel database della lotteria del silicio (apre una *issue* GitHub precompilata). Più dati raccogliamo, migliori diventano i profili consigliati per tutti.
+
+## SkillFishOS Monitor
+
+Il **Monitor** mostra in tempo reale temperatura, frequenza, voltaggio GPU, assorbimento e ventola. Si apre automaticamente durante i test del Tuner, ma è anche un'app a sé. Il pulsante **REC** registra una sessione di benchmark in un **CSV** (in `~/SkillFishOS-benchmarks/`) con riepilogo **min / media / max**: utile per confrontare due configurazioni o documentare un risultato.
+
+![Monitor di SkillFishOS — grafici live di temperatura, frequenza, voltaggio GPU e ventola, con registrazione REC](/img/monitor.jpg)
+
 ## SkillFishOS AI
 
 Il **pannello AI** accende e spegne lo stack LLM locale con un clic, liberando GPU e RAM per i giochi quando non serve. È il front-end "facile" dello stack descritto in [AI in locale](/docs/ai-locale).

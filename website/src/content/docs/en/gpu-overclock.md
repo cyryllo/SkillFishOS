@@ -9,7 +9,7 @@ On a normal APU you tune clocks through the `amdgpu` sysfs. On the BC-250 **that
 
 > ⚠️ **Silicon lottery.** Every number on this page is **measured on our BC-250**. Each card is different: one may take a deeper undervolt, another less. That's why SkillFishOS **always boots in the Stock profile** and lets you climb using the [Tuner](/docs/app-native), which validates each preset **on your card** with an automatic test and rollback.
 
-## The three profiles
+## The four profiles
 
 The [Tuner](/docs/app-native) exposes **four presets**. The ISO boots in **Stock**; the others are one click away after the test.
 

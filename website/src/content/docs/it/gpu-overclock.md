@@ -9,7 +9,7 @@ Su una APU normale le frequenze si regolano via sysfs `amdgpu`. Sulla BC-250 **n
 
 > ⚠️ **Silicon lottery.** Tutti i valori di questa pagina sono **misurati sulla nostra BC-250**. Ogni esemplare è diverso: una scheda può reggere un undervolt più spinto, un'altra meno. Per questo SkillFishOS **parte sempre in profilo Stock** e ti lascia salire con il [Tuner](/docs/app-native), che valida ogni preset **sulla tua scheda** con test automatico e rollback.
 
-## I tre profili
+## I quattro profili
 
 Il [Tuner](/docs/app-native) espone **quattro preset**. La ISO si avvia con **Stock**; gli altri si attivano con un clic dopo il test.
 
