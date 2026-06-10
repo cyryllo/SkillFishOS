@@ -264,7 +264,7 @@ export const strings: Record<string, Entry> = {
   'oc.note': { it: "Per ogni frequenza abbiamo trovato il <strong>voltaggio minimo stabile</strong> leggendo il VID reale dall'SMU e validando con stress di 120s. I preset <strong>Stock · Performance · Turbo · Crazy</strong> applicano questi profili in un clic; un thermal-guard tiene tutto entro 85 °C. Dettagli completi nella documentazione.", en: "For every frequency we found the <strong>lowest stable voltage</strong> by reading the real VID from the SMU and validating with 120s stress. The <strong>Stock · Performance · Turbo · Crazy</strong> presets apply these profiles in one click; a thermal-guard keeps everything within 85 °C. Full details in the docs." },
 
   // --- Donate / Support page ---
-  'don.title': { it: "Sostieni SkillFishOS — Offrimi un caffè", en: "Support SkillFishOS — Buy me a coffee" },
+  'don.title': { it: "Sostienici — Offrici un caffè", en: "Support us — Buy us a coffee" },
   'don.eye': { it: "Sostieni il progetto", en: "Support the project" },
   'don.h2': { it: "Aiutaci a forgiare il <span class=\"gold-text\">futuro</span> di SkillFishOS", en: "Help forge the <span class=\"gold-text\">future</span> of SkillFishOS" },
   'don.sub': { it: "SkillFishOS è e resterà <strong>gratuito e open-source</strong>. Ma dietro c'è un <strong>piccolo team</strong> e una sola scheda: con un piccolo contributo lo sviluppo va più veloce e non si ferma.", en: "SkillFishOS is and will stay <strong>free and open-source</strong>. But behind it there's a <strong>small team</strong> and a single board: a small contribution keeps development fast — and alive." },
@@ -284,7 +284,7 @@ export const strings: Record<string, Entry> = {
   'don.u4.t': { it: "Tempo di sviluppo", en: "Development time" },
   'don.u4.d': { it: "Ogni contributo ci permette di dedicare più ore a nuove funzioni, fix e supporto, invece che ad altro.", en: "Every contribution lets us put more hours into new features, fixes and support, instead of elsewhere." },
 
-  'don.give.h': { it: "Offrimi un caffè ☕", en: "Buy me a coffee ☕" },
+  'don.give.h': { it: "Offrici un caffè ☕", en: "Buy us a coffee ☕" },
   'don.give.p': { it: "Scegli un importo: si apre PayPal con la cifra già pronta. Anche solo <strong>1, 2 o 5 €</strong> fanno una differenza enorme.", en: "Pick an amount: PayPal opens with the sum ready to go. Even just <strong>€1, €2 or €5</strong> makes a huge difference." },
   'don.give.custom': { it: "Importo libero", en: "Any amount" },
   'don.give.or': { it: "oppure inquadra il QR con il telefono", en: "or scan the QR with your phone" },
