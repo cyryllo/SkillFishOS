@@ -28,11 +28,11 @@ MODULES = [
     ("launcher", "🚀", L("Avvio app", "Launcher"), True),
     ("kvm", "🖥️", L("Desktop (KVM)", "Desktop (KVM)"), True),
     ("terminal", "⌨️", L("Terminale", "Terminal"), True),
-    ("ai", "🧠", "AI / OpenWebUI", False),
+    ("ai", "🧠", "AI / OpenWebUI", True),
     ("gamestream", "🎮", "Game streaming", False),
     ("aiops", "🩺", "AI-Ops", False),
     ("rules", "⚙️", L("Regole auto", "Auto rules"), False),
-    ("wol", "🔋", L("Power schedule", "Power schedule"), False),
+    ("wol", "🔋", L("Power schedule", "Power schedule"), True),
 ]
 
 CSS = """

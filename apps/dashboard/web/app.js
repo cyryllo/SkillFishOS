@@ -205,6 +205,45 @@ const RENDER = {
       '<div class="stub" style="margin-top:8px">Shell della scheda — stessa sessione, nessuna password in più.</div>';
     $("#tgo", card).onclick = () => { window.open("/terminal/", "_blank"); };
   },
+  ai(card) {
+    card.innerHTML = '<h3>🧠 AI / OpenWebUI</h3><div id="ai">…</div>';
+    const refresh = async () => {
+      let s; try { s = await (await api("/api/ai")).json(); } catch (e) { return; }
+      $("#ai", card).innerHTML =
+        '<div class="rows"><div class="r"><span>Motore (Ollama)</span><span>' + (s.running ? "● acceso" : "○ spento") + '</span></div>' +
+        '<div class="r"><span>OpenWebUI</span><span>' + (s.webui ? "● pronto" : "○ spento") + '</span></div></div>' +
+        '<div class="brow" style="margin-top:10px">' +
+        (s.running ? '<button class="dbtn danger" id="aistop">■ Spegni AI</button>' : '<button class="dbtn" id="aistart">▶ Accendi AI</button>') +
+        '<button class="dbtn" id="aiweb"' + (s.webui ? "" : " disabled") + ">Apri OpenWebUI ↗</button></div>" +
+        '<div class="stub" style="margin-top:8px">Lo stack gira sulla GPU: spegnilo quando giochi.</div>';
+      if ($("#aistart", card)) $("#aistart", card).onclick = async () => { await action("/api/ai/start", {}, "Avvio AI… (può richiedere un minuto)"); setTimeout(refresh, 4000); };
+      if ($("#aistop", card)) $("#aistop", card).onclick = async () => { await action("/api/ai/stop", {}, "Spengo AI"); setTimeout(refresh, 2000); };
+      if ($("#aiweb", card)) $("#aiweb", card).onclick = () => window.open("http://" + location.hostname + ":" + s.webui_port, "_blank");
+    };
+    refresh(); card._iv = setInterval(refresh, 5000);
+  },
+  wol(card) {
+    card.innerHTML = '<h3>🔋 Power schedule / WoL</h3><div id="wol">…</div>';
+    const refresh = async () => {
+      let s; try { s = await (await api("/api/wol")).json(); } catch (e) { return; }
+      $("#wol", card).innerHTML =
+        '<div class="rows"><div class="r"><span>NIC</span><span>' + s.nic + '</span></div>' +
+        '<div class="r"><span>MAC</span><span>' + copyable(s.mac) + '</span></div>' +
+        '<div class="r"><span>Wake-on-LAN</span><span>' + (s.wol_enabled ? "● abilitato" : "○ disabilitato") + '</span></div></div>' +
+        '<div class="brow" style="margin-top:10px"><button class="dbtn" id="wolt">' + (s.wol_enabled ? "Disabilita WoL" : "Abilita WoL") + '</button></div>' +
+        '<div class="gl" style="margin-top:12px">Sveglia un altro dispositivo</div>' +
+        '<div class="brow"><input id="wmac" class="dsel" placeholder="AA:BB:CC:DD:EE:FF" style="flex:1"><button class="dbtn" id="wsend">Invia</button></div>' +
+        '<div class="gl" style="margin-top:12px">Programma spegnimento/riavvio</div>' +
+        '<div class="brow"><input id="wmin" class="dsel" type="number" value="10" min="1" style="width:64px"> min ' +
+        '<button class="dbtn" id="wreb">↻ Riavvia</button><button class="dbtn danger" id="woff">⏻ Spegni</button><button class="dbtn" id="wcan">Annulla</button></div>';
+      $("#wolt", card).onclick = async () => { await action("/api/wol/enable", { on: !s.wol_enabled }, "WoL aggiornato"); setTimeout(refresh, 800); };
+      $("#wsend", card).onclick = () => action("/api/wol/send", { mac: $("#wmac", card).value }, "Magic packet inviato");
+      $("#wreb", card).onclick = () => { if (confirm("Riavviare tra " + $("#wmin", card).value + " min?")) action("/api/wol/schedule", { action: "reboot", minutes: +$("#wmin", card).value }, "Riavvio programmato"); };
+      $("#woff", card).onclick = () => { if (confirm("Spegnere tra " + $("#wmin", card).value + " min?")) action("/api/wol/schedule", { action: "poweroff", minutes: +$("#wmin", card).value }, "Spegnimento programmato"); };
+      $("#wcan", card).onclick = () => action("/api/wol/schedule", { action: "cancel" }, "Programmazione annullata");
+    };
+    refresh();
+  },
   _stub(card, mod) {
     card.innerHTML = `<h3>${mod.icon} ${mod.name}</h3><div class="stub">Modulo attivo — interfaccia in arrivo.</div>`;
   },

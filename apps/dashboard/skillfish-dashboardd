@@ -446,6 +446,90 @@ def terminal_stop():
     return {"ok": True}
 
 
+# ---------------- AI / OpenWebUI ----------------
+AI_COMPOSE = "/opt/stacks/skillfish-ai/compose.yaml"
+AI_CONTAINER = "skillfish-ollama"
+WEBUI_PORT = 8080
+
+
+def _port_open(port):
+    try:
+        s = socket.create_connection(("127.0.0.1", port), timeout=1); s.close(); return True
+    except Exception:
+        return False
+
+
+def ai_status():
+    r = subprocess.run(["docker", "inspect", "-f", "{{.State.Running}}", AI_CONTAINER],
+                       capture_output=True, text=True)
+    return {"ok": True, "running": r.stdout.strip() == "true", "webui": _port_open(WEBUI_PORT)}
+
+
+def ai_start():
+    subprocess.Popen(["docker", "compose", "-f", AI_COMPOSE, "up", "-d"],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return {"ok": True}
+
+
+def ai_stop():
+    subprocess.Popen(["docker", "compose", "-f", AI_COMPOSE, "down"],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return {"ok": True}
+
+
+# ---------------- Wake-on-LAN / power schedule ----------------
+def _primary_nic():
+    out = subprocess.run("ip -o route get 1.1.1.1 2>/dev/null", shell=True, capture_output=True, text=True).stdout
+    m = re.search(r"dev (\S+)", out)
+    return m.group(1) if m else "enp4s0"
+
+
+def wol_info():
+    nic = _primary_nic()
+    try:
+        mac = open("/sys/class/net/%s/address" % nic).read().strip()
+    except Exception:
+        mac = ""
+    eth = ""
+    try:
+        eth = subprocess.run(["ethtool", nic], capture_output=True, text=True, timeout=5).stdout
+    except Exception:
+        eth = ""  # ethtool may be missing; report what we can
+    return {"ok": True, "nic": nic, "mac": mac,
+            "wol_supported": "Supports Wake-on" in eth,
+            "wol_enabled": bool(re.search(r"Wake-on:\s*\w*g", eth))}
+
+
+def wol_enable(on):
+    try:
+        subprocess.run(["ethtool", "-s", _primary_nic(), "wol", "g" if on else "d"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def wol_send(mac):
+    if not re.match(r"^([0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2}$", mac or ""):
+        return {"ok": False, "error": "MAC non valido"}
+    subprocess.run(["wakeonlan", mac], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return {"ok": True, "mac": mac}
+
+
+def power_schedule(action, minutes):
+    try:
+        m = max(1, int(minutes))
+    except Exception:
+        m = 1
+    if action == "cancel":
+        subprocess.run(["shutdown", "-c"]); return {"ok": True, "cancelled": True}
+    if action == "reboot":
+        subprocess.run(["shutdown", "-r", "+%d" % m]); return {"ok": True, "in_min": m}
+    if action in ("poweroff", "shutdown"):
+        subprocess.run(["shutdown", "-h", "+%d" % m]); return {"ok": True, "in_min": m}
+    return {"ok": False, "error": "azione sconosciuta"}
+
+
 # ---------------- HTTP ----------------
 CONFIG = load_conf()
 _login_fails = {}  # ip -> (count, first_ts)
@@ -628,6 +712,15 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(200, f.read(), "text/csv",
                                       [("Content-Disposition", 'attachment; filename="%s"' % fn)])
             return self._json(404, {"error": "not found"})
+        if path == "/api/ai":
+            if not self._guard("ai"):
+                return
+            s = ai_status(); s["webui_port"] = WEBUI_PORT
+            return self._json(200, s)
+        if path == "/api/wol":
+            if not self._guard("wol"):
+                return
+            return self._json(200, wol_info())
         return self._json(404, {"error": "not found"})
 
     def do_POST(self):
@@ -699,6 +792,26 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("terminal"):
                 return
             return self._json(200, terminal_stop())
+        if path == "/api/ai/start":
+            if not self._guard("ai"):
+                return
+            return self._json(200, ai_start())
+        if path == "/api/ai/stop":
+            if not self._guard("ai"):
+                return
+            return self._json(200, ai_stop())
+        if path == "/api/wol/enable":
+            if not self._guard("wol"):
+                return
+            return self._json(200, wol_enable(bool(data.get("on", True))))
+        if path == "/api/wol/send":
+            if not self._guard("wol"):
+                return
+            return self._json(200, wol_send(data.get("mac")))
+        if path == "/api/wol/schedule":
+            if not self._guard("wol"):
+                return
+            return self._json(200, power_schedule(data.get("action"), data.get("minutes", 1)))
         return self._json(404, {"error": "not found"})
 
     def _login(self):
