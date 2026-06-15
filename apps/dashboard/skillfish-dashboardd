@@ -93,6 +93,8 @@ try:
                                   ctypes.POINTER(_PamConv), ctypes.POINTER(ctypes.c_void_p)]
     _libpam.pam_authenticate.restype = ctypes.c_int
     _libpam.pam_authenticate.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    _libpam.pam_acct_mgmt.restype = ctypes.c_int
+    _libpam.pam_acct_mgmt.argtypes = [ctypes.c_void_p, ctypes.c_int]
     _libpam.pam_end.restype = ctypes.c_int
     _libpam.pam_end.argtypes = [ctypes.c_void_p, ctypes.c_int]
     _PAM_OK = True
@@ -125,6 +127,9 @@ def pam_check(username, password, service="login"):
         if rc != 0:
             return False
         rc = _libpam.pam_authenticate(handle, 0)
+        if rc == 0:
+            # also verify the account itself is valid (not expired/locked/disabled)
+            rc = _libpam.pam_acct_mgmt(handle, 0)
         _libpam.pam_end(handle, rc)
         return rc == 0
     except Exception:
@@ -314,67 +319,7 @@ def read_log(which, n=200):
         return []
 
 
-# benchmark recorder (server-side .sfmon, shared)
-_REC = {"thread": None, "stop": False, "path": None, "rows": 0, "t0": 0}
-_REC_LOCK = threading.Lock()
-REC_KEYS = ["cpu_temp", "gpu_temp", "cpu_load", "gpu_util", "cpu_mhz", "gpu_freq",
-            "gpu_power", "gpu_mv", "cpu_mv", "fan", "vram"]
-
-
-def _rec_loop(path):
-    st = [None]
-    try:
-        d = os.path.dirname(path); os.makedirs(d, exist_ok=True)
-        with open(path, "w", newline="") as fh:
-            fh.write("# SkillFishOS Monitor recording v1\n")
-            fh.write("# started=%s interval_ms=500 source=dashboard\n" % time.strftime("%Y-%m-%dT%H:%M:%S"))
-            fh.write("t_sec," + ",".join(REC_KEYS) + "\n")
-            t0 = time.time(); _REC["t0"] = t0
-            while not _REC["stop"]:
-                vals = read_all(); vals["cpu_load"] = cpu_load(st)
-                fh.write("%.2f," % (time.time() - t0) +
-                         ",".join("" if vals.get(k) is None else str(vals.get(k)) for k in REC_KEYS) + "\n")
-                fh.flush(); _REC["rows"] += 1
-                time.sleep(0.5)
-    except Exception:
-        pass
-
-
-def rec_start():
-    with _REC_LOCK:
-        if _REC["thread"] and _REC["thread"].is_alive():
-            return {"ok": False, "error": "già in registrazione"}
-        path = os.path.join(user_home(), "SkillFishOS-benchmarks",
-                            time.strftime("rec-%Y%m%d-%H%M%S") + ".sfmon")
-        _REC.update(stop=False, path=path, rows=0)
-        t = threading.Thread(target=_rec_loop, args=(path,), daemon=True)
-        _REC["thread"] = t; t.start()
-        return {"ok": True, "path": path}
-
-
-def rec_stop():
-    with _REC_LOCK:
-        if not (_REC["thread"] and _REC["thread"].is_alive()):
-            return {"ok": False, "error": "nessuna registrazione attiva"}
-        _REC["stop"] = True
-        try:
-            os.chown(_REC["path"], __import__("pwd").getpwnam(CONFIG.get("user", "skillfish")).pw_uid, -1)
-        except Exception:
-            pass
-        return {"ok": True, "path": _REC["path"], "rows": _REC["rows"]}
-
-
-def rec_list():
-    d = os.path.join(user_home(), "SkillFishOS-benchmarks")
-    out = []
-    try:
-        for fn in sorted(os.listdir(d), reverse=True):
-            if fn.endswith(".sfmon") or fn.endswith(".csv"):
-                p = os.path.join(d, fn)
-                out.append({"name": fn, "size": os.path.getsize(p), "mtime": int(os.path.getmtime(p))})
-    except Exception:
-        pass
-    return out
+# (server-side benchmark recorder removed — recording lives in the native Telemetry app)
 
 
 # ---------------- interactive services (KVM / Terminal) ----------------
@@ -522,7 +467,8 @@ def _primary_nic():
 def wol_info():
     nic = _primary_nic()
     try:
-        mac = open("/sys/class/net/%s/address" % nic).read().strip()
+        with open("/sys/class/net/%s/address" % nic) as f:
+            mac = f.read().strip()
     except Exception:
         mac = ""
     eth = ""
@@ -623,7 +569,8 @@ def aiops_diagnose(question):
     jrn = subprocess.run(["journalctl", "-p", "warning", "-n", "60", "--no-pager", "-o", "short"],
                          capture_output=True, text=True, timeout=8).stdout
     try:
-        frz = open("/var/log/skillfish-freeze.log").read()[-1500:]
+        with open("/var/log/skillfish-freeze.log") as f:
+            frz = f.read()[-1500:]
     except Exception:
         frz = "(nessun freeze registrato)"
     v = read_all()
@@ -645,9 +592,19 @@ def aiops_diagnose(question):
 
 
 # ---------------- ZeroTier (remote access from anywhere) ----------------
+_ZT_CMDS = {"info", "listnetworks", "join", "leave"}
+
+
 def _zt(args):
+    # hardening: only allow known subcommands and strictly-shaped arguments
+    if not args or args[0] not in _ZT_CMDS:
+        return ""
+    for a in args[1:]:
+        if not re.match(r"^[0-9a-fA-F]{16}$", a):  # only 16-hex network IDs
+            return ""
     try:
-        return subprocess.run(["zerotier-cli"] + args, capture_output=True, text=True, timeout=8).stdout.strip()
+        return subprocess.run(["zerotier-cli"] + list(args), capture_output=True,
+                              text=True, timeout=8).stdout.strip()
     except Exception:
         return ""
 
@@ -700,7 +657,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         for k, v in (extra or {}):
-            self.send_header(k, v)
+            # strip CR/LF to prevent HTTP response splitting / header injection
+            self.send_header(str(k).replace("\r", "").replace("\n", ""),
+                             str(v).replace("\r", "").replace("\n", ""))
         self.end_headers()
         if body:
             self.wfile.write(body)
@@ -849,22 +808,6 @@ class Handler(BaseHTTPRequestHandler):
                 return
             q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             return self._json(200, {"lines": read_log(q.get("which", ["journal"])[0], q.get("n", ["200"])[0])})
-        if path == "/api/rec/list":
-            if not self._guard("recording"):
-                return
-            return self._json(200, {"recordings": rec_list(),
-                                    "recording": bool(_REC["thread"] and _REC["thread"].is_alive())})
-        if path == "/api/rec/get":
-            if not self._guard("recording"):
-                return
-            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            fn = os.path.basename(q.get("f", [""])[0])
-            full = os.path.join(user_home(), "SkillFishOS-benchmarks", fn)
-            if fn and os.path.isfile(full):
-                with open(full, "rb") as f:
-                    return self._send(200, f.read(), "text/csv",
-                                      [("Content-Disposition", 'attachment; filename="%s"' % fn)])
-            return self._json(404, {"error": "not found"})
         if path == "/api/ai":
             if not self._guard("ai"):
                 return
@@ -936,14 +879,6 @@ class Handler(BaseHTTPRequestHandler):
                     "ai": ["/usr/local/bin/skillfish-ai-panel"]}
             cmd = apps.get(data.get("what"))
             return self._json(200, launch_app(cmd) if cmd else {"ok": False, "error": "app sconosciuta"})
-        if path == "/api/rec/start":
-            if not self._guard("recording"):
-                return
-            return self._json(200, rec_start())
-        if path == "/api/rec/stop":
-            if not self._guard("recording"):
-                return
-            return self._json(200, rec_stop())
         if path == "/api/kvm/start":
             if not self._guard("kvm"):
                 return
@@ -1045,9 +980,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def _serve_file(self, rel, ctype):
         rel = rel.lstrip("/")
-        if ".." in rel:
+        # canonicalise and ensure the resolved path stays inside WEB (no traversal)
+        root = os.path.realpath(WEB)
+        full = os.path.realpath(os.path.join(root, rel))
+        if full != root and not full.startswith(root + os.sep):
             return self._json(403, {"error": "no"})
-        full = os.path.join(WEB, rel)
         if not os.path.isfile(full):
             return self._json(404, {"error": "not found"})
         if ctype is None:
@@ -1099,6 +1036,7 @@ def main():
     bind = CONFIG.get("bind", "0.0.0.0"); port = int(CONFIG.get("port", 8443))
     httpd = ThreadingHTTPServer((bind, port), Handler)
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2  # refuse legacy SSL/TLS
     ctx.load_cert_chain(CERT_F, KEY_F)
     httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
     sys.stderr.write("SkillFish Remote on https://%s:%d (PAM=%s)\n" % (bind, port, _PAM_OK))

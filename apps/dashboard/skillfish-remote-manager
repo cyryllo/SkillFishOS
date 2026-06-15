@@ -4,7 +4,7 @@
 # Reads status unprivileged; privileged changes go through `pkexec skillfish-remote-ctl`.
 import sys, os, json, subprocess, webbrowser
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QFont
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QGridLayout, QLabel, QPushButton, QCheckBox, QFrame, QMessageBox)
 
