@@ -25,6 +25,7 @@ MODULE_META = {
     "telemetry":  {"icon": "📊", "name": "Telemetria",     "name_en": "Telemetry"},
     "status":     {"icon": "🧊", "name": "Stato sistema",   "name_en": "System status"},
     "tuner":      {"icon": "🎛️", "name": "Controlli",       "name_en": "Controls"},
+    "hub":        {"icon": "📦", "name": "App e pacchetti", "name_en": "Apps & packages"},
     "logs":       {"icon": "📜", "name": "Log",             "name_en": "Logs"},
     "launcher":   {"icon": "🚀", "name": "Avvio app",       "name_en": "Launcher"},
     "kvm":        {"icon": "🖥️", "name": "Desktop (KVM)",   "name_en": "Desktop (KVM)"},
@@ -231,11 +232,11 @@ PRESETS_F = "/usr/share/skillfish/tuner-presets.json"
 REC_DIR_USER = None  # resolved at first use to the desktop user's home
 
 
-def tuner_cmd(reqs):
+def tuner_cmd(reqs, timeout=40):
     """Pipe one or more JSON command lines to the tuner helper; return last reply."""
     try:
         inp = "".join(json.dumps(r) + "\n" for r in reqs)
-        p = subprocess.run([TUNER_HELPER], input=inp, capture_output=True, text=True, timeout=40)
+        p = subprocess.run([TUNER_HELPER], input=inp, capture_output=True, text=True, timeout=timeout)
         last = {"ok": False}
         for line in p.stdout.splitlines():
             try:
@@ -297,6 +298,138 @@ def launch_app(cmd):
         subprocess.Popen(["sudo", "-u", u, "env"] + ["%s=%s" % (k, v) for k, v in user_env().items()]
                          + ["setsid", "nohup"] + cmd,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+# ---------------- Hub (apt package management) ----------------
+_HUBJOB = {"running": False, "title": "", "log": [], "done": True, "rc": 0}
+_HUBLOCK = threading.Lock()
+_PKG_RE = re.compile(r"^[a-z0-9][a-z0-9.+-]{0,80}$")
+
+
+def _apt_env():
+    e = dict(os.environ); e["DEBIAN_FRONTEND"] = "noninteractive"; return e
+
+
+def hub_updates():
+    try:
+        out = subprocess.run(["apt-get", "-s", "full-upgrade"], capture_output=True,
+                             text=True, timeout=60, env=_apt_env()).stdout
+    except Exception as e:
+        return {"ok": False, "error": str(e), "updates": []}
+    ups = []
+    for ln in out.splitlines():
+        m = re.match(r"Inst (\S+) \[([^\]]*)\] \(([^ ]+)", ln)
+        if m:
+            ups.append({"pkg": m.group(1), "old": m.group(2), "new": m.group(3)})
+    return {"ok": True, "updates": ups, "count": len(ups)}
+
+
+def hub_installed():
+    try:
+        man = subprocess.run(["apt-mark", "showmanual"], capture_output=True,
+                             text=True, timeout=30).stdout.split()
+    except Exception:
+        man = []
+    return {"ok": True, "installed": sorted(set(man)), "count": len(set(man))}
+
+
+def hub_search(q):
+    q = (q or "").strip()
+    if len(q) < 2:
+        return {"ok": True, "results": []}
+    try:
+        out = subprocess.run(["apt-cache", "search", "--names-only", q],
+                             capture_output=True, text=True, timeout=30).stdout
+    except Exception as e:
+        return {"ok": False, "error": str(e), "results": []}
+    res = []
+    for ln in out.splitlines()[:80]:
+        if " - " in ln:
+            name, _, desc = ln.partition(" - ")
+            res.append({"pkg": name.strip(), "desc": desc.strip()})
+    return {"ok": True, "results": res}
+
+
+def hub_sources():
+    d = "/etc/apt/sources.list.d"
+    out = []
+    try:
+        for fn in sorted(os.listdir(d)):
+            if not fn.endswith(".sources"):
+                continue
+            with open(os.path.join(d, fn)) as f:
+                txt = f.read()
+            en = not re.search(r"(?im)^Enabled:\s*no", txt)
+            mu = re.search(r"(?im)^URIs:\s*(\S+)", txt)
+            out.append({"name": fn[:-8], "enabled": en, "uri": mu.group(1) if mu else ""})
+    except Exception:
+        pass
+    return {"ok": True, "sources": out}
+
+
+def _hub_run(title, cmds):
+    """Run a list of argv commands sequentially in a background thread, streaming to _HUBJOB['log']."""
+    with _HUBLOCK:
+        if _HUBJOB["running"]:
+            return False
+        _HUBJOB.update(running=True, title=title, log=[], done=False, rc=None)
+
+    def worker():
+        rc = 0
+        try:
+            for argv in cmds:
+                p = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                     text=True, env=_apt_env())
+                for line in p.stdout:
+                    _HUBJOB["log"].append(line.rstrip())
+                    if len(_HUBJOB["log"]) > 600:
+                        del _HUBJOB["log"][:150]
+                p.wait(); rc = p.returncode
+                if rc != 0:
+                    break
+        except Exception as e:
+            _HUBJOB["log"].append("errore: %s" % e); rc = 1
+        finally:
+            _HUBJOB["rc"] = rc; _HUBJOB["running"] = False; _HUBJOB["done"] = True
+
+    threading.Thread(target=worker, daemon=True).start()
+    return True
+
+
+def hub_op(op, pkg):
+    pkg = (pkg or "").strip()
+    if op in ("install", "remove") and not _PKG_RE.match(pkg):
+        return {"ok": False, "error": "nome pacchetto non valido"}
+    cmds = {
+        "update":  [["apt-get", "update"]],
+        "upgrade": [["apt-get", "update"], ["apt-get", "-y", "full-upgrade"]],
+        "install": [["apt-get", "update"], ["apt-get", "install", "-y", pkg]],
+        "remove":  [["apt-get", "purge", "-y", pkg], ["apt-get", "autoremove", "-y"]],
+    }.get(op)
+    if not cmds:
+        return {"ok": False, "error": "operazione sconosciuta"}
+    if not _hub_run(op + ((" " + pkg) if pkg else ""), cmds):
+        return {"ok": False, "error": "operazione già in corso"}
+    return {"ok": True, "started": True}
+
+
+def hub_source_toggle(name, enable):
+    if not re.match(r"^[A-Za-z0-9._-]+$", name or ""):
+        return {"ok": False, "error": "nome non valido"}
+    f = "/etc/apt/sources.list.d/%s.sources" % name
+    val = "yes" if enable else "no"
+    try:
+        with open(f) as fh:
+            txt = fh.read()
+        if re.search(r"(?im)^Enabled:", txt):
+            txt = re.sub(r"(?im)^Enabled:.*$", "Enabled: " + val, txt)
+        else:
+            txt = txt.rstrip() + "\nEnabled: " + val + "\n"
+        with open(f, "w") as fh:
+            fh.write(txt)
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -827,6 +960,29 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("zerotier"):
                 return
             return self._json(200, zt_status())
+        if path == "/api/hub/updates":
+            if not self._guard("hub"):
+                return
+            return self._json(200, hub_updates())
+        if path == "/api/hub/installed":
+            if not self._guard("hub"):
+                return
+            return self._json(200, hub_installed())
+        if path == "/api/hub/search":
+            if not self._guard("hub"):
+                return
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("q", [""])[0]
+            return self._json(200, hub_search(q))
+        if path == "/api/hub/sources":
+            if not self._guard("hub"):
+                return
+            return self._json(200, hub_sources())
+        if path == "/api/hub/log":
+            if not self._guard("hub"):
+                return
+            return self._json(200, {"running": _HUBJOB["running"], "title": _HUBJOB["title"],
+                                    "log": "\n".join(_HUBJOB["log"]), "done": _HUBJOB["done"],
+                                    "rc": _HUBJOB["rc"]})
         if path == "/api/config":
             if not self._user():
                 return self._json(401, {"error": "auth"})
@@ -860,6 +1016,46 @@ class Handler(BaseHTTPRequestHandler):
                 return
             return self._json(200, tuner_cmd([{"cmd": "apply-fan", "mode": data.get("mode", "auto"),
                                                "pct": int(data.get("pct", 45))}]))
+        if path == "/api/tuner/cpu":
+            if not self._guard("tuner"):
+                return
+            cmd = "persist-cpu" if data.get("persist") else "apply-cpu"
+            return self._json(200, tuner_cmd([{"cmd": cmd, "mhz": int(data.get("mhz", 3700)),
+                                               "scale": int(data.get("scale", 0)),
+                                               "temp": int(data.get("temp", 85))}]))
+        if path == "/api/tuner/gpu":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "apply-gpu",
+                                               "minmhz": int(data.get("minmhz", 350)),
+                                               "minmv": int(data.get("minmv", 700)),
+                                               "maxmhz": int(data.get("maxmhz", 2200)),
+                                               "maxmv": int(data.get("maxmv", 1000))}]))
+        if path == "/api/tuner/cu":
+            if not self._guard("tuner"):
+                return
+            rows = data.get("rows", [])
+            try:
+                rows = [int(x) & 0x1f for x in rows][:4]
+            except Exception:
+                rows = []
+            return self._json(200, tuner_cmd([{"cmd": "cu-apply", "rows": rows}]))
+        if path == "/api/tuner/cu-test":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "cu-test"}], timeout=240))
+        if path == "/api/tuner/vram":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "set-vram", "mb": int(data.get("mb", 8192))}]))
+        if path == "/api/hub/op":
+            if not self._guard("hub"):
+                return
+            return self._json(200, hub_op(data.get("op"), data.get("pkg")))
+        if path == "/api/hub/source":
+            if not self._guard("hub"):
+                return
+            return self._json(200, hub_source_toggle(data.get("name"), bool(data.get("enable"))))
         if path == "/api/power":
             if not self._user():
                 return self._json(401, {"error": "auth"})

@@ -29,6 +29,9 @@ const STR = {
   c_bal: { it: "Bilanciato", en: "Balanced" }, c_perf: { it: "Performance", en: "Performance" },
   c_fan: { it: "Ventola", en: "Fan" }, c_auto: { it: "Auto", en: "Auto" }, c_man: { it: "Manuale", en: "Manual" },
   c_applied: { it: "Preset {x} applicato", en: "Preset {x} applied" },
+  c_full: { it: "Apri Tuner completo", en: "Open full Tuner" },
+  // hub
+  h_open: { it: "Apri Hub", en: "Open Hub" }, h_updates: { it: "aggiornamenti", en: "updates" },
   // power
   p_reboot: { it: "Riavvia", en: "Reboot" }, p_off: { it: "Spegni", en: "Shut down" },
   p_conf: { it: "Richiede conferma.", en: "Asks for confirmation." },
@@ -152,7 +155,7 @@ const TELEM = [
 ];
 
 // ---------------- layout (order, hidden, collapsed) ----------------
-const DEFAULT_ORDER = ["telemetry", "status", "zerotier", "rules", "logs", "tuner",
+const DEFAULT_ORDER = ["telemetry", "status", "zerotier", "rules", "logs", "tuner", "hub",
                        "launcher", "kvm", "terminal", "ai", "aiops", "wol", "gamestream"];
 let layout = (() => { try { return JSON.parse(localStorage.getItem("sflayout")) || {}; } catch (e) { return {}; } })();
 layout.order = layout.order || []; layout.hidden = layout.hidden || []; layout.collapsed = layout.collapsed || [];
@@ -193,13 +196,23 @@ const RENDER = {
     let d; try { d = await (await api("/api/tuner")).json(); } catch (e) { return; }
     const presets = (d.presets || []).map(p => `<button class="dbtn" data-preset="${p.name}" title="${(p.desc || "").replace(/"/g, "")}">${p.name}</button>`).join("");
     $("#tk", card).innerHTML =
+      `<div class="brow" style="margin-bottom:10px"><button class="dbtn" id="opentuner" style="border-color:var(--gold)">🎛️ ${T("c_full")}</button></div>` +
       `<div class="grp"><div class="gl">${T("c_preset")}</div><div class="brow">${presets}</div></div>` +
       `<div class="grp"><div class="gl">${T("c_gov")}</div><div class="brow"><button class="dbtn" data-gov="balanced">${T("c_bal")}</button><button class="dbtn" data-gov="performance">${T("c_perf")}</button></div></div>` +
       `<div class="grp"><div class="gl">${T("c_fan")}</div><div class="brow"><button class="dbtn" data-fan="auto">${T("c_auto")}</button><input id="fanp" type="range" min="20" max="100" value="60" style="flex:1"><button class="dbtn" data-fanmanual="1">${T("c_man")}</button></div></div>`;
+    $("#opentuner", card).onclick = () => openFrame("SkillFishOS Tuner", "/static/tuner.html");
     card.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => action("/api/tuner/preset", { name: b.dataset.preset }, T("c_applied", { x: b.dataset.preset })));
     card.querySelectorAll("[data-gov]").forEach(b => b.onclick = () => action("/api/tuner/govmode", { mode: b.dataset.gov }, "Governor: " + b.dataset.gov));
     card.querySelector("[data-fan]").onclick = () => action("/api/tuner/fan", { mode: "auto" }, T("c_fan") + ": " + T("c_auto"));
     card.querySelector("[data-fanmanual]").onclick = () => action("/api/tuner/fan", { mode: "manual", pct: +$("#fanp", card).value }, T("c_fan") + ": " + $("#fanp", card).value + "%");
+  },
+  async hub(card) {
+    card.innerHTML = "<h3>📦 " + (LANG === "it" ? "App e pacchetti" : "Apps & packages") + '</h3><div id="hk">…</div>';
+    let upd = ""; try { const u = await (await api("/api/hub/updates")).json(); upd = (u.count || 0) + " " + T("h_updates"); } catch (e) {}
+    $("#hk", card).innerHTML =
+      `<div class="stub" style="margin-bottom:8px">${upd}</div>` +
+      `<div class="brow"><button class="dbtn" id="openhub" style="border-color:var(--gold)">📦 ${T("h_open")}</button></div>`;
+    $("#openhub", card).onclick = () => openFrame("SkillFishOS Hub", "/static/hub.html");
   },
   logs(card) {
     card.classList.add("span2");

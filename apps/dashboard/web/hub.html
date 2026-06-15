@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SkillFishOS Hub</title>
+<style>
+  :root{--bg:#0d0b06;--panel:#1a140b;--panel2:#211a0f;--gold:#d8a849;--gold-lt:#e8c878;--copper:#b9722f;
+        --cream:#efe6d3;--muted:#a9967a;--line:rgba(216,168,73,.2)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--cream);min-height:100vh}
+  .wrap{max-width:920px;margin:0 auto;padding:16px}
+  header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  header b{color:var(--gold-lt);font-size:1.15rem}.sp{flex:1}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .tab{background:linear-gradient(160deg,#241b10,#1a140b);border:1px solid var(--line);color:var(--gold-lt);
+       border-radius:9px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:.88rem}
+  .tab.on{background:rgba(216,168,73,.2);border-color:var(--gold)}
+  .panel{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:16px}
+  .btn{background:linear-gradient(135deg,#e8c878,#d8a849 55%,#b9722f);color:#1a130a;border:none;border-radius:9px;
+       padding:8px 14px;font-weight:700;cursor:pointer;font-size:.86rem}
+  .btn:hover{filter:brightness(1.06)} .btn:disabled{opacity:.5;cursor:default}
+  .btn.green{background:linear-gradient(135deg,#bfe08a,#9ccf6a 60%,#6e9e44)}
+  .btn.red{background:linear-gradient(160deg,#2a160e,#1a140b);color:#f0b8a0;border:1px solid rgba(224,123,90,.5)}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(216,168,73,.08)}
+  .row .name{font-weight:600;color:var(--cream)}.row .desc{color:var(--muted);font-size:.82rem}
+  .row .grow{flex:1;min-width:0}.row .grow div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mono{font-family:'DejaVu Sans Mono',monospace}
+  input[type=text]{flex:1;background:#0d0b06;border:1px solid var(--line);color:var(--cream);border-radius:9px;padding:9px 12px;font-size:.95rem}
+  input:focus{outline:none;border-color:var(--gold)}
+  .stub{color:var(--muted);font-size:.86rem;padding:8px 4px}
+  .badge{background:rgba(216,168,73,.14);border:1px solid var(--line);border-radius:999px;padding:1px 9px;font-size:.74rem;color:var(--gold-lt)}
+  .sw{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+  .sw input{accent-color:var(--gold);width:16px;height:16px}
+  #job{position:fixed;left:0;right:0;bottom:0;background:#100c07;border-top:1px solid var(--gold);padding:10px 16px;transform:translateY(100%);transition:.25s}
+  #job.show{transform:translateY(0)}
+  #job .jh{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  #job .jt{color:var(--gold-lt);font-weight:700}
+  pre#joblog{background:#08060350;border:1px solid var(--line);border-radius:8px;padding:8px;font-family:monospace;
+             font-size:.72rem;color:#bda874;max-height:160px;overflow:auto;white-space:pre-wrap;margin:0}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:sp .8s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+</style></head>
+<body><div class="wrap">
+<header><b>📦 SkillFishOS Hub</b><span class="sp"></span><span class="badge" id="updbadge"></span></header>
+<div class="tabs">
+  <button class="tab on" data-t="updates">⟳ Aggiornamenti</button>
+  <button class="tab" data-t="search">🔍 Cerca &amp; installa</button>
+  <button class="tab" data-t="installed">✓ Installati</button>
+  <button class="tab" data-t="sources">⚙ Sorgenti</button>
+</div>
+<div class="panel" id="view"><div class="stub">Carico…</div></div>
+</div>
+
+<div id="job"><div class="jh"><span class="spin" id="jspin"></span><span class="jt" id="jtitle"></span><span class="sp"></span>
+  <button class="btn" id="jclose" style="display:none">Chiudi</button></div><pre id="joblog"></pre></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let TAB="updates", jobPoll=null;
+async function api(path, body){ const o={credentials:"same-origin"};
+  if(body){o.method="POST";o.headers={"Content-Type":"application/json"};o.body=JSON.stringify(body);} return (await fetch(path,o)).json(); }
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+// ---- background job (apt) ----
+function startJob(title){ $("#jtitle").textContent=title; $("#joblog").textContent=""; $("#jspin").style.display="inline-block";
+  $("#jclose").style.display="none"; $("#job").classList.add("show");
+  clearInterval(jobPoll); jobPoll=setInterval(pollJob, 1200); pollJob(); }
+async function pollJob(){ const j=await api("/api/hub/log"); $("#joblog").textContent=j.log||"";
+  $("#joblog").scrollTop=$("#joblog").scrollHeight;
+  if(!j.running && j.done){ clearInterval(jobPoll); $("#jspin").style.display="none"; $("#jclose").style.display="inline-block";
+    $("#jtitle").textContent += (j.rc===0?"  ✓ completato":("  ⚠ uscita "+j.rc)); if(TAB!=="search") load(); refreshBadge(); } }
+$("#jclose").onclick=()=>$("#job").classList.remove("show");
+async function op(o, pkg, title){ const r=await api("/api/hub/op",{op:o,pkg}); if(r.ok){ startJob(title); } else { alert(r.error||"errore"); } }
+
+async function refreshBadge(){ const u=await api("/api/hub/updates"); $("#updbadge").textContent=(u.count||0)+" aggiornamenti"; }
+
+// ---- views ----
+const V={};
+V.updates=async()=>{ const v=$("#view"); v.innerHTML='<div class="stub">Controllo aggiornamenti…</div>';
+  const u=await api("/api/hub/updates"); const ups=u.updates||[];
+  let h='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><b style="color:var(--gold-lt)">'+
+        (ups.length?(ups.length+" aggiornamenti disponibili"):"Sistema aggiornato ✓")+'</b><span class="sp" style="flex:1"></span>'+
+        '<button class="btn green" id="updall"'+(ups.length?"":" disabled")+'>Aggiorna tutto</button>'+
+        '<button class="btn" id="aptupd">Controlla</button></div>';
+  ups.forEach(p=>{ h+='<div class="row"><div class="grow"><div class="name">'+esc(p.pkg)+'</div>'+
+    '<div class="desc mono">'+esc(p.old)+' → '+esc(p.new)+'</div></div></div>'; });
+  if(!ups.length) h+='<div class="stub">Nessun pacchetto da aggiornare.</div>';
+  v.innerHTML=h; $("#updbadge").textContent=ups.length+" aggiornamenti";
+  $("#updall").onclick=()=>op("upgrade","","Aggiornamento di tutti i pacchetti");
+  $("#aptupd").onclick=()=>op("update","","Aggiorno l'elenco pacchetti"); };
+
+V.search=async()=>{ const v=$("#view");
+  v.innerHTML='<div class="row" style="border:0"><input type="text" id="q" placeholder="Cerca un pacchetto…  (es. vlc, gimp, htop)"><button class="btn" id="go">Cerca</button></div><div id="res"><div class="stub">Scrivi un nome e premi Cerca.</div></div>';
+  const run=async()=>{ const q=$("#q").value.trim(); if(q.length<2)return; $("#res").innerHTML='<div class="stub">Cerco…</div>';
+    const r=await api("/api/hub/search?q="+encodeURIComponent(q)); const rs=r.results||[];
+    if(!rs.length){ $("#res").innerHTML='<div class="stub">Nessun risultato.</div>'; return; }
+    $("#res").innerHTML=rs.map(p=>'<div class="row"><div class="grow"><div class="name">'+esc(p.pkg)+'</div><div class="desc">'+esc(p.desc)+'</div></div>'+
+      '<button class="btn green" data-i="'+esc(p.pkg)+'">Installa</button></div>').join("");
+    $("#res").querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>op("install",b.dataset.i,"Installo "+b.dataset.i)); };
+  $("#go").onclick=run; $("#q").addEventListener("keydown",e=>{ if(e.key==="Enter")run(); }); $("#q").focus(); };
+
+V.installed=async()=>{ const v=$("#view"); v.innerHTML='<div class="stub">Carico i pacchetti installati…</div>';
+  const r=await api("/api/hub/installed"); const ins=r.installed||[];
+  let h='<div class="stub">'+ins.length+' pacchetti installati manualmente.</div>'+
+        '<div class="row" style="border:0"><input type="text" id="fi" placeholder="Filtra…"></div><div id="ilist"></div>';
+  v.innerHTML=h;
+  const draw=(f)=>{ const list=ins.filter(p=>!f||p.includes(f)).slice(0,300);
+    $("#ilist").innerHTML=list.map(p=>'<div class="row"><div class="grow"><div class="name mono">'+esc(p)+'</div></div>'+
+      '<button class="btn red" data-r="'+esc(p)+'">Rimuovi</button></div>').join("")||'<div class="stub">Nessuno.</div>';
+    $("#ilist").querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{ if(confirm("Rimuovere "+b.dataset.r+"?")) op("remove",b.dataset.r,"Rimuovo "+b.dataset.r); }); };
+  draw(""); $("#fi").addEventListener("input",e=>draw(e.target.value.trim())); };
+
+V.sources=async()=>{ const v=$("#view"); v.innerHTML='<div class="stub">Carico le sorgenti…</div>';
+  const r=await api("/api/hub/sources"); const ss=r.sources||[];
+  v.innerHTML='<div class="stub">Repository APT configurati. Disattiva quelli che non vuoi usare.</div>'+
+    (ss.map(s=>'<div class="row"><div class="grow"><div class="name">'+esc(s.name)+'</div><div class="desc mono">'+esc(s.uri)+'</div></div>'+
+      '<label class="sw"><input type="checkbox" data-s="'+esc(s.name)+'"'+(s.enabled?" checked":"")+'> attivo</label></div>').join("")||'<div class="stub">Nessuna sorgente .sources trovata.</div>');
+  v.querySelectorAll("[data-s]").forEach(c=>c.onchange=async()=>{ const x=await api("/api/hub/source",{name:c.dataset.s,enable:c.checked});
+    if(!x.ok){ alert(x.error||"errore"); c.checked=!c.checked; } else { op("update","","Aggiorno l'elenco dopo la modifica sorgenti"); } }); };
+
+function load(){ V[TAB] && V[TAB](); }
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{ document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+  t.classList.add("on"); TAB=t.dataset.t; load(); });
+load(); refreshBadge();
+</script>
+</body></html>
