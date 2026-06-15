@@ -5,7 +5,7 @@
 #   build              full app catalogue (apt+flatpak+installed snaps) -> stdout JSON
 #   snap-find <query>  live snap search via snapd -> JSON list of apps
 #   reviews <appid> <ver>   ODRS reviews for one app -> JSON list
-import sys, os, json, subprocess, hashlib, urllib.request, urllib.parse
+import sys, os, json, glob, subprocess, hashlib, urllib.request, urllib.parse
 
 SNAP_SOCK = "/run/snapd.socket"
 ODRS = "https://odrs.gnome.org/1.0/reviews/api"
@@ -140,9 +140,80 @@ def _releases(c):
     return out
 
 
+def our_pkgs():
+    """Package names published in OUR apt repo (suite 'aetherium', mtsistemi.github.io)."""
+    names = set()
+    pats = glob.glob("/var/lib/apt/lists/*SkillFishOS*aetherium*Packages*") + \
+        glob.glob("/var/lib/apt/lists/*mtsistemi*aetherium*Packages*") + \
+        glob.glob("/var/lib/apt/lists/*aetherium*Packages*")
+    for fn in pats:
+        try:
+            with open(fn, errors="ignore") as f:
+                for ln in f:
+                    if ln.startswith("Package:"):
+                        names.add(ln.split(":", 1)[1].strip())
+        except Exception:
+            pass
+    return names
+
+
+def _icon_from_name(name):
+    """Resolve a freedesktop icon name to a local file."""
+    if not name:
+        return ""
+    if name.startswith("/"):
+        return name if os.path.isfile(name) else ""
+    for d in ("/usr/share/icons/hicolor/256x256/apps", "/usr/share/icons/hicolor/128x128/apps",
+              "/usr/share/icons/hicolor/scalable/apps", "/usr/share/pixmaps"):
+        for ext in (".png", ".svg", ".xpm"):
+            p = os.path.join(d, name + ext)
+            if os.path.isfile(p):
+                return p
+    return ""
+
+
+def _our_app_from_desktop(pkg, cache):
+    """Build a minimal app entry for one of our packages that ships a .desktop file."""
+    rc, out, _ = run(["dpkg", "-L", pkg], 10)
+    desk = [l for l in out.splitlines() if l.endswith(".desktop") and "/applications/" in l]
+    if not desk:
+        return None
+    name = summary = icon = ""
+    try:
+        with open(desk[0], errors="ignore") as f:
+            for ln in f:
+                if ln.startswith("Name=") and not name:
+                    name = ln.split("=", 1)[1].strip()
+                elif ln.startswith("Comment=") and not summary:
+                    summary = ln.split("=", 1)[1].strip()
+                elif ln.startswith("Icon=") and not icon:
+                    icon = ln.split("=", 1)[1].strip()
+    except Exception:
+        pass
+    inst = False
+    ver = ""
+    summ = summary
+    if cache is not None and pkg in cache:
+        p = cache[pkg]
+        inst = p.is_installed
+        if p.candidate:
+            ver = p.candidate.version
+            if not summ:
+                summ = p.candidate.summary or ""
+    return {
+        "key": "apt:" + pkg, "backend": "apt", "id": pkg, "pkgid": pkg,
+        "name": name or pkg, "summary": summ, "desc": "", "icon": "",
+        "icon_local": _icon_from_name(icon), "cats": [], "top": "System",
+        "rating": 0, "rating_n": 0, "installed": inst, "ver": ver, "size": 0,
+        "screens": [], "releases": [], "license": "", "developer": "SkillFishOS",
+        "homepage": "https://skillfishos.com", "ours": True,
+    }
+
+
 def build():
     apps = {}
     ratings = load_ratings()
+    ours = our_pkgs()
     # ---- AppStream (apt + flatpak) ----
     try:
         import gi
@@ -217,6 +288,7 @@ def build():
                     "installed": installed, "ver": ver, "size": size,
                     "screens": _screens(c), "releases": _releases(c),
                     "license": lic, "developer": dev, "homepage": home,
+                    "ours": (backend == "apt" and pkgid in ours),
                 }
             except Exception:
                 continue
@@ -232,6 +304,14 @@ def build():
                 if a["backend"] == "flatpak" and a["pkgid"] in inst:
                     a["installed"] = True
                     a["ver"] = inst[a["pkgid"]] or a["ver"]
+        # add OUR packages that ship a .desktop but aren't in the AppStream catalogue,
+        # so newly released SkillFishOS apps show up (and are featured) immediately
+        for pkg in sorted(ours):
+            if ("apt:" + pkg) in apps:
+                continue
+            extra = _our_app_from_desktop(pkg, cache)
+            if extra:
+                apps[extra["key"]] = extra
     except Exception as e:
         sys.stderr.write("appstream failed: %s\n" % e)
     # ---- installed snaps ----
@@ -254,6 +334,7 @@ def build():
                 "screens": shots, "releases": [], "license": s.get("license", "") or "",
                 "developer": (s.get("publisher", {}) or {}).get("display-name", "") or "",
                 "homepage": s.get("website", "") or "", "confinement": s.get("confinement", ""),
+                "ours": False,
             }
     except Exception:
         pass
@@ -280,7 +361,7 @@ def snap_find(q):
             "license": s.get("license", "") or "",
             "developer": (s.get("publisher", {}) or {}).get("display-name", "") or "",
             "homepage": s.get("website", "") or "", "confinement": s.get("confinement", ""),
-            "channels": sorted((s.get("channels", {}) or {}).keys()),
+            "channels": sorted((s.get("channels", {}) or {}).keys()), "ours": False,
         })
     return out
 

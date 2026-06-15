@@ -315,7 +315,7 @@ _ICON_ROOTS = ["/usr/share/app-info/icons", "/var/lib/app-info/icons", "/usr/sha
 # In-memory app catalogue, built in the background from skillfish-hub-catalog.
 HUBCAT = {"apps": [], "by_key": {}, "ready": False, "building": False, "ts": 0}
 _CARD = ("key", "backend", "id", "pkgid", "name", "summary", "icon",
-         "top", "rating", "rating_n", "installed", "ver", "developer")
+         "top", "rating", "rating_n", "installed", "ver", "developer", "ours")
 
 
 def _apt_env():
@@ -361,6 +361,7 @@ def hub_catalog(p):
         return {"ok": True, "ready": False, "apps": [], "total": 0}
     cat = p.get("cat"); sub = p.get("sub"); bk = p.get("backend")
     q = (p.get("q") or "").lower().strip(); sort = p.get("sort", "name")
+    ours_only = p.get("ours") in ("1", "true", "yes")
     try:
         page = max(0, int(p.get("page", 0)))
     except Exception:
@@ -368,6 +369,8 @@ def hub_catalog(p):
     per = 60
     res = []
     for a in HUBCAT["apps"]:
+        if ours_only and not a.get("ours"):
+            continue
         if cat and a.get("top") != cat:
             continue
         if sub and sub not in (a.get("cats") or []):
@@ -1241,6 +1244,24 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("tuner"):
                 return
             return self._json(200, tuner_cmd([{"cmd": "set-vram", "mb": int(data.get("mb", 8192))}]))
+        if path == "/api/tuner/test-cpu":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "test-cpu", "mhz": int(data.get("mhz", 3700)),
+                                               "scale": int(data.get("scale", 0)),
+                                               "temp": int(data.get("temp", 85))}], timeout=150))
+        if path == "/api/tuner/test-gpu":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "test-gpu",
+                                               "minmhz": int(data.get("minmhz", 350)),
+                                               "minmv": int(data.get("minmv", 700)),
+                                               "maxmhz": int(data.get("maxmhz", 2200)),
+                                               "maxmv": int(data.get("maxmv", 1000))}], timeout=150))
+        if path == "/api/tuner/suggest-uv":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "suggest-uv", "mhz": int(data.get("mhz", 3700))}], timeout=150))
         if path == "/api/hub/op":
             if not self._guard("hub"):
                 return
