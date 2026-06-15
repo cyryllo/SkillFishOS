@@ -91,8 +91,45 @@ put $P 0755 system/usr/local/bin/skillfish-gaming-mode usr/local/bin/skillfish-g
 put $P 0644 system/usr/share/wayland-sessions/skillfish-gaming.desktop usr/share/wayland-sessions/skillfish-gaming.desktop
 ctrl $P "gamescope, flatpak" "SkillFishOS Console - SteamOS-style Big Picture session"
 
+P=skillfish-dashboard
+put $P 0755 apps/dashboard/skillfish-dashboardd      usr/local/bin/skillfish-dashboardd
+put $P 0755 apps/dashboard/skillfish-remote-manager  usr/local/bin/skillfish-remote-manager
+put $P 0755 apps/dashboard/skillfish-remote-ctl      usr/local/bin/skillfish-remote-ctl
+put $P 0755 apps/dashboard/skillfish-hub-catalog     usr/local/bin/skillfish-hub-catalog
+put $P 0644 apps/dashboard/web/index.html  usr/share/skillfish/dashboard/index.html
+put $P 0644 apps/dashboard/web/app.js      usr/share/skillfish/dashboard/app.js
+put $P 0644 apps/dashboard/web/aichat.html usr/share/skillfish/dashboard/aichat.html
+put $P 0644 apps/dashboard/web/tuner.html  usr/share/skillfish/dashboard/tuner.html
+put $P 0644 apps/dashboard/web/hub.html    usr/share/skillfish/dashboard/hub.html
+put $P 0644 system/etc/skillfish/dashboard.json usr/share/skillfish/dashboard-default.json
+put $P 0644 system/etc/systemd/system/skillfish-dashboard.service etc/systemd/system/skillfish-dashboard.service
+put $P 0644 system/usr/share/applications/os.skillfish.remote-manager.desktop usr/share/applications/os.skillfish.remote-manager.desktop
+opt $P 0644 system/usr/share/polkit-1/actions/os.skillfish.remote-manager.policy usr/share/polkit-1/actions/os.skillfish.remote-manager.policy
+mkdir -p "$OUT/$P/DEBIAN"
+cat > "$OUT/$P/DEBIAN/control" <<EOF
+Package: skillfish-dashboard
+Version: $VER
+Architecture: all
+Maintainer: SkillFishOS <info@skillfishos.com>
+Depends: python3, python3-pyqt6, python3-apt, gir1.2-appstream-1.0, appstream, curl, openssl, polkitd | policykit-1
+Recommends: ttyd, novnc, websockify, x11vnc, ethtool, wakeonlan, flatpak, snapd
+Suggests: zerotier-one, docker.io
+Section: utils
+Priority: optional
+Homepage: https://skillfishos.com
+Description: SkillFishOS Remote Manager - web control dashboard for the BC-250
+ A modular, self-hosted web dashboard (PAM login over HTTPS) to control the
+ board remotely: live telemetry, software KVM (noVNC), web terminal (ttyd),
+ the Tuner (CPU/GPU/compute-unit control), a full Hub app store, AI/OpenWebUI,
+ logs, Wake-on-LAN and ZeroTier. Ships the always-available daemon plus the
+ native Remote Manager toggle app. Built from git by CI.
+EOF
+printf '#!/bin/sh\nset -e\nmkdir -p /etc/skillfish\n[ -f /etc/skillfish/dashboard.json ] || cp /usr/share/skillfish/dashboard-default.json /etc/skillfish/dashboard.json\nif [ -d /run/systemd/system ]; then systemctl daemon-reload || true; fi\nupdate-desktop-database -q 2>/dev/null || true\nexit 0\n' > "$OUT/$P/DEBIAN/postinst"
+printf '#!/bin/sh\nset -e\nif [ "$1" = remove ] || [ "$1" = purge ]; then systemctl disable --now skillfish-dashboard.service 2>/dev/null || true; fi\nexit 0\n' > "$OUT/$P/DEBIAN/prerm"
+chmod 0755 "$OUT/$P/DEBIAN/postinst" "$OUT/$P/DEBIAN/prerm"
+
 echo "== building =="
-for P in skillfish-tuner skillfish-hub skillfish-monitor skillfish-kernel-manager skillfish-ai-panel skillfish-base skillfish-console; do
+for P in skillfish-tuner skillfish-hub skillfish-monitor skillfish-kernel-manager skillfish-ai-panel skillfish-base skillfish-console skillfish-dashboard; do
   find "$OUT/$P" -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
   dpkg-deb --root-owner-group --build "$OUT/$P" "$OUT/out/${P}_${VER}_all.deb" >/dev/null
 done
@@ -109,4 +146,7 @@ check skillfish-ai-panel_${VER}_all.deb      ./usr/local/bin/skillfish-ai-panel 
 check skillfish-base_${VER}_all.deb          ./usr/local/bin/skillfish-freeze-check.sh unclean-shutdown
 check skillfish-tuner_${VER}_all.deb         ./usr/local/bin/skillfish-tuner          _silicon
 check skillfish-monitor_${VER}_all.deb       ./usr/local/bin/skillfish-monitor        SFMON_EXT
+check skillfish-dashboard_${VER}_all.deb     ./usr/local/bin/skillfish-dashboardd     "SkillFish Remote"
+check skillfish-dashboard_${VER}_all.deb     ./usr/local/bin/skillfish-hub-catalog    AppStream
+check skillfish-dashboard_${VER}_all.deb     ./usr/share/skillfish/dashboard/hub.html "SkillFishOS Hub"
 echo "ALL DEBS VERIFIED"
