@@ -164,7 +164,14 @@ $top_pages = toprows($db, 'path', "$botw AND day>='$d30'");
 $top_refs  = toprows($db, 'ref',  "$botw AND day>='$d30' AND ref<>''");
 $browsers  = toprows($db, 'browser', "$botw AND day>='$d30'", 6);
 $oses      = toprows($db, 'os', "$botw AND day>='$d30'", 6);
-$recent    = $db->query("SELECT ts,path,ref,browser,os,bot FROM hits ORDER BY id DESC LIMIT 15")->fetchAll(PDO::FETCH_ASSOC);
+$countries = $db->query("SELECT country, MAX(cname) cname, COUNT(*) c FROM hits
+                         WHERE 1=1 $botw AND day>='$d30' AND country<>''
+                         GROUP BY country ORDER BY c DESC LIMIT 15")->fetchAll(PDO::FETCH_ASSOC);
+$top_links = $db->query("SELECT ref_full k, COUNT(*) c FROM hits
+                         WHERE 1=1 $botw AND day>='$d30' AND ref_full<>''
+                         GROUP BY ref_full ORDER BY c DESC LIMIT 12")->fetchAll(PDO::FETCH_ASSOC);
+$recent    = $db->query("SELECT ts,path,ref,ref_full,browser,os,bot,country,cname
+                         FROM hits ORDER BY id DESC LIMIT 20")->fetchAll(PDO::FETCH_ASSOC);
 
 page_head('SkillFishOS · Statistiche');
 echo '<div class="wrap">';
@@ -209,21 +216,52 @@ function tbl($title, $rows, $klabel, $linkpath = false) {
     }
     echo '</table></div>';
 }
+// countries
+echo '<div class="panel"><h3>Paesi di origine (30g)</h3><table><tr><th>Paese</th><th class="r">Visite</th></tr>';
+if (!$countries) echo '<tr><td class="muted" colspan="2">Nessun dato ancora.</td></tr>';
+$cmax = 1; foreach ($countries as $r) $cmax = max($cmax, (int)$r['c']);
+foreach ($countries as $r) {
+    $label = sfstats_flag($r['country']) . ' ' . h($r['cname'] ?: $r['country']);
+    $pct = round(100 * $r['c'] / $cmax);
+    echo '<tr><td>' . $label . '<div class="bar" style="width:' . $pct . '%;margin-top:4px"></div></td><td class="r">' . (int)$r['c'] . '</td></tr>';
+}
+echo '</table></div>';
+
 echo '<div class="grid2"><div>';
 tbl('Pagine più viste (30g)', $top_pages, 'Pagina', true);
-tbl('Provenienza (referrer, 30g)', $top_refs, 'Sito');
+tbl('Provenienza (domini, 30g)', $top_refs, 'Sito');
 echo '</div><div>';
 tbl('Browser (30g)', $browsers, 'Browser');
 tbl('Sistema operativo (30g)', $oses, 'OS');
 echo '</div></div>';
 
+// full referrer links
+echo '<div class="panel"><h3>Link di provenienza completi (30g)</h3><table><tr><th>URL referrer</th><th class="r">Visite</th></tr>';
+if (!$top_links) echo '<tr><td class="muted" colspan="2">Nessun link esterno registrato.</td></tr>';
+$lmax = 1; foreach ($top_links as $r) $lmax = max($lmax, (int)$r['c']);
+foreach ($top_links as $r) {
+    $u = $r['k'];
+    $pct = round(100 * $r['c'] / $lmax);
+    echo '<tr><td><a href="' . h($u) . '" target="_blank" rel="noreferrer noopener nofollow">' . h($u) . '</a>'
+       . '<div class="bar" style="width:' . $pct . '%;margin-top:4px"></div></td><td class="r">' . (int)$r['c'] . '</td></tr>';
+}
+echo '</table></div>';
+
 // recent
-echo '<div class="panel"><h3>Ultime visite</h3><table><tr><th>Quando (UTC)</th><th>Pagina</th><th>Da</th><th>Client</th></tr>';
-if (!$recent) echo '<tr><td class="muted" colspan="4">Nessuna visita registrata.</td></tr>';
+echo '<div class="panel"><h3>Ultime visite</h3><table><tr><th>Quando (UTC)</th><th>Paese</th><th>Pagina</th><th>Da</th><th>Client</th></tr>';
+if (!$recent) echo '<tr><td class="muted" colspan="5">Nessuna visita registrata.</td></tr>';
 foreach ($recent as $r) {
+    $cc = $r['country'] ?? '';
+    $country = $cc ? sfstats_flag($cc) . ' ' . h($cc) : '<span class="muted">—</span>';
+    if (!empty($r['ref_full'])) {
+        $da = '<a href="' . h($r['ref_full']) . '" target="_blank" rel="noreferrer noopener nofollow">' . h($r['ref'] ?: $r['ref_full']) . '</a>';
+    } else {
+        $da = '<span class="muted">' . h($r['ref'] ?: '—') . '</span>';
+    }
     echo '<tr><td class="muted">' . h(gmdate('d/m H:i', (int)$r['ts'])) . ($r['bot'] ? ' 🤖' : '') . '</td>'
+       . '<td>' . $country . '</td>'
        . '<td>' . h($r['path']) . '</td>'
-       . '<td class="muted">' . h($r['ref'] ?: '—') . '</td>'
+       . '<td>' . $da . '</td>'
        . '<td class="muted">' . h($r['browser'] . ' / ' . $r['os']) . '</td></tr>';
 }
 echo '</table></div>';

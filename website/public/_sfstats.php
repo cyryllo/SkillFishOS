@@ -39,7 +39,14 @@ if (!defined('SFSTATS_LIB')) {
             ts INTEGER NOT NULL, day TEXT NOT NULL,
             path TEXT NOT NULL, ref TEXT NOT NULL DEFAULT "",
             vis TEXT NOT NULL, bot INTEGER NOT NULL DEFAULT 0,
-            browser TEXT NOT NULL DEFAULT "", os TEXT NOT NULL DEFAULT "")');
+            browser TEXT NOT NULL DEFAULT "", os TEXT NOT NULL DEFAULT "",
+            country TEXT NOT NULL DEFAULT "", cname TEXT NOT NULL DEFAULT "",
+            ref_full TEXT NOT NULL DEFAULT "")');
+        // migrate older databases that predate the new columns
+        foreach (array('country','cname','ref_full') as $col) {
+            try { $db->exec('ALTER TABLE hits ADD COLUMN ' . $col . ' TEXT NOT NULL DEFAULT ""'); }
+            catch (Throwable $e) { /* column already exists */ }
+        }
         $db->exec('CREATE INDEX IF NOT EXISTS idx_day ON hits(day)');
         $db->exec('CREATE INDEX IF NOT EXISTS idx_vis ON hits(vis)');
         return $db;
@@ -83,6 +90,28 @@ if (!defined('SFSTATS_LIB')) {
         if (preg_match('/Chrome|Chromium/i', $ua)) return 'Chrome';
         if (preg_match('/Safari/i', $ua)) return 'Safari';
         return 'Altro';
+    }
+
+    // Country from OVH/Apache mod_geoip (server-side, IP never leaves the host).
+    function sfstats_country() {
+        $code = strtoupper(substr((string)($_SERVER['GEOIP_COUNTRY_CODE'] ?? ''), 0, 2));
+        $name = (string)($_SERVER['GEOIP_COUNTRY_NAME'] ?? '');
+        if ($code && !$name) $name = $code;
+        return array($code, substr($name, 0, 60));
+    }
+
+    // Two-letter country code -> flag emoji (regional indicators), with fallback.
+    function sfstats_flag($code) {
+        $code = strtoupper((string)$code);
+        if (strlen($code) !== 2 || !ctype_alpha($code)) return '🏳️';
+        $a = function_exists('mb_chr') ? 'mb_chr' : null;
+        $f = '';
+        for ($i = 0; $i < 2; $i++) {
+            $cp = 0x1F1E6 + (ord($code[$i]) - 65);
+            $f .= $a ? mb_chr($cp, 'UTF-8')
+                     : html_entity_decode('&#' . $cp . ';', ENT_QUOTES, 'UTF-8');
+        }
+        return $f;
     }
 
     function sfstats_os($ua) {

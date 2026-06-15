@@ -17,17 +17,25 @@ $ref  = substr((string)($_POST['r'] ?? $_GET['r'] ?? ''), 0, 300);
 
 // Keep only the path part of whatever was sent; drop query strings.
 $path = parse_url($path, PHP_URL_PATH) ?: '/';
-// Referrer: store host only (privacy + tidy aggregation), and ignore self-refs.
+// Referrer: keep the host (for aggregation) and, for EXTERNAL referrers, the
+// full URL too. Self-referrals are ignored.
 $ref_host = '';
+$ref_full = '';
 if ($ref) {
     $h = parse_url($ref, PHP_URL_HOST) ?: '';
-    if ($h && !preg_match('/skillfishos\.com$/i', $h)) $ref_host = strtolower($h);
+    $scheme = strtolower((string)(parse_url($ref, PHP_URL_SCHEME) ?: ''));
+    if ($h && !preg_match('/skillfishos\.com$/i', $h)) {
+        $ref_host = strtolower($h);
+        if ($scheme === 'http' || $scheme === 'https') $ref_full = $ref; // already capped to 300
+    }
 }
+
+list($country, $cname) = sfstats_country();
 
 try {
     $db = sfstats_db();
-    $st = $db->prepare('INSERT INTO hits(ts,day,path,ref,vis,bot,browser,os)
-                        VALUES(:ts,:day,:path,:ref,:vis,:bot,:br,:os)');
+    $st = $db->prepare('INSERT INTO hits(ts,day,path,ref,vis,bot,browser,os,country,cname,ref_full)
+                        VALUES(:ts,:day,:path,:ref,:vis,:bot,:br,:os,:cc,:cn,:rf)');
     $st->execute(array(
         ':ts'   => time(),
         ':day'  => gmdate('Y-m-d'),
@@ -37,6 +45,9 @@ try {
         ':bot'  => sfstats_is_bot($ua),
         ':br'   => sfstats_browser($ua),
         ':os'   => sfstats_os($ua),
+        ':cc'   => $country,
+        ':cn'   => $cname,
+        ':rf'   => $ref_full,
     ));
 } catch (Throwable $e) {
     // never break a page load because of analytics
