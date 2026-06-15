@@ -417,9 +417,12 @@ def hub_op(op, pkg):
 
 
 def hub_source_toggle(name, enable):
-    if not re.match(r"^[A-Za-z0-9._-]+$", name or ""):
+    if not re.match(r"^[A-Za-z0-9_-]+$", name or ""):  # no dots/slashes -> no traversal
         return {"ok": False, "error": "nome non valido"}
-    f = "/etc/apt/sources.list.d/%s.sources" % name
+    root = "/etc/apt/sources.list.d"
+    f = os.path.realpath(os.path.join(root, name + ".sources"))
+    if os.path.dirname(f) != os.path.realpath(root):
+        return {"ok": False, "error": "percorso non valido"}
     val = "yes" if enable else "no"
     try:
         with open(f) as fh:
