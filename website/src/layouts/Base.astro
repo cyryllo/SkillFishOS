@@ -34,5 +34,21 @@ const pageDesc = description ?? t('meta.desc', lang);
   <Header lang={lang} page={page} />
   <slot />
   <Footer lang={lang} />
+  <script is:inline>
+    // SkillFishOS — anonymous, cookieless visit beacon (self-hosted /pulse.php).
+    // Honours opt-out (localStorage 'sf_nostats') and Do-Not-Track.
+    try {
+      if (localStorage.getItem('sf_nostats') !== '1' && navigator.doNotTrack !== '1') {
+        var body = 'p=' + encodeURIComponent(location.pathname) +
+                   '&r=' + encodeURIComponent(document.referrer || '');
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/pulse.php',
+            new Blob([body], { type: 'application/x-www-form-urlencoded' }));
+        } else {
+          var i = new Image(); i.src = '/pulse.php?' + body;
+        }
+      }
+    } catch (e) {}
+  </script>
 </body>
 </html>
