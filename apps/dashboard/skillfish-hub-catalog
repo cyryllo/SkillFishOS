@@ -5,7 +5,7 @@
 #   build              full app catalogue (apt+flatpak+installed snaps) -> stdout JSON
 #   snap-find <query>  live snap search via snapd -> JSON list of apps
 #   reviews <appid> <ver>   ODRS reviews for one app -> JSON list
-import sys, os, json, re, subprocess, hashlib, urllib.request, urllib.parse
+import sys, os, json, subprocess, hashlib, urllib.request, urllib.parse
 
 SNAP_SOCK = "/run/snapd.socket"
 ODRS = "https://odrs.gnome.org/1.0/reviews/api"
