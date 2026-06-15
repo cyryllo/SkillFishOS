@@ -22,3 +22,6 @@ kernel-build/linux-tkg/
 __pycache__/
 *.pyc
 website/debug.log
+
+# local test/automation scripts (may contain box credentials) — never publish
+art/
