@@ -303,54 +303,178 @@ def launch_app(cmd):
         return {"ok": False, "error": str(e)}
 
 
-# ---------------- Hub (apt package management) ----------------
+# ---------------- Hub (full app store: apt + flatpak + snap) ----------------
 _HUBJOB = {"running": False, "title": "", "log": [], "done": True, "rc": 0}
 _HUBLOCK = threading.Lock()
-_PKG_RE = re.compile(r"^[a-z0-9][a-z0-9.+-]{0,80}$")
+_PKG_RE = re.compile(r"^[a-z0-9][a-z0-9.+-]{0,80}$")          # apt
+_FLAT_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,120}$")  # flatpak app id
+_SNAP_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,80}$")           # snap name
+HUB_CATALOG = "/usr/local/bin/skillfish-hub-catalog"
+_ICON_ROOTS = ["/usr/share/app-info/icons", "/var/lib/app-info/icons", "/usr/share/icons",
+               "/usr/share/pixmaps", "/var/lib/flatpak"]
+# In-memory app catalogue, built in the background from skillfish-hub-catalog.
+HUBCAT = {"apps": [], "by_key": {}, "ready": False, "building": False, "ts": 0}
+_CARD = ("key", "backend", "id", "pkgid", "name", "summary", "icon",
+         "top", "rating", "rating_n", "installed", "ver", "developer")
 
 
 def _apt_env():
     e = dict(os.environ); e["DEBIAN_FRONTEND"] = "noninteractive"; return e
 
 
-def hub_updates():
+def _card(a):
+    c = {k: a.get(k) for k in _CARD}
+    c["iloc"] = bool(a.get("icon_local"))
+    return c
+
+
+def _cat_build():
+    if HUBCAT["building"]:
+        return
+    HUBCAT["building"] = True
     try:
-        out = subprocess.run(["apt-get", "-s", "full-upgrade"], capture_output=True,
-                             text=True, timeout=60, env=_apt_env()).stdout
+        p = subprocess.run([HUB_CATALOG, "build"], capture_output=True, text=True, timeout=180)
+        apps = json.loads(p.stdout).get("apps", [])
+        HUBCAT["apps"] = apps
+        HUBCAT["by_key"] = {a["key"]: a for a in apps}
+        HUBCAT["ready"] = True
+        HUBCAT["ts"] = int(time.time())
     except Exception as e:
-        return {"ok": False, "error": str(e), "updates": []}
-    ups = []
-    for ln in out.splitlines():
-        m = re.match(r"Inst (\S+) \[([^\]]*)\] \(([^ ]+)", ln)
-        if m:
-            ups.append({"pkg": m.group(1), "old": m.group(2), "new": m.group(3)})
-    return {"ok": True, "updates": ups, "count": len(ups)}
+        sys.stderr.write("hub catalog build failed: %s\n" % e)
+    finally:
+        HUBCAT["building"] = False
 
 
-def hub_installed():
+def cat_build_async():
+    threading.Thread(target=_cat_build, daemon=True).start()
+
+
+def hub_status():
+    return {"ok": True, "ready": HUBCAT["ready"], "building": HUBCAT["building"],
+            "count": len(HUBCAT["apps"]), "ts": HUBCAT["ts"]}
+
+
+def hub_catalog(p):
+    if not HUBCAT["ready"]:
+        if not HUBCAT["building"]:
+            cat_build_async()
+        return {"ok": True, "ready": False, "apps": [], "total": 0}
+    cat = p.get("cat"); sub = p.get("sub"); bk = p.get("backend")
+    q = (p.get("q") or "").lower().strip(); sort = p.get("sort", "name")
     try:
-        man = subprocess.run(["apt-mark", "showmanual"], capture_output=True,
-                             text=True, timeout=30).stdout.split()
+        page = max(0, int(p.get("page", 0)))
     except Exception:
-        man = []
-    return {"ok": True, "installed": sorted(set(man)), "count": len(set(man))}
+        page = 0
+    per = 60
+    res = []
+    for a in HUBCAT["apps"]:
+        if cat and a.get("top") != cat:
+            continue
+        if sub and sub not in (a.get("cats") or []):
+            continue
+        if bk and a.get("backend") != bk:
+            continue
+        if q and q not in a.get("name", "").lower() and q not in (a.get("summary") or "").lower():
+            continue
+        res.append(a)
+    if sort == "rating":
+        res.sort(key=lambda a: (a.get("rating_n", 0), a.get("rating", 0)), reverse=True)
+    elif sort == "installed":
+        res.sort(key=lambda a: (not a.get("installed"), a.get("name", "").lower()))
+    else:
+        res.sort(key=lambda a: a.get("name", "").lower())
+    total = len(res)
+    cards = [_card(a) for a in res[page * per:(page + 1) * per]]
+    return {"ok": True, "ready": True, "total": total, "page": page, "per": per, "apps": cards}
+
+
+def hub_categories():
+    counts = {}
+    for a in HUBCAT["apps"]:
+        counts[a.get("top")] = counts.get(a.get("top"), 0) + 1
+    return {"ok": True, "ready": HUBCAT["ready"], "counts": counts, "total": len(HUBCAT["apps"])}
+
+
+def hub_app(key):
+    a = HUBCAT["by_key"].get(key)
+    if not a:
+        return {"ok": False, "error": "app non trovata"}
+    a = dict(a)
+    a["iloc"] = bool(a.get("icon_local"))
+    try:
+        p = subprocess.run([HUB_CATALOG, "reviews", a.get("id", ""), a.get("ver", "")],
+                           capture_output=True, text=True, timeout=20)
+        a["reviews"] = json.loads(p.stdout)
+    except Exception:
+        a["reviews"] = []
+    return {"ok": True, "app": a}
+
+
+def hub_icon_path(key):
+    a = HUBCAT["by_key"].get(key)
+    if not a:
+        return None
+    p = a.get("icon_local")
+    if not p:
+        return None
+    rp = os.path.realpath(p)
+    if not any(rp == os.path.realpath(r) or rp.startswith(os.path.realpath(r) + os.sep) for r in _ICON_ROOTS):
+        return None
+    return rp if os.path.isfile(rp) else None
 
 
 def hub_search(q):
     q = (q or "").strip()
     if len(q) < 2:
         return {"ok": True, "results": []}
+    ql = q.lower()
+    res = [a for a in HUBCAT["apps"] if a.get("backend") in ("apt", "flatpak")
+           and (ql in a.get("name", "").lower() or ql in (a.get("summary") or "").lower()
+                or ql in a.get("pkgid", "").lower())][:80]
+    snaps = []
     try:
-        out = subprocess.run(["apt-cache", "search", "--names-only", q],
-                             capture_output=True, text=True, timeout=30).stdout
-    except Exception as e:
-        return {"ok": False, "error": str(e), "results": []}
-    res = []
-    for ln in out.splitlines()[:80]:
-        if " - " in ln:
-            name, _, desc = ln.partition(" - ")
-            res.append({"pkg": name.strip(), "desc": desc.strip()})
-    return {"ok": True, "results": res}
+        p = subprocess.run([HUB_CATALOG, "snap-find", q], capture_output=True, text=True, timeout=25)
+        snaps = json.loads(p.stdout)
+    except Exception:
+        snaps = []
+    return {"ok": True, "results": [_card(a) for a in res] + [_card(s) for s in snaps]}
+
+
+def hub_installed():
+    res = [_card(a) for a in HUBCAT["apps"] if a.get("installed")]
+    res.sort(key=lambda a: a.get("name", "").lower())
+    return {"ok": True, "installed": res, "count": len(res)}
+
+
+def hub_updates():
+    ups = []
+    try:
+        out = subprocess.run(["apt-get", "-s", "full-upgrade"], capture_output=True,
+                             text=True, timeout=60, env=_apt_env()).stdout
+        for ln in out.splitlines():
+            m = re.match(r"Inst (\S+) \[([^\]]*)\] \(([^ ]+)", ln)
+            if m:
+                ups.append({"backend": "apt", "pkg": m.group(1), "old": m.group(2), "new": m.group(3)})
+    except Exception:
+        pass
+    try:
+        out = subprocess.run(["flatpak", "remote-ls", "--updates", "--columns=application,version"],
+                             capture_output=True, text=True, timeout=40).stdout
+        for ln in out.splitlines():
+            f = ln.split("\t")
+            if f and f[0] and f[0] != "Application ID":
+                ups.append({"backend": "flatpak", "pkg": f[0], "old": "", "new": f[1] if len(f) > 1 else ""})
+    except Exception:
+        pass
+    try:
+        out = subprocess.run(["snap", "refresh", "--list"], capture_output=True, text=True, timeout=40).stdout
+        for ln in out.splitlines()[1:]:
+            f = ln.split()
+            if f:
+                ups.append({"backend": "snap", "pkg": f[0], "old": "", "new": f[1] if len(f) > 1 else ""})
+    except Exception:
+        pass
+    return {"ok": True, "updates": ups, "count": len(ups)}
 
 
 def hub_sources():
@@ -367,11 +491,21 @@ def hub_sources():
             out.append({"name": fn[:-8], "enabled": en, "uri": mu.group(1) if mu else ""})
     except Exception:
         pass
-    return {"ok": True, "sources": out}
+    remotes = []
+    try:
+        o = subprocess.run(["flatpak", "remotes", "--columns=name,url"],
+                           capture_output=True, text=True, timeout=15).stdout
+        for ln in o.splitlines():
+            f = ln.split("\t")
+            if f and f[0]:
+                remotes.append({"name": f[0].strip(), "uri": f[1].strip() if len(f) > 1 else ""})
+    except Exception:
+        pass
+    return {"ok": True, "sources": out, "flatpak_remotes": remotes}
 
 
-def _hub_run(title, cmds):
-    """Run a list of argv commands sequentially in a background thread, streaming to _HUBJOB['log']."""
+def _hub_run(title, cmds, stop_on_error=True):
+    """Run a list of argv commands sequentially in a background thread; refresh catalogue after."""
     with _HUBLOCK:
         if _HUBJOB["running"]:
             return False
@@ -387,31 +521,53 @@ def _hub_run(title, cmds):
                     _HUBJOB["log"].append(line.rstrip())
                     if len(_HUBJOB["log"]) > 600:
                         del _HUBJOB["log"][:150]
-                p.wait(); rc = p.returncode
-                if rc != 0:
-                    break
+                p.wait()
+                if p.returncode != 0:
+                    rc = p.returncode
+                    if stop_on_error:
+                        break
         except Exception as e:
             _HUBJOB["log"].append("errore: %s" % e); rc = 1
         finally:
             _HUBJOB["rc"] = rc; _HUBJOB["running"] = False; _HUBJOB["done"] = True
+            cat_build_async()  # refresh installed state
 
     threading.Thread(target=worker, daemon=True).start()
     return True
 
 
-def hub_op(op, pkg):
+def hub_op(op, backend, pkg):
     pkg = (pkg or "").strip()
-    if op in ("install", "remove") and not _PKG_RE.match(pkg):
-        return {"ok": False, "error": "nome pacchetto non valido"}
-    cmds = {
-        "update":  [["apt-get", "update"]],
-        "upgrade": [["apt-get", "update"], ["apt-get", "-y", "full-upgrade"]],
-        "install": [["apt-get", "update"], ["apt-get", "install", "-y", pkg]],
-        "remove":  [["apt-get", "purge", "-y", pkg], ["apt-get", "autoremove", "-y"]],
-    }.get(op)
-    if not cmds:
+    if op == "update":
+        cmds = [["apt-get", "update"]]
+    elif op == "upgrade":
+        cmds = [["apt-get", "update"], ["apt-get", "-y", "full-upgrade"],
+                ["flatpak", "update", "--system", "-y", "--noninteractive"], ["snap", "refresh"]]
+        return _hub_start("aggiorno tutto", cmds, stop_on_error=False)
+    elif op in ("install", "remove"):
+        if backend == "apt":
+            if not _PKG_RE.match(pkg):
+                return {"ok": False, "error": "nome pacchetto non valido"}
+            cmds = ([["apt-get", "update"], ["apt-get", "install", "-y", pkg]] if op == "install"
+                    else [["apt-get", "purge", "-y", pkg], ["apt-get", "autoremove", "-y"]])
+        elif backend == "flatpak":
+            if not _FLAT_RE.match(pkg):
+                return {"ok": False, "error": "id flatpak non valido"}
+            cmds = ([["flatpak", "install", "--system", "-y", "--noninteractive", "flathub", pkg]] if op == "install"
+                    else [["flatpak", "uninstall", "--system", "-y", "--noninteractive", pkg]])
+        elif backend == "snap":
+            if not _SNAP_RE.match(pkg):
+                return {"ok": False, "error": "nome snap non valido"}
+            cmds = [["snap", "install", pkg]] if op == "install" else [["snap", "remove", pkg]]
+        else:
+            return {"ok": False, "error": "backend sconosciuto"}
+    else:
         return {"ok": False, "error": "operazione sconosciuta"}
-    if not _hub_run(op + ((" " + pkg) if pkg else ""), cmds):
+    return _hub_start(op + ((" " + pkg) if pkg else ""), cmds)
+
+
+def _hub_start(title, cmds, stop_on_error=True):
+    if not _hub_run(title, cmds, stop_on_error):
         return {"ok": False, "error": "operazione già in corso"}
     return {"ok": True, "started": True}
 
@@ -963,6 +1119,40 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("zerotier"):
                 return
             return self._json(200, zt_status())
+        if path == "/api/hub/status":
+            if not self._guard("hub"):
+                return
+            return self._json(200, hub_status())
+        if path == "/api/hub/catalog":
+            if not self._guard("hub"):
+                return
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            p = {k: v[0] for k, v in qs.items()}
+            return self._json(200, hub_catalog(p))
+        if path == "/api/hub/categories":
+            if not self._guard("hub"):
+                return
+            return self._json(200, hub_categories())
+        if path == "/api/hub/app":
+            if not self._guard("hub"):
+                return
+            key = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("key", [""])[0]
+            return self._json(200, hub_app(key))
+        if path == "/api/hub/icon":
+            if not self._guard("hub"):
+                return
+            key = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get("key", [""])[0]
+            ip = hub_icon_path(key)
+            if not ip:
+                return self._json(404, {"error": "no icon"})
+            ext = os.path.splitext(ip)[1].lower()
+            ct = {".png": "image/png", ".svg": "image/svg+xml", ".jpg": "image/jpeg",
+                  ".jpeg": "image/jpeg", ".xpm": "image/x-xpixmap"}.get(ext, "application/octet-stream")
+            try:
+                with open(ip, "rb") as f:
+                    return self._send(200, f.read(), ct, [("Cache-Control", "max-age=86400")])
+            except Exception:
+                return self._json(404, {"error": "no icon"})
         if path == "/api/hub/updates":
             if not self._guard("hub"):
                 return
@@ -1054,7 +1244,12 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/hub/op":
             if not self._guard("hub"):
                 return
-            return self._json(200, hub_op(data.get("op"), data.get("pkg")))
+            return self._json(200, hub_op(data.get("op"), data.get("backend", "apt"), data.get("pkg")))
+        if path == "/api/hub/refresh":
+            if not self._guard("hub"):
+                return
+            cat_build_async()
+            return self._json(200, {"ok": True, "building": True})
         if path == "/api/hub/source":
             if not self._guard("hub"):
                 return
@@ -1241,6 +1436,8 @@ def main():
     sys.stderr.write("SkillFish Remote on https://%s:%d (PAM=%s)\n" % (bind, port, _PAM_OK))
     sys.stderr.flush()
     threading.Thread(target=rules_loop, daemon=True).start()
+    if CONFIG.get("modules", {}).get("hub"):
+        cat_build_async()  # pre-build the app catalogue in the background
     httpd.serve_forever()
 
 
