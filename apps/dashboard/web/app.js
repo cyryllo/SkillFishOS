@@ -109,6 +109,34 @@ function openFrame(title, url) {
   $(".fr-title", m).textContent = title;
   const f = $(".fr-if", m); f.dataset.url = url; f.src = url; m.style.display = "flex";
 }
+// "Optimize for AI" (#5): show current tuning + apply recommended tweaks
+async function aiTune(card, it) {
+  const box = card.querySelector("#aitune"); if (!box) return;
+  box.innerHTML = '<div class="stub">…</div>';
+  let s; try { s = await (await api("/api/ai/tune")).json(); } catch (e) { box.innerHTML = '<div class="stub">errore</div>'; return; }
+  const row = (a, b) => `<div class="r"><span>${a}</span><span>${b}</span></div>`;
+  let h = '<div class="rows" style="margin-top:8px">' +
+    row("KV cache", s.kv_cache || "-") +
+    row(it ? "Contesto" : "Context", s.context || "-") +
+    row(it ? "Cap GTT" : "GTT cap", s.gtt_cap_mb ? (s.gtt_cap_mb + " MB") : (it ? "sbloccato" : "unlocked")) +
+    row("Swap", (s.swap_mb || 0) + " MB") +
+    row("Vulkan / Flash-Attn", (s.vulkan ? "✓" : "✗") + " / " + (s.flash_attention ? "✓" : "✗")) +
+    '</div><div class="brow" style="margin-top:8px">';
+  const recs = s.recommend || [];
+  if (recs.includes("kv_q8")) h += '<button class="dbtn" data-tune="kv_q8">' + (it ? "KV cache q8_0" : "KV cache q8_0") + "</button>";
+  if (recs.includes("gtt_unlock")) h += '<button class="dbtn" data-tune="gtt_unlock">' + (it ? "Sblocca GTT (riavvio)" : "Unlock GTT (reboot)") + "</button>";
+  if (!recs.length) h += '<span class="stub">' + (it ? "Già ottimizzato ✓" : "Already optimized ✓") + "</span>";
+  h += '</div><div class="stub" style="margin-top:6px">' + (it ? "q8_0 dimezza la KV cache (più contesto). Sbloccare la GTT permette modelli più grandi ma richiede il riavvio." : "q8_0 halves the KV cache (more context). Unlocking GTT allows bigger models but needs a reboot.") + "</div>";
+  box.innerHTML = h;
+  box.querySelectorAll("[data-tune]").forEach(b => b.onclick = async () => {
+    const act = b.dataset.tune;
+    const msg = act === "gtt_unlock" ? (it ? "Sbloccare la GTT? Modifica il boot e richiede il RIAVVIO." : "Unlock GTT? Edits boot config, needs a REBOOT.")
+      : (it ? "KV cache → q8_0? Ricrea il contenitore Ollama." : "KV cache → q8_0? Recreates the Ollama container.");
+    if (!confirm(msg)) return;
+    await action("/api/ai/tune", { action: act }, it ? "Applico…" : "Applying…");
+    setTimeout(() => aiTune(card, it), 1500);
+  });
+}
 // settings modal: pick which modules the web dashboard exposes
 async function openSettings() {
   const it = LANG === "it";
@@ -246,12 +274,14 @@ const RENDER = {
         '<button class="dbtn" id="aiweb"' + (s.webui ? "" : " disabled") + ">" + T("ai_open") + "</button></div>" +
         '<div class="gl" style="margin-top:12px">' + (it ? "Modelli installati" : "Installed models") + '</div><div style="margin-top:4px">' + models + "</div>" +
         '<div class="brow" style="margin-top:10px"><input id="aipm" class="dsel" placeholder="' + (it ? "scarica modello (es. qwen3:14b)" : "pull model (e.g. qwen3:14b)") + '" style="flex:1"><button class="dbtn" id="aipull"' + (s.running ? "" : " disabled") + ">" + (it ? "Scarica" : "Pull") + "</button></div>" +
+        '<div class="brow" style="margin-top:10px"><button class="dbtn" id="aitunebtn" style="border-color:var(--gold)">⚡ ' + (it ? "Ottimizza per AI" : "Optimize for AI") + "</button></div><div id=\"aitune\"></div>" +
         '<div class="stub" style="margin-top:8px">' + T("ai_hint") + "</div>";
       if ($("#aistart", card)) $("#aistart", card).onclick = async () => { await action("/api/ai/start", {}, T("ai_starting")); setTimeout(refresh, 4000); };
       if ($("#aistop", card)) $("#aistop", card).onclick = async () => { await action("/api/ai/stop", {}, T("ai_stopping")); setTimeout(refresh, 2000); };
       if ($("#aichat", card)) $("#aichat", card).onclick = () => openFrame("SkillFishOS AI", "/static/aichat.html");
       if ($("#aiweb", card)) $("#aiweb", card).onclick = () => window.open("http://" + location.hostname + ":" + s.webui_port, "_blank");
       if ($("#aipull", card)) $("#aipull", card).onclick = async () => { if ($("#aipm", card).value.trim()) { await action("/api/ai/pull", { model: $("#aipm", card).value }, it ? "Download avviato…" : "Download started…"); $("#aipm", card).value = ""; } };
+      if ($("#aitunebtn", card)) $("#aitunebtn", card).onclick = () => aiTune(card, it);
     };
     refresh(); card._iv = setInterval(refresh, 5000);
   },

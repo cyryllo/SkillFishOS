@@ -900,6 +900,97 @@ def ai_pull(model):
     return {"ok": True, "model": model.strip()}
 
 
+# ---- "Optimize for AI" (#5): tune GTT cap, KV cache and context for bigger models ----
+GRUB_F = "/etc/default/grub"
+
+
+def _cmdline_param(name):
+    try:
+        with open("/proc/cmdline") as f:
+            for tok in f.read().split():
+                if tok.startswith(name + "="):
+                    return tok.split("=", 1)[1]
+    except Exception:
+        pass
+    return None
+
+
+def _compose_env(name):
+    try:
+        with open(AI_COMPOSE) as f:
+            m = re.search(r"^\s*-\s*%s=(\S+)" % re.escape(name), f.read(), re.M)
+        return m.group(1) if m else None
+    except Exception:
+        return None
+
+
+def ai_tune_status():
+    gtt_cap = _cmdline_param("amdgpu.gttsize")
+    swap_mb = 0
+    try:
+        with open("/proc/meminfo") as f:
+            m = re.search(r"SwapTotal:\s+(\d+)", f.read())
+            swap_mb = int(m.group(1)) // 1024 if m else 0
+    except Exception:
+        pass
+    kv = _compose_env("OLLAMA_KV_CACHE_TYPE")
+    ctx = _compose_env("OLLAMA_CONTEXT_LENGTH")
+    recs = []
+    if kv and kv != "q8_0":
+        recs.append("kv_q8")
+    if gtt_cap:
+        recs.append("gtt_unlock")
+    return {"ok": True, "gtt_cap_mb": int(gtt_cap) if (gtt_cap or "").isdigit() else gtt_cap,
+            "swap_mb": swap_mb, "kv_cache": kv, "context": ctx,
+            "vulkan": _compose_env("OLLAMA_VULKAN") == "1",
+            "flash_attention": _compose_env("OLLAMA_FLASH_ATTENTION") == "1",
+            "recommend": recs}
+
+
+def _grub_update():
+    subprocess.run(["update-grub"], capture_output=True, text=True, timeout=60)
+
+
+def _ollama_recreate():
+    subprocess.Popen(["docker", "compose", "-f", AI_COMPOSE, "up", "-d", "ollama"],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def ai_tune_apply(action):
+    try:
+        if action in ("kv_q8", "kv_f16"):
+            val = "q8_0" if action == "kv_q8" else "f16"
+            with open(AI_COMPOSE) as f:
+                txt = f.read()
+            txt = re.sub(r"(- OLLAMA_KV_CACHE_TYPE=)\S+", r"\g<1>" + val, txt)
+            with open(AI_COMPOSE, "w") as f:
+                f.write(txt)
+            _ollama_recreate()
+            return {"ok": True, "kv_cache": val, "note": "Contenitore Ollama ricreato."}
+        if action == "context":
+            return {"ok": False, "error": "non implementato qui"}
+        if action in ("gtt_unlock", "gtt_restore"):
+            with open(GRUB_F) as f:
+                txt = f.read()
+            if action == "gtt_unlock":
+                new = re.sub(r"\s*amdgpu\.gttsize=\d+", "", txt)
+            else:
+                if "amdgpu.gttsize=" not in txt:
+                    new = re.sub(r'(GRUB_CMDLINE_LINUX_DEFAULT="[^"]*)"',
+                                 r"\1 amdgpu.gttsize=6144\"", txt, count=1)
+                else:
+                    new = txt
+            if new != txt:
+                with open(GRUB_F, "w") as f:
+                    f.write(new)
+                _grub_update()
+            return {"ok": True, "reboot_needed": True,
+                    "note": "Modifica al boot applicata: riavvia per attivarla."}
+        return {"ok": False, "error": "azione sconosciuta"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 def ai_chat(model, messages):
     if not _port_open(11434):
         return {"ok": False, "error": "Motore AI spento — accendilo dal modulo AI."}
@@ -1286,6 +1377,10 @@ class Handler(BaseHTTPRequestHandler):
                 return
             s = ai_status(); s["webui_port"] = WEBUI_PORT
             return self._json(200, s)
+        if path == "/api/ai/tune":
+            if not self._guard("ai"):
+                return
+            return self._json(200, ai_tune_status())
         if path == "/api/wol":
             if not self._guard("wol"):
                 return
@@ -1504,6 +1599,10 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("ai"):
                 return
             return self._json(200, ai_stop())
+        if path == "/api/ai/tune":
+            if not self._guard("ai"):
+                return
+            return self._json(200, ai_tune_apply(data.get("action")))
         if path == "/api/wol/enable":
             if not self._guard("wol"):
                 return
