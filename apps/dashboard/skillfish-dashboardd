@@ -272,6 +272,88 @@ def apply_preset(name):
     return {"ok": True, "preset": pr.get("name")}
 
 
+# ---- named Compute-Unit (WGP) profiles, shared by the web and native Tuner ----
+CU_PROFILES_F = "/etc/skillfish/cu-profiles.json"
+
+
+def cu_profiles_load():
+    try:
+        with open(CU_PROFILES_F) as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def cu_profile_op(action, name, rows):
+    name = (name or "").strip()[:40]
+    profs = cu_profiles_load()
+    if action == "save":
+        if not name:
+            return {"ok": False, "error": "nome mancante"}
+        try:
+            r = [int(x) & 0x1f for x in (rows or [])][:4]
+        except Exception:
+            r = []
+        while len(r) < 4:
+            r.append(0x1f)
+        profs[name] = r
+    elif action == "delete":
+        profs.pop(name, None)
+    elif action == "apply":
+        r = profs.get(name)
+        if not r:
+            return {"ok": False, "error": "profilo sconosciuto"}
+        res = tuner_cmd([{"cmd": "cu-apply", "rows": r}])
+        res["profiles"] = profs
+        return res
+    else:
+        return {"ok": False, "error": "azione sconosciuta"}
+    try:
+        os.makedirs(os.path.dirname(CU_PROFILES_F), exist_ok=True)
+        with open(CU_PROFILES_F, "w") as f:
+            json.dump(profs, f, indent=2)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    return {"ok": True, "profiles": profs}
+
+
+def cpu_coremap():
+    """Physical CPU core layout + live per-core MHz (for affinity / pinning)."""
+    base = "/sys/devices/system/cpu"
+
+    def rd(p):
+        try:
+            with open(p) as f:
+                return f.read().strip()
+        except Exception:
+            return ""
+    # live MHz per logical CPU from /proc/cpuinfo
+    mhz = {}
+    try:
+        cur = None
+        with open("/proc/cpuinfo") as f:
+            for ln in f:
+                if ln.startswith("processor"):
+                    cur = int(ln.split(":")[1])
+                elif ln.lower().startswith("cpu mhz") and cur is not None:
+                    mhz[cur] = round(float(ln.split(":")[1]))
+    except Exception:
+        pass
+    out = []
+    try:
+        cpus = sorted(int(d[3:]) for d in os.listdir(base) if re.match(r"cpu\d+$", d))
+    except Exception:
+        cpus = []
+    for c in cpus:
+        t = "%s/cpu%d/topology" % (base, c)
+        out.append({"cpu": c, "core": rd(t + "/core_id"),
+                    "pkg": rd(t + "/physical_package_id"),
+                    "siblings": rd(t + "/thread_siblings_list"),
+                    "mhz": mhz.get(c, "")})
+    return {"ok": True, "cpus": out, "n": len(out)}
+
+
 def user_home():
     global REC_DIR_USER
     if REC_DIR_USER:
@@ -1098,6 +1180,14 @@ class Handler(BaseHTTPRequestHandler):
                 return
             ps = [{"name": p.get("name"), "desc": p.get("desc_it") or p.get("desc", "")} for p in list_presets()]
             return self._json(200, {"presets": ps, "state": tuner_cmd([{"cmd": "get"}])})
+        if path == "/api/tuner/cu-profiles":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, {"ok": True, "profiles": cu_profiles_load()})
+        if path == "/api/tuner/coremap":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, cpu_coremap())
         if path == "/api/logs":
             if not self._guard("logs"):
                 return
@@ -1240,6 +1330,10 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("tuner"):
                 return
             return self._json(200, tuner_cmd([{"cmd": "cu-test"}], timeout=240))
+        if path == "/api/tuner/cu-profile":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, cu_profile_op(data.get("action"), data.get("name"), data.get("rows")))
         if path == "/api/tuner/vram":
             if not self._guard("tuner"):
                 return

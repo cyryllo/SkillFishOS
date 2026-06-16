@@ -90,8 +90,20 @@
   </div>
   <div class="cugrid" id="cugrid"></div>
   <div class="brow"><button class="btn" id="cuapply">Applica CU</button><button class="btn danger" id="cutest">Test CU</button></div>
-  <div class="stub">Le prime 3 colonne (24 CU) sono il minimo del driver e restano bloccate. 1 WGP = 2 CU.</div>
+  <div class="brow" style="margin-top:8px">
+    <span style="color:var(--muted);font-size:.85rem">Profili:</span>
+    <select id="cuprof" style="background:#241b10;color:var(--gold-lt);border:1px solid var(--line);border-radius:8px;padding:6px 9px"></select>
+    <button class="btn sec" id="cuprofapply">Carica</button>
+    <button class="btn sec" id="cuprofsave">Salva come…</button>
+    <button class="btn danger" id="cuprofdel">Elimina</button>
+  </div>
+  <div class="stub">Le prime 3 colonne (24 CU) sono il minimo del driver e restano bloccate. 1 WGP = 2 CU. Salva la griglia come profilo per richiamarla al volo.</div>
   <pre class="log" id="cutestlog"></pre>
+</div>
+
+<div class="panel"><h3>🧩 Mappa core CPU</h3>
+  <div class="stub">Layout fisico dei core (per affinità/pinning dei giochi). MHz live per core.</div>
+  <div id="coremap" style="margin-top:8px"></div>
 </div>
 
 <div class="panel"><h3>🌀 Ventola</h3>
@@ -236,6 +248,33 @@ $("#fanapply").onclick=async()=>{ const mode=$("#fanman").classList.contains("on
 $("#vramapply").onclick=async()=>{ toast("Imposto VRAM…"); const x=await api("/api/tuner/vram",{mb:+$("#vram").value});
   toast(x.ok?"VRAM impostata — riavvia per applicare":"Errore VRAM"); };
 
-load();
+// --- CU profiles (#7) ---
+async function loadProfiles(){ const r=await api("/api/tuner/cu-profiles"); const sel=$("#cuprof"); const cur=sel.value;
+  const names=Object.keys(r.profiles||{}); sel.innerHTML=names.length?names.map(n=>'<option>'+n+'</option>').join(""):'<option value="">(nessun profilo)</option>';
+  if(cur&&names.includes(cur))sel.value=cur; }
+$("#cuprofsave").onclick=async()=>{ const n=prompt("Nome del profilo CU:"); if(!n)return;
+  const rows=CU_ROWS.map(([k])=>cuMask[k]|cuFloor); const x=await api("/api/tuner/cu-profile",{action:"save",name:n,rows});
+  if(x.ok){ await loadProfiles(); $("#cuprof").value=n; toast("Profilo '"+n+"' salvato"); } else toast("Errore: "+(x.error||"")); };
+$("#cuprofapply").onclick=async()=>{ const n=$("#cuprof").value; if(!n)return; toast("Applico profilo '"+n+"'…");
+  const x=await api("/api/tuner/cu-profile",{action:"apply",name:n}); toast(x.ok?("Profilo applicato: "+(x.active||"")+" CU"):("Errore: "+(x.err||x.error||""))); setTimeout(load,500); };
+$("#cuprofdel").onclick=async()=>{ const n=$("#cuprof").value; if(!n||!confirm("Eliminare il profilo '"+n+"'?"))return;
+  const x=await api("/api/tuner/cu-profile",{action:"delete",name:n}); if(x.ok){ await loadProfiles(); toast("Profilo eliminato"); } };
+
+// --- CPU core map (#8) ---
+async function loadCoremap(){ const r=await api("/api/tuner/coremap"); const el=$("#coremap");
+  if(!r.ok||!r.cpus){ el.innerHTML='<span class="stub">non disponibile</span>'; return; }
+  // raggruppa per core fisico
+  const byCore={}; r.cpus.forEach(c=>{ (byCore[c.core]=byCore[c.core]||[]).push(c); });
+  let h='<table style="width:100%;border-collapse:collapse;font-size:.85rem">'+
+    '<tr style="color:var(--muted)"><th style="text-align:left;padding:4px">Core fisico</th><th style="text-align:left">CPU logiche</th><th style="text-align:right">MHz</th></tr>';
+  Object.keys(byCore).sort((a,b)=>a-b).forEach(core=>{ const cs=byCore[core];
+    const cpus=cs.map(c=>c.cpu).join(", "); const mhz=cs.map(c=>c.mhz).filter(Boolean).join("/");
+    h+='<tr style="border-top:1px solid rgba(216,168,73,.1)"><td style="padding:5px 4px">core '+core+'</td><td class="val" style="text-align:left">CPU '+esc(cpus)+'</td><td style="text-align:right;color:var(--gold-lt);font-family:monospace">'+esc(mhz)+'</td></tr>'; });
+  h+='</table><div class="stub" style="margin-top:6px">'+r.n+' CPU logiche su '+Object.keys(byCore).length+' core fisici. Per fissare un gioco a certi core: <code>taskset -c 0-3 &lt;gioco&gt;</code>.</div>';
+  el.innerHTML=h;
+}
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+load(); loadProfiles(); loadCoremap();
 </script>
 </body></html>
