@@ -81,9 +81,11 @@ put $P 0644 system/etc/systemd/system/skillfish-freeze-check.service etc/systemd
 put $P 0644 system/etc/xdg/autostart/skillfish-freeze-notify.desktop  etc/xdg/autostart/skillfish-freeze-notify.desktop
 put $P 0644 system/etc/modules-load.d/skillfish-watchdog.conf         etc/modules-load.d/skillfish-watchdog.conf
 put $P 0644 system/etc/systemd/system.conf.d/10-skillfish-watchdog.conf etc/systemd/system.conf.d/10-skillfish-watchdog.conf
+put $P 0644 system/etc/modules-load.d/skillfish-nct6686.conf          etc/modules-load.d/skillfish-nct6686.conf
+put $P 0644 system/etc/modprobe.d/skillfish-nct6686.conf              etc/modprobe.d/skillfish-nct6686.conf
 ctrl $P "systemd, libnotify-bin" "SkillFishOS base - hardware watchdog + freeze detector"
 # base needs its own postinst: enable the watchdog and the freeze check
-printf '#!/bin/sh\nset -e\nif [ -d /run/systemd/system ]; then\n  systemctl daemon-reload || true\n  systemctl enable --now skillfish-freeze-check.service || true\n  modprobe sp5100_tco 2>/dev/null || true\n  systemctl daemon-reexec || true\nfi\nexit 0\n' > "$OUT/$P/DEBIAN/postinst"
+printf '#!/bin/sh\nset -e\nif [ -d /run/systemd/system ]; then\n  systemctl daemon-reload || true\n  systemctl enable --now skillfish-freeze-check.service || true\n  modprobe sp5100_tco 2>/dev/null || true\n  modprobe nct6683 force=1 2>/dev/null || true\n  systemctl daemon-reexec || true\nfi\nexit 0\n' > "$OUT/$P/DEBIAN/postinst"
 chmod 0755 "$OUT/$P/DEBIAN/postinst"
 
 P=skillfish-console
