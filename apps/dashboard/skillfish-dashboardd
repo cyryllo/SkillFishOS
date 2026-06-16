@@ -318,6 +318,89 @@ def cu_profile_op(action, name, rows):
     return {"ok": True, "profiles": profs}
 
 
+# ---- temperature -> fan% curve (#3) ----
+FAN_CURVE_F = "/etc/skillfish/fan-curve.json"
+FAN_CURVE_DEFAULT = {"enabled": False, "source": "max",
+                     "points": [[40, 20], [55, 35], [70, 55], [80, 80], [90, 100]]}
+_FAN = {"last_pct": None, "was_enabled": False}
+
+
+def fan_curve_load():
+    try:
+        with open(FAN_CURVE_F) as f:
+            d = json.load(f)
+        out = dict(FAN_CURVE_DEFAULT)
+        out.update({k: d[k] for k in ("enabled", "source", "points") if k in d})
+        return out
+    except Exception:
+        return dict(FAN_CURVE_DEFAULT)
+
+
+def fan_curve_save(d):
+    cur = fan_curve_load()
+    if "enabled" in d:
+        cur["enabled"] = bool(d["enabled"])
+    if d.get("source") in ("max", "gpu", "cpu"):
+        cur["source"] = d["source"]
+    if isinstance(d.get("points"), list):
+        pts = []
+        for p in d["points"]:
+            try:
+                pts.append([max(0, min(110, int(p[0]))), max(0, min(100, int(p[1])))])
+            except Exception:
+                pass
+        if pts:
+            cur["points"] = sorted(pts)
+    try:
+        os.makedirs(os.path.dirname(FAN_CURVE_F), exist_ok=True)
+        with open(FAN_CURVE_F, "w") as f:
+            json.dump(cur, f, indent=2)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    return {"ok": True, "curve": cur, "preview": fan_curve_pct(cur)}
+
+
+def fan_curve_pct(cur=None):
+    """Interpolate the target fan % for the current temperature."""
+    cur = cur or fan_curve_load()
+    v = read_all()
+    g = v.get("gpu_temp") if isinstance(v.get("gpu_temp"), (int, float)) else 0
+    c = v.get("cpu_temp") if isinstance(v.get("cpu_temp"), (int, float)) else 0
+    t = {"gpu": g, "cpu": c}.get(cur["source"], max(g, c))
+    pts = sorted(cur["points"])
+    if not pts:
+        return None
+    if t <= pts[0][0]:
+        return pts[0][1]
+    if t >= pts[-1][0]:
+        return pts[-1][1]
+    for i in range(1, len(pts)):
+        t0, p0 = pts[i - 1]
+        t1, p1 = pts[i]
+        if t0 <= t <= t1:
+            return round(p0 + (p1 - p0) * (t - t0) / (t1 - t0)) if t1 != t0 else p1
+    return pts[-1][1]
+
+
+def fan_curve_loop():
+    while True:
+        try:
+            cur = fan_curve_load()
+            if cur["enabled"]:
+                pct = fan_curve_pct(cur)
+                if pct is not None and (_FAN["last_pct"] is None or abs(pct - _FAN["last_pct"]) >= 3):
+                    tuner_cmd([{"cmd": "apply-fan", "mode": "manual", "pct": int(pct)}])
+                    _FAN["last_pct"] = pct
+                _FAN["was_enabled"] = True
+            elif _FAN["was_enabled"]:
+                tuner_cmd([{"cmd": "apply-fan", "mode": "auto"}])  # hand the fan back to firmware
+                _FAN["was_enabled"] = False
+                _FAN["last_pct"] = None
+        except Exception:
+            pass
+        time.sleep(3)
+
+
 def cpu_coremap():
     """Physical CPU core layout + live per-core MHz (for affinity / pinning)."""
     base = "/sys/devices/system/cpu"
@@ -1188,6 +1271,11 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("tuner"):
                 return
             return self._json(200, cpu_coremap())
+        if path == "/api/tuner/fan-curve":
+            if not self._guard("tuner"):
+                return
+            cur = fan_curve_load()
+            return self._json(200, {"ok": True, "curve": cur, "preview": fan_curve_pct(cur)})
         if path == "/api/logs":
             if not self._guard("logs"):
                 return
@@ -1334,6 +1422,10 @@ class Handler(BaseHTTPRequestHandler):
             if not self._guard("tuner"):
                 return
             return self._json(200, cu_profile_op(data.get("action"), data.get("name"), data.get("rows")))
+        if path == "/api/tuner/fan-curve":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, fan_curve_save(data))
         if path == "/api/tuner/vram":
             if not self._guard("tuner"):
                 return
@@ -1551,6 +1643,7 @@ def main():
     sys.stderr.write("SkillFish Remote on https://%s:%d (PAM=%s)\n" % (bind, port, _PAM_OK))
     sys.stderr.flush()
     threading.Thread(target=rules_loop, daemon=True).start()
+    threading.Thread(target=fan_curve_loop, daemon=True).start()
     if CONFIG.get("modules", {}).get("hub"):
         cat_build_async()  # pre-build the app catalogue in the background
     httpd.serve_forever()
