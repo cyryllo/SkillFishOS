@@ -427,6 +427,8 @@ PL = {
     "AI Engine (LLM)": "Silnik AI (LLM)",
     "On \u2014 starts/stops Ollama. Turn it off before gaming.":
         "Wlaczony \u2014 uruchamia/zatrzymuje Ollame. Wylacz przed graniem.",
+    "Start automatically on boot (even if it was off)":
+        "Automatyczne uruchamianie przy starcie komputera (nawet jesli byl wylaczony)",
     "Model": "Model",
     "active model / name to pull": "aktywny model / nazwa do pobrania",
     "Use": "Uzyj",

@@ -186,6 +186,20 @@ def compose_file():
 def stack_present():
     return any(os.path.exists(os.path.join(STACK_DIR, n)) for n in COMPOSE_NAMES)
 
+def autostart_cmd(enabled):
+    # WHY: restart:unless-stopped (the compose default) will NOT bring containers back
+    # after a reboot if they were last stopped manually (e.g. "turn engine off before
+    # gaming"). Autostart flips it to restart:always for both services so the AI engine
+    # always comes back on boot, on top of a fresh reboot, regardless of prior state.
+    f = compose_file()
+    old, new = ("unless-stopped", "always") if enabled else ("always", "unless-stopped")
+    sudo = "" if os.access(f, os.W_OK) else "pkexec "
+    steps = [f"{sudo}sed -i 's/restart: {old}/restart: {new}/g' {f}"]
+    if enabled:
+        steps.append("pkexec systemctl enable docker")
+    steps.append(f"cd {STACK_DIR} && docker compose up -d")
+    return " && ".join(steps)
+
 def engine_running():
     rc, out, _ = sh(f"docker inspect -f '{{{{.State.Running}}}}' {CONTAINER}", 8)
     return out == "true"
@@ -226,6 +240,10 @@ DEFAULT_COMPOSE = """services:
     image: ollama/ollama:rocm
     container_name: skillfish-ollama
     restart: unless-stopped
+    environment:
+      - OLLAMA_VULKAN=1
+      - OLLAMA_IGPU_ENABLE=1
+      - OLLAMA_MAX_LOADED_MODELS=2
     devices:
       - /dev/kfd
       - /dev/dri
@@ -329,6 +347,11 @@ class InstallPage(QWizardPage):
         steps = []
         if not docker_ok():
             steps.append("pkexec sh -c 'apt-get update && apt-get install -y docker.io docker-compose-v2 && systemctl enable --now docker'")
+        else:
+            # WHY: docker_ok() only checks the binary; if docker was already present the
+            # daemon may never have been enabled for boot, so containers wouldn't come
+            # back after a reboot even with restart:unless-stopped. Idempotent either way.
+            steps.append("pkexec systemctl enable --now docker")
         steps.append(f"pkexec mkdir -p {STACK_DIR}" if not os.access(os.path.dirname(STACK_DIR), os.W_OK) else f"mkdir -p {STACK_DIR}")
         if not stack_present():
             # write a default compose if the SkillFishOS one is absent (needs root for /opt)
@@ -417,6 +440,10 @@ class Panel(QMainWindow):
         self.cb = QCheckBox(L("Acceso — accende/spegne Ollama. Spegnilo prima di giocare.",
                               "On — starts/stops Ollama. Turn it off before gaming."))
         self.cb.toggled.connect(self.on_toggle); gv.addWidget(self.cb)
+        self.cb_auto = QCheckBox(L("Avvio automatico all'accensione del PC (anche se era spento)",
+                                    "Start automatically on boot (even if it was off)"))
+        self.cb_auto.blockSignals(True); self.cb_auto.setChecked(cfg.get("autostart", False)); self.cb_auto.blockSignals(False)
+        self.cb_auto.toggled.connect(self.on_autostart); gv.addWidget(self.cb_auto)
         self.status = QLabel("…"); self.status.setWordWrap(True); gv.addWidget(self.status)
         v.addWidget(g)
 
@@ -541,6 +568,16 @@ class Panel(QMainWindow):
         self._t = Worker(cmd, 180); self._t.done.connect(self._toggled); self._t.start()
     def _toggled(self, rc):
         self.busy = False; self.cb.setEnabled(True); self.refresh_engine(); self.refresh_models()
+
+    def on_autostart(self, state):
+        if self.busy: return
+        self.busy = True; self.cb_auto.setEnabled(False)
+        self.status.setText(L("… operazione in corso …", "… working …"))
+        cfg = load_cfg(); cfg["autostart"] = state; save_cfg(cfg)
+        self._a = Worker(autostart_cmd(state), 60)
+        self._a.done.connect(self._autostarted); self._a.start()
+    def _autostarted(self, rc):
+        self.busy = False; self.cb_auto.setEnabled(True); self.refresh_engine()
 
     # ---- model actions ----
     def set_active(self):
