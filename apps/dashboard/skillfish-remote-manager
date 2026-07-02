@@ -13,9 +13,40 @@ CTL = "/usr/local/bin/skillfish-remote-ctl"
 
 def _lang():
     v = (os.environ.get("LC_ALL") or os.environ.get("LANG") or "")
-    return "it" if v.lower().startswith("it") else "en"
+    v = v.lower()
+    if v.startswith("it"): return "it"
+    if v.startswith("pl"): return "pl"
+    return "en"
 LANG = _lang()
-def L(it, en): return it if LANG == "it" else en
+# WHAT: polskie tlumaczenia interfejsu (klucz = tekst angielski)
+PL = {
+    "Telemetry": "Telemetria",
+    "System status": "Stan systemu",
+    "Controls": "Sterowanie",
+    "Apps & packages": "Aplikacje i pakiety",
+    "Launcher": "Uruchamianie aplikacji",
+    "Desktop (KVM)": "Pulpit (KVM)",
+    "Terminal": "Terminal",
+    "Auto rules": "Reguły automatyczne",
+    "Power schedule": "Harmonogram zasilania",
+    "SkillFishOS — Remote Manager": "SkillFishOS — Remote Manager",
+    "Remote control panel · SkillFishOS": "Panel zdalnego sterowania · SkillFishOS",
+    "ACCESS": "DOSTĘP",
+    "Open in browser": "Otwórz w przeglądarce",
+    "EXPOSED MODULES": "UDOSTĘPNIONE MODUŁY",
+    "  (coming)": "  (wkrótce)",
+    "service unavailable": "usługa niedostępna",
+    "Turn off": "Wyłącz",
+    "Turn on": "Włącz",
+    "● On": "● Włączona",
+    "○ Off": "○ Wyłączona",
+    "  · at boot: ": "  · przy starcie: ",
+    "Log in with user “%s” password.": "Zaloguj się hasłem użytkownika „%s”.",
+}
+def L(it, en):
+    if LANG == "it": return it
+    if LANG == "pl": return PL.get(en, en)
+    return en
 
 # id, icon, name, ready?  (not-ready modules need external tools still to be wired)
 MODULES = [

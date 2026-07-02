@@ -336,7 +336,9 @@ write_panel_patcher(){
   #        1) naprawia refresh_models (lista = zainstalowane + katalog),
   #        2) wyróżnia zainstalowane modele (na górze, zielone, pogrubione + separator),
   #        3) dodaje przycisk usuwania i metody delete_model / _deleted,
-  #        4) dokłada polskie tłumaczenie interfejsu (gdy język systemu = pl).
+  #        4) dokłada polskie tłumaczenie interfejsu (gdy język systemu = pl),
+  #        5) odświeża listę modeli też po włączeniu/wyłączeniu silnika (nie
+  #           tylko po pobraniu), żeby wyróżnienie działało od razu.
   TMP_PY2="$(mktemp --suffix=.py)"
   cat > "$TMP_PY2" <<'PYEOF'
 import sys, re
@@ -471,6 +473,13 @@ BTN_NEW = ('        self.bpull = QPushButton(L("Scarica", "Pull")); self.bpull.c
 MSG_OLD = "        mv.addWidget(self.modelmsg, 1, 0, 1, 4)\n"
 MSG_NEW = "        mv.addWidget(self.modelmsg, 1, 0, 1, 5)\n"
 
+# --- odswiez liste modeli tez po wlaczeniu/wylaczeniu silnika ------------------
+# WHY: wyroznienie zainstalowanych modeli dzialo dopiero po pobraniu (_pulled
+#      wola refresh_models), bo installed_models() widzi cokolwiek tylko gdy
+#      silnik dziala, a wlaczenie silnika samo w sobie nie odswiezalo listy.
+TOGGLE_OLD = "        self.busy = False; self.cb.setEnabled(True); self.refresh_engine()\n"
+TOGGLE_NEW = "        self.busy = False; self.cb.setEnabled(True); self.refresh_engine(); self.refresh_models()\n"
+
 IMP_OLD = "from PyQt6.QtGui import QIcon, QPixmap\n"
 IMP_NEW = "from PyQt6.QtGui import QIcon, QPixmap, QColor, QBrush, QFont\n"
 
@@ -522,6 +531,10 @@ if "self.bdel" in src and MSG_OLD in src:
 if "def delete_model" not in src and "    def pull_model(self):\n" in src:
     src = src.replace("    def pull_model(self):\n", DELETE_METHODS + "    def pull_model(self):\n", 1); changed = True
 
+# 7) odswiezenie listy modeli po (de)aktywacji silnika
+if TOGGLE_OLD in src:
+    src = src.replace(TOGGLE_OLD, TOGGLE_NEW, 1); changed = True
+
 if not changed:
     print("ALREADY"); sys.exit(2)
 
@@ -563,7 +576,8 @@ fn_fix_panel(){
        echo "    - lista modeli: zainstalowane + katalog do pobrania,"
        echo "    - zainstalowane modele wyróżnione (na górze, zielone, z separatorem),"
        echo "    - przycisk usuwania wybranego modelu,"
-       echo "    - polski interfejs (gdy język systemu jest polski)." ;;
+       echo "    - polski interfejs (gdy język systemu jest polski),"
+       echo "    - wyróżnienie działa od razu po włączeniu silnika, nie tylko po pobraniu." ;;
     2) info "Panel jest już naprawiony — nic nie zmieniono."; $SUDO rm -f "$BAK"; return 0 ;;
     3) $SUDO rm -f "$BAK"; err "Nie znalazłem funkcji refresh_models w pliku."; return 1 ;;
     *) $SUDO rm -f "$BAK"; err "Błąd podczas naprawy (kod $CODE)."; return 1 ;;

@@ -540,7 +540,7 @@ class Panel(QMainWindow):
         cmd = (f"cd {STACK_DIR} && docker compose up -d") if state else (f"cd {STACK_DIR} && docker compose stop")
         self._t = Worker(cmd, 180); self._t.done.connect(self._toggled); self._t.start()
     def _toggled(self, rc):
-        self.busy = False; self.cb.setEnabled(True); self.refresh_engine()
+        self.busy = False; self.cb.setEnabled(True); self.refresh_engine(); self.refresh_models()
 
     # ---- model actions ----
     def set_active(self):

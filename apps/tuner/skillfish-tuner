@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SkillFishOS Tuner — KDE-native (PyQt6/Qt Widgets). Themed by Kvantum/Breeze.
 # The GUI talks to the root daemon skillfish-tuner-helper (pkexec, one auth at start).
-# Bilingual UI (IT/EN), auto-detected from the LANG/LC_* environment.
+# Trilingual UI (IT/EN/PL), auto-detected from the LANG/LC_* environment.
 import sys, os, json, subprocess, re, collections
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QIcon, QPainter, QColor, QPen, QBrush, QLinearGradient, QPainterPath, QFont
@@ -20,13 +20,115 @@ def _detect_lang():
     # LANGUAGE (gettext colon-list) is the last fallback. First non-empty wins.
     val = (os.environ.get("LC_ALL") or os.environ.get("LC_MESSAGES")
            or os.environ.get("LANG") or os.environ.get("LANGUAGE") or "")
-    return "it" if val.lower().startswith("it") else "en"
+    v = val.lower()
+    if v.startswith("it"): return "it"
+    if v.startswith("pl"): return "pl"
+    return "en"
 
 LANG = _detect_lang()
 
+# Polish translations, keyed by the exact EN string passed to each L(it, en) call.
+# Only static string literals are covered here: f-strings and other dynamically
+# built EN text fall back to English via PL.get(en, en), same as the IT precedent.
+PL = {
+    "Max CPU frequency": "Maksymalna częstotliwość CPU",
+    "CPU boost limit in MHz.\n\n• 3500 = safe base\n• 3700 = verified stable on this chip\n• 3800-3900 = beyond limits, possible thermal throttling\n\nVoltage (Vid) always stays below 1.325 V for safety.": "Limit boostu CPU w MHz.\n\n• 3500 = bezpieczna baza\n• 3700 = zweryfikowana stabilność na tym układzie\n• 3800-3900 = poza limitami, możliwy throttling termiczny\n\nNapięcie (Vid) zawsze pozostaje poniżej 1,325 V dla bezpieczeństwa.",
+    "Undervolt (scale)": "Undervolt (skala)",
+    "Lowers the CPU voltage relative to the factory curve.\n\n• 0 = no undervolt (default)\n• negative values (-1, -2 ...) = less voltage\n\nUndervolting lowers temperatures and power draw, but too much makes the system unstable. Use «Test» to verify.": "Obniża napięcie CPU względem fabrycznej krzywej.\n\n• 0 = brak undervoltu (domyślnie)\n• wartości ujemne (-1, -2 ...) = mniej napięcia\n\nUndervolt obniża temperatury i pobór mocy, ale zbyt duży czyni system niestabilnym. Użyj «Test», aby sprawdzić.",
+    "CPU temperature limit": "Limit temperatury CPU",
+    "Thermal threshold above which the SMU throttles frequency.\n\nRecommended 85 °C. Above it, the system automatically lowers the clock to protect the hardware.": "Próg termiczny, powyżej którego SMU ogranicza częstotliwość.\n\nZalecane 85 °C. Powyżej tej wartości system automatycznie obniża zegar, aby chronić sprzęt.",
+    "Max GPU frequency": "Maksymalna częstotliwość GPU",
+    "Maximum GPU clock (SMU governor).\n\n• 1500 = power saving\n• 2000 = balanced (safe on every board)\n• 2200 = max stable at 1000 mV on stock cooling\n\nThe GPU reaches this frequency only under load, then returns to 350 MHz at idle. Above 2200 MHz at 1000 mV the BC-250 can hard-freeze: it needs more voltage and depends on the silicon lottery.": "Maksymalny zegar GPU (governor SMU).\n\n• 1500 = oszczędzanie energii\n• 2000 = zbalansowany (bezpieczny na każdej płycie)\n• 2200 = maksimum stabilne przy 1000 mV na chłodzeniu fabrycznym\n\nGPU osiąga tę częstotliwość tylko pod obciążeniem, a w spoczynku wraca do 350 MHz. Powyżej 2200 MHz przy 1000 mV BC-250 może się całkowicie zawiesić: potrzeba wyższego napięcia, a wynik zależy od loterii krzemowej.",
+    "Max GPU voltage": "Maksymalne napięcie GPU",
+    "Voltage tied to the max GPU frequency (mV).\n\nHigher = more stable at high frequency but hotter. Range 700-1129 mV.": "Napięcie powiązane z maksymalną częstotliwością GPU (mV).\n\nWyższe = większa stabilność przy wysokiej częstotliwości, ale wyższa temperatura. Zakres 700-1129 mV.",
+    "GPU governor mode": "Tryb governora GPU",
+    "How the governor picks the GPU clock under load:\n\n• Balanced: raises the clock only as much as needed — cooler and quieter (default).\n• Performance: holds the GPU at max clock under any gaming load (best FPS in GPU-bound games, more heat and power). It still returns to 350 MHz at idle.\n\nBoth modes use the governor's safe SMU path.": "Jak governor dobiera zegar GPU pod obciążeniem:\n\n• Zbalansowany: podnosi zegar tylko na tyle, na ile potrzeba — chłodniej i ciszej (domyślnie).\n• Performance: utrzymuje GPU na maksymalnym zegarze pod każdym obciążeniem w grach (najlepsze FPS w grach ograniczanych przez GPU, więcej ciepła i poboru mocy). W spoczynku i tak wraca do 350 MHz.\n\nOba tryby korzystają z bezpiecznej ścieżki SMU governora.",
+    "Fan": "Wentylator",
+    "Manual control: you set the speed in %.\nAutomatic: the chip's curve manages the speed based on temperature.\n\nUse «Test» to hear the fan at the chosen speed for a few seconds.": "Kontrola ręczna: sam ustawiasz prędkość w %.\nAutomatyczna: krzywa układu zarządza prędkością na podstawie temperatury.\n\nUżyj «Test», aby usłyszeć wentylator przy wybranej prędkości przez kilka sekund.",
+    "VRAM (graphics memory)": "VRAM (pamięć graficzna)",
+    "Amount of system RAM reserved for the GPU (UMA).\n\n⚠ Writes to the BIOS CMOS and requires a REBOOT to apply. Reversible by clearing the CMOS (jumper on the board).\n\nDon't exceed values that leave too little RAM for the system.": "Ilość pamięci RAM systemu zarezerwowanej dla GPU (UMA).\n\n⚠ Zapisuje w CMOS-ie BIOS-u i wymaga PONOWNEGO URUCHOMIENIA, aby zastosować zmiany. Odwracalne przez wyzerowanie CMOS-u (zworka na płycie).\n\nNie przekraczaj wartości, które zostawiają systemowi zbyt mało RAM-u.",
+    "Compute Units (CU)": "Jednostki obliczeniowe (CU)",
+    "CUs are the GPU's compute cores. Here you enable/disable them LIVE, no reboot.\n\n• Each square = 1 CU: GREEN = active, RED = off.\n• CLICK a pair to toggle it manually (pairs are managed 2 CU at a time = 1 WGP).\n• Or use the PRESETS (24 / 32 / 40 CU).\n• The first 3 pairs per row (24 CU) are the driver minimum and stay always on.\n• Hit «Apply live» to make the choice effective.\n\nMore CU = more graphics power but also more heat and power draw.\n\nUse «Test CU» to verify the active CUs are stable and defect-free (silicon lottery).": "CU to rdzenie obliczeniowe GPU. Tutaj włączasz/wyłączasz je NA ŻYWO, bez restartu.\n\n• Każdy kwadracik = 1 CU: ZIELONY = aktywna, CZERWONY = wyłączona.\n• KLIKNIJ parę, aby przełączyć ją ręcznie (pary zarządzane są po 2 CU naraz = 1 WGP).\n• Albo użyj PRESETÓW (24 / 32 / 40 CU).\n• Pierwsze 3 pary w każdym rzędzie (24 CU) to minimum sterownika i zawsze pozostają aktywne.\n• Naciśnij «Zastosuj na żywo», aby uaktywnić wybór.\n\nWięcej CU = więcej mocy graficznej, ale też więcej ciepła i poboru energii.\n\nUżyj «Test CU», aby sprawdzić, czy aktywne CU są stabilne i wolne od defektów (loteria krzemowa).",
+    "daemon not running": "demon nie działa",
+    "locked (always on)": "zablokowana (zawsze aktywna)",
+    "on": "aktywna",
+    "off": "wyłączona",
+    "◉  LIVE MONITOR": "◉  MONITOR NA ŻYWO",
+    "Temperature (°C)": "Temperatura (°C)",
+    "Frequency (MHz)": "Częstotliwość (MHz)",
+    "GPU voltage (mV)": "Napięcie GPU (mV)",
+    "Fan (RPM)": "Wentylator (RPM)",
+    "SkillFishOS — Monitor · %s": "SkillFishOS — Monitor · %s",
+    "Help": "Pomoc",
+    "Presets": "Presety",
+    "Apply": "Zastosuj",
+    "Extreme preset": "Ekstremalny preset",
+    "🎰 My silicon": "🎰 Mój krzem",
+    "CPU %d MHz @ %d  ·  GPU %d MHz @ %d mV  ·  Active CUs: %d  ·  Detected freezes: %d": "CPU %d MHz @ %d  ·  GPU %d MHz @ %d mV  ·  Aktywne CU: %d  ·  Wykryte zawieszenia: %d",
+    "⚠ Last freeze: %s — if it happens again, step down one notch with the 🎰 wizards.": "⚠ Ostatnie zawieszenie: %s — jeśli powtórzy się, zejdź o jeden poziom niżej za pomocą kreatorów 🎰.",
+    "Share to the silicon DB": "Udostępnij w bazie krzemu",
+    "Max frequency": "Maksymalna częstotliwość",
+    "Undervolt": "Undervolt",
+    "Temperature limit": "Limit temperatury",
+    "🎰 Find my max": "🎰 Znajdź maksimum",
+    "Suggest UV": "Zasugeruj UV",
+    "Test (benchmark)": "Test (benchmark)",
+    "CPU applied": "CPU zastosowane",
+    "Save at boot": "Zapisz przy starcie",
+    "CPU saved at boot": "CPU zapisane przy starcie",
+    "CPU test: applying and benchmarking 60s (for a realistic temp)…": "Test CPU: stosuję ustawienia i uruchamiam benchmark 60 s (dla realistycznej temperatury)…",
+    "test failed": "test nieudany",
+    "Max voltage": "Maksymalne napięcie",
+    "Balanced": "Zbalansowany",
+    "Performance": "Performance",
+    "Governor: Balanced": "Governor: Zbalansowany",
+    "Governor: Performance — 2230 MHz under load": "Governor: Performance — 2230 MHz pod obciążeniem",
+    "Governor mode": "Tryb governora",
+    "GPU applied": "GPU zastosowane",
+    "Find my max": "Znajdź maksimum",
+    "The wizard steps the GPU up (2000 → 2200 MHz at 1000 mV), validating each step with a benchmark and rolling back if unstable.\n\n~2 minutes per step under full GPU load: set the fan high first.\nWhen done it applies the highest stable point for YOUR board.\n\nProceed?": "Kreator zwiększa zegar GPU krok po kroku (2000 → 2200 MHz przy 1000 mV), sprawdzając każdy krok benchmarkiem i cofając się w razie niestabilności.\n\n~2 minuty na krok przy pełnym obciążeniu GPU: najpierw ustaw wysokie obroty wentylatora.\nPo zakończeniu zastosuje najwyższy stabilny punkt dla TWOJEJ płyty.\n\nKontynuować?",
+    "✗ Not even 2000 MHz is stable on this board: keeping the current profile.": "✗ Nawet 2000 MHz nie jest stabilne na tej płycie: zachowuję bieżący profil.",
+    "Highest stable point: %d MHz @ 1000 mV%s (already applied).": "Najwyższy stabilny punkt: %d MHz @ 1000 mV%s (już zastosowano).",
+    "Share the result (anonymous) in the silicon-lottery database on GitHub?": "Udostępnić wynik (anonimowo) w bazie loterii krzemowej na GitHubie?",
+    "Wizard result": "Wynik kreatora",
+    "Find my max (CPU)": "Znajdź maksimum (CPU)",
+    "The wizard steps the CPU up (3600 → 4000 MHz with progressive undervolt), validating each step with a benchmark and stopping at the first unstable one.\n\n⚠ The last step can freeze some boards: the watchdog then reboots automatically and the last stable value is restored at boot.\n\nNote: the test validates UNDER-LOAD stability; idle stability over days is confirmed by regular use.\n\nProceed?": "Kreator zwiększa zegar CPU krok po kroku (3600 → 4000 MHz z progresywnym undervoltem), sprawdzając każdy krok benchmarkiem i zatrzymując się na pierwszym niestabilnym.\n\n⚠ Ostatni krok może zawiesić niektóre płyty: watchdog wtedy automatycznie uruchamia system ponownie, a przy starcie przywracana jest ostatnia stabilna wartość.\n\nUwaga: test sprawdza stabilność POD OBCIĄŻENIEM; stabilność w spoczynku przez kilka dni potwierdza dopiero codzienne użytkowanie.\n\nKontynuować?",
+    "✗ Not even 3600 MHz is stable: keeping the current profile.": "✗ Nawet 3600 MHz nie jest stabilne: zachowuję bieżący profil.",
+    "Tip: run the system for a few days; if a freeze appears, step down one notch.\n\nShare the result (anonymous) in the silicon-lottery database?": "Wskazówka: używaj systemu przez kilka dni; jeśli pojawi się zawieszenie, zejdź o jeden poziom niżej.\n\nUdostępnić wynik (anonimowo) w bazie loterii krzemowej?",
+    "CPU wizard result": "Wynik kreatora CPU",
+    "GPU test: applying and running vkpeak…": "Test GPU: stosuję ustawienia i uruchamiam vkpeak…",
+    "Compute Units (CU) — live": "Jednostki obliczeniowe (CU) — na żywo",
+    "40 CU (max)": "40 CU (maks.)",
+    "Test CU": "Test CU",
+    "Active CUs: %d / 40": "Aktywne CU: %d / 40",
+    "CUs applied: %s/40 (live)": "CU zastosowane: %s/40 (na żywo)",
+    "CU error: %s": "Błąd CU: %s",
+    "CU test": "Test CU",
+    "Tests the extra CUs (WGP3-4) one by one to catch defects (silicon lottery): enables each pair alone, stresses it with vkpeak and checks for GPU errors/hangs.\n\nTakes ~2-3 minutes and the GPU will be under load. Proceed?": "Testuje dodatkowe CU (WGP3-4) pojedynczo, aby wykryć defekty (loteria krzemowa): włącza każdą parę osobno, obciąża ją vkpeak i sprawdza błędy/zawieszenia GPU.\n\nZajmuje ~2-3 minuty, a GPU będzie pod obciążeniem. Kontynuować?",
+    "CU test running (~2-3 min)…": "Test CU w toku (~2-3 min)…",
+    "CU test failed: %s": "Test CU nieudany: %s",
+    "40 CU under load (vkpeak): %s GFLOPS%s": "40 CU pod obciążeniem (vkpeak): %s GFLOPS%s",
+    "Baseline 24 CU: %s GFLOPS": "Bazowo 24 CU: %s GFLOPS",
+    "(expected ~11300 at 40 CU)": "(oczekiwane ~11300 przy 40 CU)",
+    "Per extra-CU-pair stability:": "Stabilność wg pary dodatkowych CU:",
+    "⚠ GPU problems under load detected: possible defective CU (silicon lottery). Consider keeping fewer CUs.": "⚠ Wykryto problemy GPU pod obciążeniem: możliwa wadliwa CU (loteria krzemowa). Rozważ pozostawienie mniejszej liczby CU.",
+    "✓ No defects: all CUs sustain the load with no GPU errors.": "✓ Brak defektów: wszystkie CU wytrzymują obciążenie bez błędów GPU.",
+    "CU test result": "Wynik testu CU",
+    "Manual control (off = automatic curve)": "Kontrola ręczna (wyłączone = krzywa automatyczna)",
+    "Speed": "Prędkość",
+    "Test": "Test",
+    "Fan error": "Błąd wentylatora",
+    "New allocation": "Nowy przydział",
+    "Set (reboot)": "Ustaw (restart)",
+    "Writes to the BIOS CMOS. A reboot is needed to apply.": "Zapisuje w CMOS-ie BIOS-u. Aby zastosować, wymagany jest restart.",
+    "Authentication cancelled or helper not started.\nRestart the program and authorize the operation.": "Uwierzytelnienie anulowane lub pomocnik nie został uruchomiony.\nUruchom program ponownie i autoryzuj operację.",
+}
+
 def L(it, en):
-    """Return the IT or EN string depending on the detected locale."""
-    return it if LANG == "it" else en
+    """Return the IT, PL or EN string depending on the detected locale."""
+    if LANG == "it": return it
+    if LANG == "pl": return PL.get(en, en)
+    return en
 
 
 HELP = {
