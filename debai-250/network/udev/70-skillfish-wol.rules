@@ -1,0 +1,4 @@
+# Re-apply Wake-on-LAN whenever a network interface is (re-)added — some
+# drivers reset the WoL flag on link renegotiation, cable replug, or module
+# reload, so the boot-time systemd unit alone isn't always enough.
+ACTION=="add", SUBSYSTEM=="net", RUN+="/usr/local/bin/skillfish-enable-wol"

@@ -1,0 +1,648 @@
+#!/usr/bin/env python3
+# debai-250 tuner daemon (Python standard library only) — trimmed fork of
+# SkillFishOS's skillfish-dashboardd, keeping ONLY the tuner module: CPU/GPU
+# clock+voltage, fan curve, Compute Unit rows/profiles, benchmarks. HTTPS
+# (self-signed) + PAM login + signed session cookies, same as the original.
+# LAN-only by design; never expose to the internet without a real reverse proxy.
+import os, sys, json, ssl, hmac, hashlib, base64, time, subprocess, threading, urllib.parse, re
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+CONF = "/etc/skillfish/tunerd.json"
+STATE = "/etc/skillfish"
+SECRET_F = os.path.join(STATE, "tunerd.secret")
+CERT_F = os.path.join(STATE, "tunerd-cert.pem")
+KEY_F = os.path.join(STATE, "tunerd-key.pem")
+WEB = "/usr/share/skillfish/tunerd"
+HUD = "/usr/local/bin/skillfish-hud-val"
+SESSION_TTL = 8 * 3600
+
+DEFAULT_CONF = {"bind": "0.0.0.0", "port": 8443, "user": "skillfish",
+                "modules": {"tuner": True}}
+
+
+def load_conf():
+    try:
+        with open(CONF) as f:
+            c = json.load(f)
+        for k, v in DEFAULT_CONF.items():
+            c.setdefault(k, v)
+        return c
+    except Exception:
+        return dict(DEFAULT_CONF)
+
+
+def get_secret():
+    try:
+        with open(SECRET_F, "rb") as f:
+            return f.read()
+    except Exception:
+        s = os.urandom(32)
+        try:
+            os.makedirs(STATE, exist_ok=True)
+            fd = os.open(SECRET_F, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+            os.write(fd, s); os.close(fd)
+        except Exception:
+            pass
+        return s
+
+
+SECRET = get_secret()
+
+
+# ---------------- PAM auth (ctypes, no external deps) ----------------
+import ctypes, ctypes.util
+
+class _PamMessage(ctypes.Structure):
+    _fields_ = [("msg_style", ctypes.c_int), ("msg", ctypes.c_char_p)]
+
+class _PamResponse(ctypes.Structure):
+    _fields_ = [("resp", ctypes.c_char_p), ("resp_retcode", ctypes.c_int)]
+
+_CONV = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int,
+                         ctypes.POINTER(ctypes.POINTER(_PamMessage)),
+                         ctypes.POINTER(ctypes.POINTER(_PamResponse)), ctypes.c_void_p)
+
+class _PamConv(ctypes.Structure):
+    _fields_ = [("conv", _CONV), ("appdata_ptr", ctypes.c_void_p)]
+
+try:
+    _libpam = ctypes.CDLL(ctypes.util.find_library("pam"))
+    _libc = ctypes.CDLL(ctypes.util.find_library("c"))
+    _libc.calloc.restype = ctypes.c_void_p
+    _libc.calloc.argtypes = [ctypes.c_size_t, ctypes.c_size_t]
+    _libpam.pam_start.restype = ctypes.c_int
+    _libpam.pam_start.argtypes = [ctypes.c_char_p, ctypes.c_char_p,
+                                  ctypes.POINTER(_PamConv), ctypes.POINTER(ctypes.c_void_p)]
+    _libpam.pam_authenticate.restype = ctypes.c_int
+    _libpam.pam_authenticate.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    _libpam.pam_acct_mgmt.restype = ctypes.c_int
+    _libpam.pam_acct_mgmt.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    _libpam.pam_end.restype = ctypes.c_int
+    _libpam.pam_end.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    _PAM_OK = True
+except Exception:
+    _PAM_OK = False
+
+
+def pam_check(username, password, service="login"):
+    if not _PAM_OK:
+        return False
+
+    @_CONV
+    def conv(n_messages, messages, p_response, app_data):
+        addr = _libc.calloc(n_messages, ctypes.sizeof(_PamResponse))
+        p_response[0] = ctypes.cast(addr, ctypes.POINTER(_PamResponse))
+        for i in range(n_messages):
+            if messages[i].contents.msg_style == 1:  # PAM_PROMPT_ECHO_OFF
+                pw = password.encode() + b"\x00"
+                dst = _libc.calloc(len(pw), 1)
+                ctypes.memmove(dst, pw, len(pw))
+                p_response[0][i].resp = ctypes.cast(dst, ctypes.c_char_p)
+                p_response[0][i].resp_retcode = 0
+        return 0
+
+    handle = ctypes.c_void_p()
+    conv_struct = _PamConv(conv, None)
+    try:
+        rc = _libpam.pam_start(service.encode(), username.encode(),
+                               ctypes.byref(conv_struct), ctypes.byref(handle))
+        if rc != 0:
+            return False
+        rc = _libpam.pam_authenticate(handle, 0)
+        if rc == 0:
+            # also verify the account itself is valid (not expired/locked/disabled)
+            rc = _libpam.pam_acct_mgmt(handle, 0)
+        _libpam.pam_end(handle, rc)
+        return rc == 0
+    except Exception:
+        return False
+
+
+# ---------------- sessions ----------------
+def make_token(user):
+    payload = "%s|%d" % (user, int(time.time()) + SESSION_TTL)
+    sig = hmac.new(SECRET, payload.encode(), hashlib.sha256).hexdigest()[:32]
+    return base64.urlsafe_b64encode(("%s|%s" % (payload, sig)).encode()).decode()
+
+
+def check_token(tok):
+    try:
+        raw = base64.urlsafe_b64decode(tok.encode()).decode()
+        user, exp, sig = raw.rsplit("|", 2)
+        payload = "%s|%s" % (user, exp)
+        good = hmac.new(SECRET, payload.encode(), hashlib.sha256).hexdigest()[:32]
+        if not hmac.compare_digest(sig, good):
+            return None
+        if int(exp) < time.time():
+            return None
+        return user
+    except Exception:
+        return None
+
+
+# ---------------- sensor readout (used by the fan curve) ----------------
+def read_all():
+    out = {}
+    try:
+        txt = subprocess.run([HUD, "all"], capture_output=True, text=True, timeout=1.5).stdout
+        for line in txt.splitlines():
+            p = line.split(None, 1)
+            if len(p) == 2:
+                m = re.search(r"-?\d+(?:\.\d+)?", p[1])
+                out[p[0]] = float(m.group()) if m else None
+    except Exception:
+        pass
+    return out
+
+
+# ---------------- tuner backend ----------------
+TUNER_HELPER = "/usr/local/bin/skillfish-tuner-helper"
+PRESETS_F = "/usr/share/skillfish/tuner-presets.json"
+
+
+def tuner_cmd(reqs, timeout=40):
+    """Pipe one or more JSON command lines to the tuner helper; return last reply."""
+    try:
+        inp = "".join(json.dumps(r) + "\n" for r in reqs)
+        p = subprocess.run([TUNER_HELPER], input=inp, capture_output=True, text=True, timeout=timeout)
+        last = {"ok": False}
+        for line in p.stdout.splitlines():
+            try:
+                last = json.loads(line)
+            except Exception:
+                pass
+        return last
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def list_presets():
+    try:
+        with open(PRESETS_F) as f:
+            return json.load(f).get("presets", [])
+    except Exception:
+        return []
+
+
+def apply_preset(name):
+    pr = next((p for p in list_presets() if p.get("name", "").lower() == (name or "").lower()), None)
+    if not pr:
+        return {"ok": False, "error": "preset sconosciuto"}
+    c, g, fan = pr.get("cpu", {}), pr.get("gpu", {}), pr.get("fan", {})
+    cmds = [
+        {"cmd": "apply-cpu", "mhz": c.get("frequency"), "scale": c.get("scale"), "temp": c.get("max_temperature", 85)},
+        {"cmd": "apply-gpu", "minmhz": g.get("min_mhz"), "minmv": g.get("min_mv"),
+         "maxmhz": g.get("max_mhz"), "maxmv": g.get("max_mv")},
+        {"cmd": "apply-fan", "mode": fan.get("mode", "auto"), "pct": fan.get("pct", 45)},
+        {"cmd": "thermal-guard", "limit": pr.get("thermal_guard", 85)},
+    ]
+    tuner_cmd(cmds)
+    return {"ok": True, "preset": pr.get("name")}
+
+
+# ---- named Compute-Unit (WGP) profiles, shared with the native Tuner app ----
+CU_PROFILES_F = "/etc/skillfish/cu-profiles.json"
+
+
+def cu_profiles_load():
+    try:
+        with open(CU_PROFILES_F) as f:
+            d = json.load(f)
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def cu_profile_op(action, name, rows):
+    name = (name or "").strip()[:40]
+    profs = cu_profiles_load()
+    if action == "save":
+        if not name:
+            return {"ok": False, "error": "nome mancante"}
+        try:
+            r = [int(x) & 0x1f for x in (rows or [])][:4]
+        except Exception:
+            r = []
+        while len(r) < 4:
+            r.append(0x1f)
+        profs[name] = r
+    elif action == "delete":
+        profs.pop(name, None)
+    elif action == "apply":
+        r = profs.get(name)
+        if not r:
+            return {"ok": False, "error": "profilo sconosciuto"}
+        res = tuner_cmd([{"cmd": "cu-apply", "rows": r}])
+        res["profiles"] = profs
+        return res
+    else:
+        return {"ok": False, "error": "azione sconosciuta"}
+    try:
+        os.makedirs(os.path.dirname(CU_PROFILES_F), exist_ok=True)
+        with open(CU_PROFILES_F, "w") as f:
+            json.dump(profs, f, indent=2)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    return {"ok": True, "profiles": profs}
+
+
+# ---- temperature -> fan% curve ----
+FAN_CURVE_F = "/etc/skillfish/fan-curve.json"
+FAN_CURVE_DEFAULT = {"enabled": False, "source": "max",
+                     "points": [[40, 20], [55, 35], [70, 55], [80, 80], [90, 100]]}
+_FAN = {"last_pct": None, "was_enabled": False}
+
+
+def fan_curve_load():
+    try:
+        with open(FAN_CURVE_F) as f:
+            d = json.load(f)
+        out = dict(FAN_CURVE_DEFAULT)
+        out.update({k: d[k] for k in ("enabled", "source", "points") if k in d})
+        return out
+    except Exception:
+        return dict(FAN_CURVE_DEFAULT)
+
+
+def fan_curve_save(d):
+    cur = fan_curve_load()
+    if "enabled" in d:
+        cur["enabled"] = bool(d["enabled"])
+    if d.get("source") in ("max", "gpu", "cpu"):
+        cur["source"] = d["source"]
+    if isinstance(d.get("points"), list):
+        pts = []
+        for p in d["points"]:
+            try:
+                pts.append([max(0, min(110, int(p[0]))), max(0, min(100, int(p[1])))])
+            except Exception:
+                pass
+        if pts:
+            cur["points"] = sorted(pts)
+    try:
+        os.makedirs(os.path.dirname(FAN_CURVE_F), exist_ok=True)
+        with open(FAN_CURVE_F, "w") as f:
+            json.dump(cur, f, indent=2)
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    return {"ok": True, "curve": cur, "preview": fan_curve_pct(cur)}
+
+
+def fan_curve_pct(cur=None):
+    """Interpolate the target fan % for the current temperature."""
+    cur = cur or fan_curve_load()
+    v = read_all()
+    g = v.get("gpu_temp") if isinstance(v.get("gpu_temp"), (int, float)) else 0
+    c = v.get("cpu_temp") if isinstance(v.get("cpu_temp"), (int, float)) else 0
+    t = {"gpu": g, "cpu": c}.get(cur["source"], max(g, c))
+    pts = sorted(cur["points"])
+    if not pts:
+        return None
+    if t <= pts[0][0]:
+        return pts[0][1]
+    if t >= pts[-1][0]:
+        return pts[-1][1]
+    for i in range(1, len(pts)):
+        t0, p0 = pts[i - 1]
+        t1, p1 = pts[i]
+        if t0 <= t <= t1:
+            return round(p0 + (p1 - p0) * (t - t0) / (t1 - t0)) if t1 != t0 else p1
+    return pts[-1][1]
+
+
+def fan_curve_loop():
+    while True:
+        try:
+            cur = fan_curve_load()
+            if cur["enabled"]:
+                pct = fan_curve_pct(cur)
+                if pct is not None and (_FAN["last_pct"] is None or abs(pct - _FAN["last_pct"]) >= 3):
+                    tuner_cmd([{"cmd": "apply-fan", "mode": "manual", "pct": int(pct)}])
+                    _FAN["last_pct"] = pct
+                _FAN["was_enabled"] = True
+            elif _FAN["was_enabled"]:
+                tuner_cmd([{"cmd": "apply-fan", "mode": "auto"}])  # hand the fan back to firmware
+                _FAN["was_enabled"] = False
+                _FAN["last_pct"] = None
+        except Exception:
+            pass
+        time.sleep(3)
+
+
+def cpu_coremap():
+    """Physical CPU core layout + live per-core MHz (for affinity / pinning)."""
+    base = "/sys/devices/system/cpu"
+
+    def rd(p):
+        try:
+            with open(p) as f:
+                return f.read().strip()
+        except Exception:
+            return ""
+    # live MHz per logical CPU from /proc/cpuinfo
+    mhz = {}
+    try:
+        cur = None
+        with open("/proc/cpuinfo") as f:
+            for ln in f:
+                if ln.startswith("processor"):
+                    cur = int(ln.split(":")[1])
+                elif ln.lower().startswith("cpu mhz") and cur is not None:
+                    mhz[cur] = round(float(ln.split(":")[1]))
+    except Exception:
+        pass
+    out = []
+    try:
+        cpus = sorted(int(d[3:]) for d in os.listdir(base) if re.match(r"cpu\d+$", d))
+    except Exception:
+        cpus = []
+    for c in cpus:
+        t = "%s/cpu%d/topology" % (base, c)
+        out.append({"cpu": c, "core": rd(t + "/core_id"),
+                    "pkg": rd(t + "/physical_package_id"),
+                    "siblings": rd(t + "/thread_siblings_list"),
+                    "mhz": mhz.get(c, "")})
+    return {"ok": True, "cpus": out, "n": len(out)}
+
+
+# ---------------- Wake-on-LAN ----------------
+def _primary_nic():
+    out = subprocess.run("ip -o route get 1.1.1.1 2>/dev/null", shell=True, capture_output=True, text=True).stdout
+    m = re.search(r"dev (\S+)", out)
+    return m.group(1) if m else "enp4s0"
+
+
+def wol_info():
+    nic = _primary_nic()
+    try:
+        with open("/sys/class/net/%s/address" % nic) as f:
+            mac = f.read().strip()
+    except Exception:
+        mac = ""
+    eth = ""
+    try:
+        eth = subprocess.run(["ethtool", nic], capture_output=True, text=True, timeout=5).stdout
+    except Exception:
+        eth = ""  # ethtool may be missing; report what we can
+    return {"ok": True, "nic": nic, "mac": mac,
+            "wol_supported": "Supports Wake-on" in eth,
+            "wol_enabled": bool(re.search(r"Wake-on:\s*\w*g", eth))}
+
+
+def wol_enable(on):
+    try:
+        subprocess.run(["ethtool", "-s", _primary_nic(), "wol", "g" if on else "d"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=5)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+# ---------------- HTTP ----------------
+CONFIG = load_conf()
+_login_fails = {}  # ip -> (count, first_ts)
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "SkillFishTuner/1.0"
+    protocol_version = "HTTP/1.1"
+
+    def log_message(self, *a):
+        pass
+
+    # --- helpers ---
+    def _send(self, code, body=b"", ctype="application/json", extra=None):
+        if isinstance(body, str):
+            body = body.encode()
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        for k, v in (extra or {}):
+            # strip CR/LF to prevent HTTP response splitting / header injection
+            self.send_header(str(k).replace("\r", "").replace("\n", ""),
+                             str(v).replace("\r", "").replace("\n", ""))
+        self.end_headers()
+        if body:
+            self.wfile.write(body)
+
+    def _json(self, code, obj, extra=None):
+        self._send(code, json.dumps(obj), "application/json", extra)
+
+    def _user(self):
+        c = self.headers.get("Cookie", "")
+        m = re.search(r"sftuner=([^;]+)", c)
+        return check_token(m.group(1)) if m else None
+
+    def _body(self):
+        n = int(self.headers.get("Content-Length", 0) or 0)
+        return self.rfile.read(n) if n else b""
+
+    def _mod(self, name):
+        return bool(CONFIG.get("modules", {}).get(name))
+
+    def _guard(self, mod):
+        """Return True if request is allowed (authed + module on), else send error."""
+        if not self._user():
+            self._json(401, {"error": "auth"}); return False
+        if mod and not self._mod(mod):
+            self._json(403, {"error": "modulo disattivato"}); return False
+        return True
+
+    def _client_ip(self):
+        return self.client_address[0]
+
+    # --- routing ---
+    def do_GET(self):
+        path = urllib.parse.urlparse(self.path).path
+        if path in ("/", "/index.html"):
+            return self._serve_file("tuner.html", "text/html; charset=utf-8")
+        if path.startswith("/static/"):
+            return self._serve_file(path[len("/static/"):], None)
+        if path == "/api/me":
+            u = self._user()
+            return self._json(200 if u else 401, {"user": u} if u else {"error": "auth"})
+        if path == "/api/tuner":
+            if not self._guard("tuner"):
+                return
+            ps = [{"name": p.get("name"), "desc": p.get("desc_it") or p.get("desc", "")} for p in list_presets()]
+            return self._json(200, {"presets": ps, "state": tuner_cmd([{"cmd": "get"}])})
+        if path == "/api/tuner/cu-profiles":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, {"ok": True, "profiles": cu_profiles_load()})
+        if path == "/api/tuner/coremap":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, cpu_coremap())
+        if path == "/api/tuner/fan-curve":
+            if not self._guard("tuner"):
+                return
+            cur = fan_curve_load()
+            return self._json(200, {"ok": True, "curve": cur, "preview": fan_curve_pct(cur)})
+        if path == "/api/wol":
+            if not self._user():
+                return self._json(401, {"error": "auth"})
+            return self._json(200, wol_info())
+        return self._json(404, {"error": "not found"})
+
+    def do_POST(self):
+        path = urllib.parse.urlparse(self.path).path
+        if path == "/api/login":
+            return self._login()
+        if path == "/api/logout":
+            return self._json(200, {"ok": True},
+                              extra=[("Set-Cookie", "sftuner=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict")])
+        if not self._user():
+            return self._json(401, {"error": "auth"})
+        try:
+            data = json.loads(self._body() or b"{}")
+        except Exception:
+            data = {}
+        if path == "/api/tuner/preset":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, apply_preset(data.get("name")))
+        if path == "/api/tuner/govmode":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "gov-mode", "mode": data.get("mode", "balanced")}]))
+        if path == "/api/tuner/fan":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "apply-fan", "mode": data.get("mode", "auto"),
+                                               "pct": int(data.get("pct", 45))}]))
+        if path == "/api/tuner/cpu":
+            if not self._guard("tuner"):
+                return
+            cmd = "persist-cpu" if data.get("persist") else "apply-cpu"
+            return self._json(200, tuner_cmd([{"cmd": cmd, "mhz": int(data.get("mhz", 3700)),
+                                               "scale": int(data.get("scale", 0)),
+                                               "temp": int(data.get("temp", 85))}]))
+        if path == "/api/tuner/gpu":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "apply-gpu",
+                                               "minmhz": int(data.get("minmhz", 350)),
+                                               "minmv": int(data.get("minmv", 700)),
+                                               "maxmhz": int(data.get("maxmhz", 2200)),
+                                               "maxmv": int(data.get("maxmv", 1000))}]))
+        if path == "/api/tuner/cu":
+            if not self._guard("tuner"):
+                return
+            rows = data.get("rows", [])
+            try:
+                rows = [int(x) & 0x1f for x in rows][:4]
+            except Exception:
+                rows = []
+            return self._json(200, tuner_cmd([{"cmd": "cu-apply", "rows": rows}]))
+        if path == "/api/tuner/cu-test":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "cu-test"}], timeout=240))
+        if path == "/api/tuner/cu-profile":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, cu_profile_op(data.get("action"), data.get("name"), data.get("rows")))
+        if path == "/api/tuner/fan-curve":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, fan_curve_save(data))
+        if path == "/api/tuner/vram":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "set-vram", "mb": int(data.get("mb", 8192))}]))
+        if path == "/api/tuner/test-cpu":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "test-cpu", "mhz": int(data.get("mhz", 3700)),
+                                               "scale": int(data.get("scale", 0)),
+                                               "temp": int(data.get("temp", 85))}], timeout=150))
+        if path == "/api/tuner/test-gpu":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "test-gpu",
+                                               "minmhz": int(data.get("minmhz", 350)),
+                                               "minmv": int(data.get("minmv", 700)),
+                                               "maxmhz": int(data.get("maxmhz", 2200)),
+                                               "maxmv": int(data.get("maxmv", 1000))}], timeout=150))
+        if path == "/api/tuner/suggest-uv":
+            if not self._guard("tuner"):
+                return
+            return self._json(200, tuner_cmd([{"cmd": "suggest-uv", "mhz": int(data.get("mhz", 3700))}], timeout=150))
+        if path == "/api/wol/enable":
+            return self._json(200, wol_enable(bool(data.get("on", True))))
+        return self._json(404, {"error": "not found"})
+
+    def _login(self):
+        ip = self._client_ip()
+        cnt, t0 = _login_fails.get(ip, (0, time.time()))
+        if cnt >= 8 and time.time() - t0 < 300:
+            return self._json(429, {"error": "too many attempts, wait a few minutes"})
+        try:
+            data = json.loads(self._body() or b"{}")
+        except Exception:
+            data = {}
+        user = (data.get("user") or CONFIG.get("user") or "").strip()
+        pw = data.get("pass") or ""
+        if user and pw and pam_check(user, pw):
+            _login_fails.pop(ip, None)
+            tok = make_token(user)
+            return self._json(200, {"ok": True, "user": user},
+                              extra=[("Set-Cookie",
+                                      "sftuner=%s; Max-Age=%d; Path=/; HttpOnly; SameSite=Strict; Secure"
+                                      % (tok, SESSION_TTL))])
+        _login_fails[ip] = (cnt + 1, t0 if cnt else time.time())
+        return self._json(401, {"error": "credenziali non valide"})
+
+    def _serve_file(self, rel, ctype):
+        rel = rel.lstrip("/")
+        # canonicalise and ensure the resolved path stays inside WEB (no traversal)
+        root = os.path.realpath(WEB)
+        full = os.path.realpath(os.path.join(root, rel))
+        if full != root and not full.startswith(root + os.sep):
+            return self._json(403, {"error": "no"})
+        if not os.path.isfile(full):
+            return self._json(404, {"error": "not found"})
+        if ctype is None:
+            ext = os.path.splitext(full)[1]
+            ctype = {".js": "application/javascript", ".css": "text/css",
+                     ".html": "text/html; charset=utf-8", ".svg": "image/svg+xml",
+                     ".png": "image/png", ".ico": "image/x-icon"}.get(ext, "application/octet-stream")
+        with open(full, "rb") as f:
+            self._send(200, f.read(), ctype)
+
+
+def ensure_cert():
+    if os.path.isfile(CERT_F) and os.path.isfile(KEY_F):
+        return
+    host = subprocess.run("hostname", capture_output=True, text=True).stdout.strip() or "skillfishos"
+    subprocess.run(
+        ["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+         "-keyout", KEY_F, "-out", CERT_F, "-days", "3650",
+         "-subj", "/CN=%s" % host,
+         "-addext", "subjectAltName=DNS:%s,DNS:%s.local,DNS:localhost" % (host, host)],
+        check=False)
+    try:
+        os.chmod(KEY_F, 0o600)
+    except Exception:
+        pass
+
+
+def main():
+    os.makedirs(STATE, exist_ok=True)
+    ensure_cert()
+    bind = CONFIG.get("bind", "0.0.0.0"); port = int(CONFIG.get("port", 8443))
+    httpd = ThreadingHTTPServer((bind, port), Handler)
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2  # refuse legacy SSL/TLS
+    ctx.load_cert_chain(CERT_F, KEY_F)
+    httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+    sys.stderr.write("debai-250 Tuner on https://%s:%d (PAM=%s)\n" % (bind, port, _PAM_OK))
+    sys.stderr.flush()
+    threading.Thread(target=fan_curve_loop, daemon=True).start()
+    httpd.serve_forever()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,12 @@
+[Unit]
+Description=debai-250 Tuner web panel
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/skillfish-tunerd
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=Enable Wake-on-LAN on the primary NIC
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/skillfish-enable-wol
+
+[Install]
+WantedBy=multi-user.target
