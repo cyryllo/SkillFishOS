@@ -17,7 +17,7 @@ HUD = "/usr/local/bin/skillfish-hud-val"
 SESSION_TTL = 8 * 3600
 
 DEFAULT_CONF = {"bind": "0.0.0.0", "port": 8443, "user": "skillfish",
-                "modules": {"tuner": True}}
+                "auth": True, "modules": {"tuner": True}}
 
 
 def load_conf():
@@ -430,6 +430,11 @@ class Handler(BaseHTTPRequestHandler):
         self._send(code, json.dumps(obj), "application/json", extra)
 
     def _user(self):
+        if not CONFIG.get("auth", True):
+            # WHY: "auth": false in tunerd.json is a deliberate, reversible
+            # bypass for testing on a fully trusted LAN — flip it back to
+            # true (or delete the key) to require PAM login again.
+            return CONFIG.get("user", "local")
         c = self.headers.get("Cookie", "")
         m = re.search(r"sftuner=([^;]+)", c)
         return check_token(m.group(1)) if m else None
